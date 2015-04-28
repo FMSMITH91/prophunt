@@ -1,0 +1,82 @@
+"Gamemode"
+{
+	"base"		"base"
+	"title"		"Prop Hunt"
+	"maps"      "^ph_"
+
+	"fretta_maps"
+        {
+    "1"	  "ph_"
+        }
+        "selectable"            "1"
+        
+	"menusystem"	"1"
+	"workshopid"	"417565863"
+	"settings"
+	{
+		1
+		{
+			"name"		"HUNTER_FIRE_PENALTY"
+			"text"		"Hunter Fire Penality"
+			"help"		"Health points removed from hunters when they shoot"
+			"type"		"numeric"
+			"default"	"5"
+		}
+
+		2
+		{
+			"name"		"HUNTER_KILL_BONUS"
+			"text"		"Hunter Kill Bonus"
+			"help"		"How much health to give back to the Hunter after killing a prop"
+			"type"		"numeric"
+			"default"	"100"
+		}
+
+		3
+		{
+			"name"		"SWAP_TEAMS_EVERY_ROUND"
+			"text"		"Swap Teams Every Round"
+			"help"		"Should teams swapped on every round?"
+			"type"		"CheckBox"
+			"default"	"1"
+		}
+
+		4
+		{
+			"name"		"GAME_TIME"
+			"text"		"Time Left (Mins.)"
+			"help"		"Maxium Time Left (in minutes) - Default is 30 minutes."
+			"type"		"Numeric"
+			"default"	"30"
+		}
+		
+		5
+		{
+			"name"		"HUNTER_BLINDLOCK_TIME"
+			"text"		"Hunter Blind Time (Sec.)"
+			"help"		"How long hunters are blinded (in seconds)"
+			"type"		"Numeric"
+			"default"	"30"
+		}
+		
+		6
+		{
+			"name"		"ROUND_TIME"
+			"text"		"Round Time (Sec.)"
+			"help"		"Time (in seconds) for each rounds."
+			"type"		"Numeric"
+			"default"	"300"
+		}
+		
+		7
+		{
+			"name"		"ROUNDS_PER_MAP"
+			"text"		"Rounds per Map (Num.)"
+			"help"		"Numbers played on a map (Default: 10)"
+			"type"		"Numeric"
+			"default"	"10"
+		}
+
+	}
+
+}
