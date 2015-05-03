@@ -193,6 +193,10 @@ function PlayerDisconnected(pl)
 end
 hook.Add("PlayerDisconnected", "PH_PlayerDisconnected", PlayerDisconnected)
 
+function GM:CanStartRound()
+	if #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= 2 then return true end
+	return false
+end
 
 -- Called when the players spawns
 function PlayerSpawn(pl)
