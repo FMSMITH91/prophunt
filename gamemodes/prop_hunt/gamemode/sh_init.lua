@@ -30,7 +30,7 @@ Both teams can press [F3] to play a taunt sound.]]
 
 
 -- Fretta configuration
-GM.AddFragsToTeamScore		= true
+GM.AddFragsToTeamScore		= false
 GM.CanOnlySpectateOwnTeam 	= true
 GM.ValidSpectatorModes 		= { OBS_MODE_CHASE, OBS_MODE_IN_EYE, OBS_MODE_ROAMING }
 GM.Data 					= {}

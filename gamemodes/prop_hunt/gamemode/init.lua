@@ -48,7 +48,7 @@ function GM:CheckPlayerDeathRoundEnd()
 
 	if table.Count(Teams) == 1 then
 		local TeamID = table.GetFirstKey(Teams)
-		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(1).." win!")
+		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(TeamID).." win!")
 		return
 	end
 	
@@ -280,6 +280,11 @@ function GM:OnPreRoundStart(num)
 					pl:SetTeam(TEAM_HUNTERS)
 				else
 					pl:SetTeam(TEAM_PROPS)
+				local props = team.GetScore( TEAM_PROPS )
+				local hunters = team.GetScore( TEAM_HUNTERS )
+	
+				team.SetScore( TEAM_PROPS, hunters )
+				team.SetScore( TEAM_HUNTERS, props )
 				end
 				
 				pl:ChatPrint("Teams have been swapped!")
