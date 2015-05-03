@@ -54,7 +54,7 @@ GM.RoundEndsWhenOneTeamAlive = true	// CS Style rules
 GM.EnableFreezeCam = false			// TF2 Style Freezecam
 GM.DeathLingerTime = 4				// The time between you dying and it going into spectator mode, 0 disables
 
-GM.SelectModel = true               // Can players use the playermodel picker in the F1 menu?
+GM.SelectModel = false               // Can players use the playermodel picker in the F1 menu?
 GM.SelectColor = false				// Can players modify the colour of their name? (ie.. no teams)
 
 GM.PlayerRingSize = 48              // How big are the colored rings under the player's feet (if they are enabled) ?
@@ -110,6 +110,8 @@ end
 		 Useful for when forced auto-assign is on.
 ---------------------------------------------------------*/
 function GM:TeamHasEnoughPlayers( teamid )
+
+	if teamid == TEAM_SPECTATOR then return false end
 
 	local PlayerCount = team.NumPlayers( teamid )
 

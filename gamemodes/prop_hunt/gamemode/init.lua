@@ -122,7 +122,7 @@ function GM:PlayerUse(pl, ent)
 	
 	if pl:Team() == TEAM_PROPS && pl:IsOnGround() && !pl:Crouching() && table.HasValue(USABLE_PROP_ENTITIES, ent:GetClass()) && ent:GetModel() then
 		if table.HasValue(BANNED_PROP_MODELS, ent:GetModel()) then
-			pl:ChatPrint("That prop has been banned by the server.")
+			pl:PrintMessage(HUD_PRINTCENTER, "Sorry! That prop has been banned by the server!")
 		elseif ent:GetPhysicsObject():IsValid() && pl.ph_prop:GetModel() != ent:GetModel() then
 			local ent_health = math.Clamp(ent:GetPhysicsObject():GetVolume() / 250, 1, 200)
 			local new_health = math.Clamp((pl.ph_prop.health / pl.ph_prop.max_health) * ent_health, 1, 200)

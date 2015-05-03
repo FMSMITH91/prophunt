@@ -119,9 +119,25 @@ net.Receive( "NPCKilledNPC", RecvNPCKilledNPC )
    Name: gamemode:AddDeathNotice( Victim, Weapon, Attacker )
    Desc: Adds an death notice entry
 ---------------------------------------------------------*/
---function GM:AddDeathNotice( victim, inflictor, attacker )
 function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 
+	local RdmDeathString = {}
+	local function addString(strtxt)
+		local t = {}
+		t.strtxt	= strtxt
+		table.insert(RdmDeathString, t)
+	end
+	
+	addString( "suicided!" )
+	addString( "died mysteriously!" )
+	addString( "died with magic." )
+	addString( "died and has no-scoped himself." )
+	addString( "rage-quited." )
+	addString( "died, better luck next time!" )
+
+	local customText = table.Random( RdmDeathString )
+	local stringtext = customText.strtxt
+	
 	if ( !IsValid( g_DeathNotify ) ) then return end
 
 	local pnl = vgui.Create( "GameNotice", g_DeathNotify )
@@ -137,7 +153,7 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	
 	if Victim == Attacker then
 		pnl:AddText( Attacker, color1)
-		pnl:AddText( "suicided or died mysterously." )
+		pnl:AddText( stringtext )
 	else
 		pnl:AddText( Attacker, color1)
 		pnl:AddIcon( Inflictor )

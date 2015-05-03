@@ -13,13 +13,7 @@ CLASS.DrawTeamRing			= false
 
 -- Called by spawn and sets loadout
 function CLASS:Loadout(pl)
-	--pl:Give("weapon_jihadbomb")	
 	-- Props don't get anything
-	local cl_defaultweapon = pl:GetInfo("cl_defaultweapon") 
- 	 
- 	if pl:HasWeapon(cl_defaultweapon) then 
- 		pl:SelectWeapon(cl_defaultweapon)
- 	end 
 end
 
 
