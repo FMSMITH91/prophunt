@@ -7,7 +7,7 @@
 
 local g_PlayableGamemodes = {}
 
-fretta_votesneeded = CreateConVar( "fretta_votesneeded", "0.75", { FCVAR_ARCHIVE } )
+fretta_votesneeded = CreateConVar( "fretta_votesneeded", "0.65", { FCVAR_ARCHIVE } )
 fretta_votetime = CreateConVar( "fretta_votetime", "20", { FCVAR_ARCHIVE } )
 fretta_votegraceperiod = CreateConVar( "fretta_votegraceperiod", "30", { FCVAR_ARCHIVE } )
 
