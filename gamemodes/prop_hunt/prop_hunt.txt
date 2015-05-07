@@ -16,25 +16,25 @@
 	{
 		1
 		{
-			"name"		"HUNTER_FIRE_PENALTY"
+			"name"		"ph_hunter_fire_penalty"
 			"text"		"Hunter Fire Penality"
 			"help"		"Health points removed from hunters when they shoot"
-			"type"		"numeric"
+			"type"		"Numeric"
 			"default"	"5"
 		}
 
 		2
 		{
-			"name"		"HUNTER_KILL_BONUS"
+			"name"		"ph_hunter_kill_bonus"
 			"text"		"Hunter Kill Bonus"
 			"help"		"How much health to give back to the Hunter after killing a prop"
-			"type"		"numeric"
-			"default"	"100"
+			"type"		"Numeric"
+			"default"	"20"
 		}
 
 		3
 		{
-			"name"		"SWAP_TEAMS_EVERY_ROUND"
+			"name"		"ph_swap_teams_every_round"
 			"text"		"Swap Teams Every Round"
 			"help"		"Should teams swapped on every round?"
 			"type"		"CheckBox"
@@ -43,7 +43,7 @@
 
 		4
 		{
-			"name"		"GAME_TIME"
+			"name"		"ph_game_time"
 			"text"		"Time Left (Mins.)"
 			"help"		"Maxium Time Left (in minutes) - Default is 30 minutes."
 			"type"		"Numeric"
@@ -52,7 +52,7 @@
 		
 		5
 		{
-			"name"		"HUNTER_BLINDLOCK_TIME"
+			"name"		"ph_hunter_blindlock_time"
 			"text"		"Hunter Blind Time (Sec.)"
 			"help"		"How long hunters are blinded (in seconds)"
 			"type"		"Numeric"
@@ -61,7 +61,7 @@
 		
 		6
 		{
-			"name"		"ROUND_TIME"
+			"name"		"ph_round_time"
 			"text"		"Round Time (Sec.)"
 			"help"		"Time (in seconds) for each rounds."
 			"type"		"Numeric"
@@ -70,11 +70,47 @@
 		
 		7
 		{
-			"name"		"ROUNDS_PER_MAP"
+			"name"		"ph_rounds_per_map"
 			"text"		"Rounds per Map (Num.)"
 			"help"		"Numbers played on a map (Default: 10)"
 			"type"		"Numeric"
 			"default"	"10"
+		}
+		
+		8
+		{
+			"name"		"ph_prop_camera_collisions"
+			"text"		"Prop View Collisions"
+			"help"		"Props can/cannot see through walls."
+			"type"		"CheckBox"
+			"default"	"1"
+		}
+		
+		9
+		{
+			"name"		"ph_freezecam"
+			"text"		"Freeze Camera"
+			"help"		"Enable freeze cam features? Available only for Prop that attacked by Hunter."
+			"type"		"CheckBox"
+			"default"	"1"
+		}
+		
+		10
+		{
+			"name"		"ph_better_prop_movement"
+			"text"		"Better Prop Movement"
+			"help"		"Should Enable Prop Rotation or Not? (Originally facing to 0 0 0). Props rotate and are seen properly by the local player."
+			"type"		"CheckBox"
+			"default"	"1"
+		}
+		
+		11
+		{
+			"name"		"ph_prop_collision"
+			"text"		"Team Props Collision"
+			"help"		"Should Team Props collide with each other?"
+			"type"		"CheckBox"
+			"default"	"1"
 		}
 
 	}

@@ -44,12 +44,43 @@ function ENT:OnTakeDamage(dmg)
 
 	
 			MsgAll(attacker:Name() .. " found and killed " .. pl:Name() .. "\n") 
+	
+	
+			-- D4UNKN0WNM4N2010: Alright, I made my own code for this. The current one looked too messy, sorry. -- it's fine btw
+			if GetConVar("ph_freezecam"):GetBool() then
+				if pl:GetNWBool("InFreezeCam", false) then
+					pl:PrintMessage(HUD_PRINTCONSOLE, "Something went wrong with the Freeze Camera, it's still enabled!")
+				else
+					timer.Simple(0.5, function()
+						if !pl:GetNWBool("InFreezeCam", false) then
+							-- Play the good old Freeze Cam sound
+							umsg.Start("PlayFreezeCamSound", pl)
+							umsg.End()
+						
+							pl:SetNWEntity("PlayerKilledByPlayerEntity", attacker)
+							pl:SetNWBool("InFreezeCam", true)
+							pl:SpectateEntity( attacker )
+							pl:Spectate( OBS_MODE_FREEZECAM )
+						end
+					end)
+					
+					timer.Simple(4.5, function()
+						if pl:GetNWBool("InFreezeCam", false) then
+							pl:SetNWBool("InFreezeCam", false)
+							pl:Spectate( OBS_MODE_CHASE )
+							pl:SpectateEntity( nil )
+						end
+					end)
+				end
+			end
+			
 			
 			attacker:AddFrags(1)
 			pl:AddDeaths(1)
-			attacker:SetHealth(math.Clamp(attacker:Health() + GetConVar("HUNTER_KILL_BONUS"):GetInt(), 1, 100))
+			attacker:SetHealth(math.Clamp(attacker:Health() + GetConVarNumber("ph_hunter_kill_bonus"), 1, 100))
 			
 			pl:RemoveProp()
+			pl:RemoveClientProp()
 		end
 	end
 end

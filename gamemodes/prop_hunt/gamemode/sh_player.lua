@@ -21,7 +21,19 @@ function meta:Blind(bool)
 end
 
 
--- Blinds the player by setting view out into the void
+-- Player has locked prop rotation?
+function meta:GetPlayerLockedRot()
+	return self:GetNWBool("PlayerLockedRotation", false)
+end
+
+
+-- Player's prop entity
+function meta:GetPlayerPropEntity()
+	return self:GetNWBool("PlayerPropEntity", nil)
+end
+
+
+-- Removes the prop given to the player
 function meta:RemoveProp()
 	if CLIENT || !self:IsValid() then return end
 	
@@ -29,4 +41,11 @@ function meta:RemoveProp()
 		self.ph_prop:Remove()
 		self.ph_prop = nil
 	end
+end
+
+function meta:RemoveClientProp()
+	if CLIENT || !self:IsValid() then return end
+	
+	umsg.Start("RemoveClientPropUMSG", self)
+	umsg.End()
 end

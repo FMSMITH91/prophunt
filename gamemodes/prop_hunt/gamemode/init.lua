@@ -1,4 +1,4 @@
--- Enhanced by: Wolvindra-Vinzuerio | v.3 --
+-- Enhanced by: Wolvindra-Vinzuerio and D4UNKN0WNM4N2010 --
 -- Special thanks for Kowalski that merged into his github. You may check on his prop hunt workshop page. --
 
 -- Send the required lua files to the client
@@ -58,7 +58,7 @@ end
 -- Called when an entity takes damage
 function EntityTakeDamage(ent, dmginfo)
     local att = dmginfo:GetAttacker()
-	if GAMEMODE:InRound() && ent && ent:GetClass() != "ph_prop" && !ent:IsPlayer() && att && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive() then
+	if GAMEMODE:InRound() && ent && (ent:GetClass() != "ph_prop" && ent:GetClass() != "func_breakable" && ent:GetClass() != "prop_door_rotating" && ent:GetClass() != "prop_dynamic*") && !ent:IsPlayer() && att && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive() then
 		att:SetHealth(att:Health() - HUNTER_FIRE_PENALTY)
 		if att:Health() <= 0 then
 			MsgAll(att:Name() .. " felt guilty for hurting so many innocent props and committed suicide\n")
@@ -122,7 +122,7 @@ function GM:PlayerUse(pl, ent)
 	
 	if pl:Team() == TEAM_PROPS && pl:IsOnGround() && !pl:Crouching() && table.HasValue(USABLE_PROP_ENTITIES, ent:GetClass()) && ent:GetModel() then
 		if table.HasValue(BANNED_PROP_MODELS, ent:GetModel()) then
-			pl:PrintMessage(HUD_PRINTCENTER, "Sorry! That prop has been banned by the server!")
+			pl:ChatPrint("That prop has been banned by the server.")
 		elseif ent:GetPhysicsObject():IsValid() && pl.ph_prop:GetModel() != ent:GetModel() then
 			local ent_health = math.Clamp(ent:GetPhysicsObject():GetVolume() / 250, 1, 200)
 			local new_health = math.Clamp((pl.ph_prop.health / pl.ph_prop.max_health) * ent_health, 1, 200)
@@ -132,7 +132,7 @@ function GM:PlayerUse(pl, ent)
 			pl.ph_prop.max_health = ent_health
 			pl.ph_prop:SetModel(ent:GetModel())
 			pl.ph_prop:SetSkin(ent:GetSkin())
-			pl.ph_prop:SetSolid(SOLID_BSP)
+			pl.ph_prop:SetSolid(SOLID_VPHYSICS)
 			pl.ph_prop:SetPos(pl:GetPos() - Vector(0, 0, ent:OBBMins().z))
 			pl.ph_prop:SetAngles(pl:GetAngles())
 			
@@ -179,14 +179,6 @@ function GM:ShowSpare1(pl)
 	end	
 end
 
---[[
--- Called when the gamemode is initialized -- This does not even working since the command is blocked.
-function Initialize()
-	game.ConsoleCommand("mp_flashlight 1\n")
-end
-hook.Add("Initialize", "PH_Initialize", Initialize)
-]]--
-
 -- Called when a player leaves
 function PlayerDisconnected(pl)
 	pl:RemoveProp()
@@ -200,32 +192,12 @@ end
 
 -- Called when the players spawns
 function PlayerSpawn(pl)
-
-	local oldhands = pl:GetHands()
-	if ( IsValid( oldhands ) ) then oldhands:Remove() end
-
-	local hands = ents.Create( "gmod_hands" )
-	if ( IsValid( hands ) ) then
-		pl:SetHands( hands )
-		hands:SetOwner( pl )
-		
-		-- No more default citizen hands. We will forcing to use from the combine's model.
-		hands:SetModel( "models/weapons/c_arms_combine.mdl" )
-		hands:SetSkin ( 0 )
-		hands:SetBodyGroups ( "000000" )
-		
-		-- Attach them to the viewmodel
-		local vm = pl:GetViewModel( 0 )
-		hands:AttachToViewmodel( vm )
-
-		vm:DeleteOnRemove( hands )
-		pl:DeleteOnRemove( hands )
-
-		hands:Spawn()
- 	end
-
+	pl:SetNWBool("PlayerLockedRotation", false)
+	pl:SetNWBool("InFreezeCam", false)
+	pl:SetNWEntity("PlayerKilledByPlayerEntity", nil)
 	pl:Blind(false)
 	pl:RemoveProp()
+	pl:RemoveClientProp()
 	pl:SetColor( Color(255, 255, 255, 255))
 	pl:SetRenderMode( RENDERMODE_TRANSALPHA )
 	pl:UnLock()
@@ -240,7 +212,7 @@ end
 hook.Add("PlayerSpawn", "PH_PlayerSpawn", PlayerSpawn)
 
 
--- Removes all weapons on a map | I think this function never worked?
+--[[
 function RemoveWeaponsAndItems()
 	for _, wep in pairs(ents.FindByClass("weapon_*")) do
 		wep:Remove()
@@ -251,7 +223,7 @@ function RemoveWeaponsAndItems()
 	end
 end
 hook.Add("InitPostEntity", "PH_RemoveWeaponsAndItems", RemoveWeaponsAndItems)
-
+]]--
 
 -- Called when round ends
 function RoundEnd()
@@ -280,16 +252,18 @@ function GM:OnPreRoundStart(num)
 		if GetGlobalInt("RoundNumber") != 1 && (SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0 || SWAP_TEAMS_POINTS_ZERO==1)) then
 		for _, pl in pairs(player.GetAll()) do
 				if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
-				if pl:Team() == TEAM_PROPS then
-					pl:SetTeam(TEAM_HUNTERS)
-				else
-					pl:SetTeam(TEAM_PROPS)
-				local props = team.GetScore( TEAM_PROPS )
-				local hunters = team.GetScore( TEAM_HUNTERS )
+					if pl:Team() == TEAM_PROPS then
+						pl:SetTeam(TEAM_HUNTERS)
+					else
+						pl:SetTeam(TEAM_PROPS)
+					local props = team.GetScore( TEAM_PROPS )
+					local hunters = team.GetScore( TEAM_HUNTERS )
 	
-				team.SetScore( TEAM_PROPS, hunters )
-				team.SetScore( TEAM_HUNTERS, props )
-				end
+					team.SetScore( TEAM_PROPS, hunters )
+					team.SetScore( TEAM_HUNTERS, props )
+						pl:SendLua( [[notification.AddLegacy("You are in Prop Team now and you can rotate the prop around!", NOTIFY_UNDO, 20 )]] )
+						pl:SendLua( [[notification.AddLegacy("You can press R to lock the prop rotation!", NOTIFY_GENERIC, 20 )]] )
+					end
 				
 				pl:ChatPrint("Teams have been swapped!")
 
@@ -301,3 +275,35 @@ function GM:OnPreRoundStart(num)
 	UTIL_SpawnAllPlayers()
 	UTIL_FreezeAllPlayers()
 end
+
+
+-- Called every server tick.
+function GM:Think()
+	for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
+		if GetConVar("ph_better_prop_movement"):GetBool() then
+			if pl && pl:IsValid() && pl:Alive() && pl.ph_prop && pl.ph_prop:IsValid() then
+				pl.ph_prop:SetPos(pl:GetPos() - Vector(0, 0, pl.ph_prop:OBBMins().z))
+				if !(pl:GetPlayerLockedRot()) then
+					pl.ph_prop:SetAngles(pl:GetAngles())
+				end
+			end
+		end
+	end
+end
+
+
+-- Player pressed a key
+function PlayerPressedKey(pl, key)
+	if GetConVar("ph_better_prop_movement"):GetBool() && pl && pl:IsValid() && pl:Alive() && pl:Team() == TEAM_PROPS && pl.ph_prop && pl.ph_prop:IsValid() then
+		if ( key == IN_RELOAD ) then
+			if pl:GetPlayerLockedRot() then
+				pl:SetNWBool("PlayerLockedRotation", false)
+				pl:PrintMessage(HUD_PRINTCENTER, "Prop Rotation Lock: Disabled")
+			else
+				pl:SetNWBool("PlayerLockedRotation", true)
+				pl:PrintMessage(HUD_PRINTCENTER, "Prop Rotation Lock: Enabled")
+			end
+		end
+	end
+end
+hook.Add("KeyPress", "PlayerPressedKey", PlayerPressedKey)

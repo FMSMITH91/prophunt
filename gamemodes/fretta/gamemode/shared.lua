@@ -51,8 +51,8 @@ GM.RoundPreStartTime = 5			// Preperation time before a round starts
 GM.RoundPostLength = 8				// Seconds to show the 'x team won!' screen at the end of a round
 GM.RoundEndsWhenOneTeamAlive = true	// CS Style rules
 
-GM.EnableFreezeCam = false			// TF2 Style Freezecam
-GM.DeathLingerTime = 4				// The time between you dying and it going into spectator mode, 0 disables
+GM.EnableFreezeCam = true			// TF2 Style Freezecam
+GM.DeathLingerTime = 7				// The time between you dying and it going into spectator mode, 0 disables
 
 GM.SelectModel = false               // Can players use the playermodel picker in the F1 menu?
 GM.SelectColor = false				// Can players modify the colour of their name? (ie.. no teams)
@@ -63,7 +63,7 @@ GM.SuicideString = "died"			// The string to append to the player's name when th
 GM.DeathNoticeDefaultColor = Color( 255, 128, 0 ); // Default colour for entity kills
 GM.DeathNoticeTextColor = color_white; // colour for text ie. "died", "killed"
 
-GM.ValidSpectatorModes = { OBS_MODE_CHASE, OBS_MODE_IN_EYE, OBS_MODE_ROAMING } // The spectator modes that are allowed OBS_MODE_ROAMING
+GM.ValidSpectatorModes = { OBS_MODE_CHASE, OBS_MODE_IN_EYE, OBS_MODE_ROAMING } // The spectator modes that are allowed
 GM.ValidSpectatorEntities = { "player" }	// Entities we can spectate, players being the obvious default choice.
 GM.CanOnlySpectateOwnTeam = true; // you can only spectate players on your own team
 

@@ -119,6 +119,7 @@ net.Receive( "NPCKilledNPC", RecvNPCKilledNPC )
    Name: gamemode:AddDeathNotice( Victim, Weapon, Attacker )
    Desc: Adds an death notice entry
 ---------------------------------------------------------*/
+--function GM:AddDeathNotice( victim, inflictor, attacker )
 function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 
 	local RdmDeathString = {}
@@ -134,7 +135,7 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	addString( "died and has no-scoped himself." )
 	addString( "rage-quited." )
 	addString( "died, better luck next time!" )
-
+	
 	local customText = table.Random( RdmDeathString )
 	local stringtext = customText.strtxt
 	

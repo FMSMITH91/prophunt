@@ -40,6 +40,34 @@ function GM:AddScoreboardAvatar( ScoreBoard )
 
 end
 
+--[[
+function GM:AddScoreboardVoice( ScoreBoard )
+
+   local f = function(ply)
+		local vc = vgui.Create("DImageButton", ScoreBoard)
+			vc:SetSize (16,16)
+			if self.Player != LocalPlayer() then
+				local muted = self.Player:IsMuted()
+				vc:SetImage(muted and "icon16/sound_mute.png" or "icon16/sound.png")
+			else
+				vc:Hide()
+			end
+			
+			-- click function
+			vc.DoClick = function()
+			   if IsValid(ply) and ply != LocalPlayer() then
+				  ply:SetMuted(not ply:IsMuted())
+			   end
+			end
+			
+			return vc
+	end
+	
+	ScoreBoard:AddColumn( "Mute", 20, f, 0.5, nil, 6, 6 )
+
+end
+]]--
+
 function GM:AddScoreboardSpacer( ScoreBoard, iSize )
 	ScoreBoard:AddColumn( "", 16 ) // Gap
 end

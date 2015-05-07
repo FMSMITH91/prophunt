@@ -6,19 +6,19 @@ BANNED_PROP_MODELS = {
 
 
 -- Maximum time (in minutes) for this fretta gamemode (Default: 30)
-GAME_TIME = 30
+GAME_TIME = GetConVarNumber("ph_game_time")
 
 
 -- Number of seconds hunters are blinded/locked at the beginning of the map (Default: 30)
-HUNTER_BLINDLOCK_TIME = 30
+HUNTER_BLINDLOCK_TIME = GetConVarNumber("ph_hunter_blindlock_time")
 
 
 -- Health points removed from hunters when they shoot  (Default: 25)
-HUNTER_FIRE_PENALTY = 5
+HUNTER_FIRE_PENALTY = GetConVarNumber("ph_hunter_fire_penalty")
 
 
 -- How much health to give back to the Hunter after killing a prop (Default: 100)
-HUNTER_KILL_BONUS = 20
+HUNTER_KILL_BONUS = GetConVarNumber("ph_hunter_kill_bonus")
 
 
 -- If you loose one of these will be played
@@ -168,15 +168,15 @@ TAUNT_DELAY = 2
 
 
 -- Rounds played on a map (Default: 10)
-ROUNDS_PER_MAP = 10
+ROUNDS_PER_MAP = GetConVarNumber("ph_rounds_per_map")
 
 
 -- Time (in seconds) for each round (Default: 300)
-ROUND_TIME = 300
+ROUND_TIME = GetConVarNumber("ph_round_time")
 
 
 -- Determains if players should be team swapped every round [0 = No, 1 = Yes] (Default: 1)
-SWAP_TEAMS_EVERY_ROUND = 1
+SWAP_TEAMS_EVERY_ROUND = GetConVarNumber("ph_swap_teams_every_round")
 
 
 -- If you win, one of these will be played

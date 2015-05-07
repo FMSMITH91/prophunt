@@ -1,7 +1,5 @@
 include("sh_init.lua")
 
-overlaydraw = 0
-
 -- Decides where  the player view should be (forces third person for props)
 function GM:CalcView(pl, origin, angles, fov)
 	local view = {} 
@@ -20,7 +18,21 @@ function GM:CalcView(pl, origin, angles, fov)
  	
  	-- Give the active weapon a go at changing the viewmodel position 
 	if pl:Team() == TEAM_PROPS && pl:Alive() then
-		view.origin = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
+		if GetConVar("ph_prop_camera_collisions"):GetBool() then
+			local trace = {}
+			local TraceOffset = 2
+
+			trace.start = origin + Vector(0, 0, hullz - 60)
+			trace.endpos = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
+			trace.filter = player.GetAll() && ents.FindByClass("ph_prop")
+			trace.mins = Vector(-TraceOffset, -TraceOffset, -TraceOffset)
+			trace.maxs = Vector(TraceOffset, TraceOffset, TraceOffset)
+			local tr = util.TraceHull(trace)
+
+			view.origin = tr.HitPos
+		else
+			view.origin = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
+		end
 	else
 	 	local wep = pl:GetActiveWeapon() 
 	 	if wep && wep != NULL then 
@@ -43,7 +55,8 @@ end
 -- Draw round timeleft and hunter release timeleft
 function HUDPaint()
 	if GetGlobalBool("InRound", false) then
-		local blindlock_time_left = (HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
+		-- local blindlock_time_left = (HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
+		local blindlock_time_left = (GetConVarNumber("ph_hunter_blindlock_time") - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 		
 		if blindlock_time_left < 1 && blindlock_time_left > -6 then
 			blindlock_time_left_msg = "Ready or not, here we come!"
@@ -61,17 +74,17 @@ function HUDPaint()
 			draw.DrawText(blindlock_time_left_msg, "MyFont", 31, 26, Color(255, 255, 0, 255), TEXT_ALIGN_LEFT)
 		end
 	end
+	
+	-- Draw some nice text
+	if LocalPlayer():GetNWBool("InFreezeCam", false) then
+		local w1, h1 = surface.GetTextSize("You were killed by "..LocalPlayer():GetNWEntity("PlayerKilledByPlayerEntity", nil):Name() );
+		local textx = ScrW()/2
+		local steamx = (ScrW()/2) - 32
+		draw.SimpleTextOutlined("You were killed by "..LocalPlayer():GetNWEntity("PlayerKilledByPlayerEntity", nil):Name(), "TrebuchetBig", textx, ScrH()*0.75, Color(255, 10, 10, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1.5, Color(0, 0, 0, 255))
+	end
 end
 hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
 
-function DrawMaterial()
-	if blind then
-		draw.RoundedBox( 0, 0, 0, ScrW(), ScrH(), Color( 50, 50, 50, 255 ) )
-	else
-	end
-end
-	
-hook.Add( "HUDPaintBackground", "RenderBlindOverlay", DrawMaterial )
 
 -- Called immediately after starting the gamemode 
 function Initialize()
@@ -84,6 +97,11 @@ function Initialize()
 		weight	= 1200,
 		antialias = true,
 		underline = false
+	})
+
+	surface.CreateFont("TrebuchetBig", {
+		font = "Impact",
+		size = 40
 	})
 end
 hook.Add("Initialize", "PH_Initialize", Initialize)
@@ -98,19 +116,19 @@ function ResetHull(um)
 end
 usermessage.Hook("ResetHull", ResetHull)
 
--- Show the hands!
-function GM:PostDrawViewModel( vm, pl, weapon )
-	if weapon.UseHands or (not weapon:IsScripted()) then
-		local hands = LocalPlayer():GetHands()
-		if IsValid(hands) then hands:DrawModel() end
-	end
-end
 
 -- Sets the local blind variable to be used in CalcView
 function SetBlind(um)
 	blind = um:ReadBool()
 end
 usermessage.Hook("SetBlind", SetBlind)
+
+
+-- Plays the Freeze Cam sound
+function PlayFreezeCamSound(um)
+	surface.PlaySound("misc/freeze_cam.wav")
+end
+usermessage.Hook("PlayFreezeCamSound", PlayFreezeCamSound)
 
 
 -- Sets the player hull
@@ -124,3 +142,35 @@ function SetHull(um)
 	LocalPlayer():SetHealth(new_health)
 end
 usermessage.Hook("SetHull", SetHull)
+
+
+-- Player has a client-side prop model
+function ClientPropSpawn(um)
+	client_prop_model = ents.CreateClientProp("models/player/kleiner.mdl")
+	-- client_prop_model = ents.CreateClientProp(LocalPlayer():GetPlayerPropEntity():GetModel())
+end
+usermessage.Hook("ClientPropSpawn", ClientPropSpawn)
+
+
+-- Remove the client prop model
+function RemoveClientPropUMSG(um)
+	if client_prop_model && client_prop_model:IsValid() then
+		client_prop_model:Remove()
+		 client_prop_model = nil
+	end
+end
+usermessage.Hook("RemoveClientPropUMSG", RemoveClientPropUMSG)
+
+
+-- Called every client frame.
+function GM:Think()
+	for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
+		if GetConVar("ph_better_prop_movement"):GetBool() then
+			if LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():GetPlayerPropEntity() && LocalPlayer():GetPlayerPropEntity():IsValid() && client_prop_model && client_prop_model:IsValid() then
+				client_prop_model:SetPos(LocalPlayer():GetPos() - Vector(0, 0, LocalPlayer():GetPlayerPropEntity():OBBMins().z))
+				client_prop_model:SetModel(LocalPlayer():GetPlayerPropEntity():GetModel())
+				client_prop_model:SetAngles(LocalPlayer():GetPlayerPropEntity():GetAngles())
+			end
+		end
+	end
+end

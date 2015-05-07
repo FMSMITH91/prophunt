@@ -1,18 +1,18 @@
 This is a list of things that need to be worked on. If you know a fix for any of these or found a bug then please open a new issue.
 
 *Fixes*
--Score not being kept/transferred between teams.
+-Score not being kept/transferred between teams. (Working on this)
 -prop_door_rotating has Door model (models/props_c17/door01_left.mdl) with no door_options! Verify that SKIN is valid, and has a corresponding options block in the model QC file
--mod_studio: MOVETYPE_FOLLOW with no model.
 -Very rearly a hunter will spawn not blinded and is able to move around and kill props.
 -player dies when switching to spectator.
+-When the round limit ends first players still respawn for round "11" but yet map vote starts also.
+-When the round ends, and someone kills a prop, just as it changes, as a hunter they get noclip. (Needs looking into.)
 
 
 *Enhancements*
 -Better ULX support. (Maybe add ranks to scoreboard)
--Add mute function to allow players to mute other players.
--Prop rotation by click of mouse and to lock prop orientation.
+-Add mute function to allow players to mute other players. (Currently being worked on?)
 -Allow to give props a weapon at a certain time limit or give a weapon to last prop left to kill hunters.
--Allow to config jump hight for props.
 -Add unstuck function.
 -Add when 1 minute left in game props will taunt every few seconds.
+-Adding MapVote - Fretta-like Map Voting (I'll do some testing first and if I like what I see then I'll update it)
