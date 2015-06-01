@@ -1,12 +1,8 @@
 -- Props will not be able to become these models
 BANNED_PROP_MODELS = {
 	"models/props/cs_assault/dollar.mdl",
-	"models/props/cs_assault/money.mdl",
 	"models/props/cs_office/snowman_arm.mdl",
-	"models/props/cs_office/computer_mouse.mdl",
-	"models/props/cs_office/projector_remote.mdl",
 	"models/props/cs_militia/reload_bullet_tray.mdl",
-	"models/foodnhouseholditems/egg.mdl"
 }
 
 

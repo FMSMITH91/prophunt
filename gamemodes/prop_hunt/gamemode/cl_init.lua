@@ -108,7 +108,7 @@ function Initialize()
 	hullz = 80
 	client_prop_light = false
 	
-	CreateClientConVar("ph_cl_halos", "1", true, false)
+	CreateClientConVar("ph_cl_halos", "0", true, false)
 	
 	-- Just like the server constant
 	USABLE_PROP_ENTITIES_CL = {
