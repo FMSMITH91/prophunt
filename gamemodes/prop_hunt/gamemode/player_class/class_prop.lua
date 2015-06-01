@@ -24,6 +24,7 @@ function CLASS:OnSpawn(pl)
 	pl:SetupHands()
 	pl:SetCustomCollisionCheck(true)
 	pl:SetAvoidPlayers(true)
+	pl:CrosshairDisable()
 	
 	pl.ph_prop = ents.Create("ph_prop")
 	pl.ph_prop:SetPos(pl:GetPos())

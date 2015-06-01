@@ -112,6 +112,15 @@
 			"type"		"CheckBox"
 			"default"	"1"
 		}
+		
+		12
+		{
+			"name"		"ph_prop_additional_models"
+			"text"		"Team Props Additional Models"
+			"help"		"Should Team Props have different starting models instead of Kleiner?"
+			"type"		"CheckBox"
+			"default"	"0"
+		}
 
 	}
 

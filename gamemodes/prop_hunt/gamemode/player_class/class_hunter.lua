@@ -40,6 +40,7 @@ function CLASS:OnSpawn(pl)
 	pl:SetupHands()
 	pl:SetCustomCollisionCheck(false)
 	pl:SetAvoidPlayers(false)
+	pl:CrosshairEnable()
 
 	local unlock_time = math.Clamp(HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, HUNTER_BLINDLOCK_TIME)
 	

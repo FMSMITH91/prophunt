@@ -20,11 +20,11 @@ function GM:CalcView(pl, origin, angles, fov)
 	if pl:Team() == TEAM_PROPS && pl:Alive() then
 		if GetConVar("ph_prop_camera_collisions"):GetBool() then
 			local trace = {}
-			local TraceOffset = 2
+			local TraceOffset = math.Clamp(hullz, 0, 4)
 
 			trace.start = origin + Vector(0, 0, hullz - 60)
 			trace.endpos = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
-			trace.filter = player.GetAll() && ents.FindByClass("ph_prop")
+			trace.filter = client_prop_model && ents.FindByClass("ph_prop")
 			trace.mins = Vector(-TraceOffset, -TraceOffset, -TraceOffset)
 			trace.maxs = Vector(TraceOffset, TraceOffset, TraceOffset)
 			local tr = util.TraceHull(trace)
@@ -82,6 +82,23 @@ function HUDPaint()
 		local steamx = (ScrW()/2) - 32
 		draw.SimpleTextOutlined("You were killed by "..LocalPlayer():GetNWEntity("PlayerKilledByPlayerEntity", nil):Name(), "TrebuchetBig", textx, ScrH()*0.75, Color(255, 10, 10, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1.5, Color(0, 0, 0, 255))
 	end
+	
+	-- Draw a crosshair so aiming is easier for props
+	-- if LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():Team() == TEAM_PROPS then
+		-- local trace = {}
+		-- trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60)
+		-- trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 10000
+		-- trace.filter = client_prop_model && ents.FindByClass("ph_prop")
+		
+		-- local trace2 = util.TraceLine(trace)
+		
+		-- local crosshair_pos = trace2.HitPos:ToScreen()
+		
+		-- surface.SetDrawColor(0, 0, 0, 255)
+		-- surface.DrawRect(crosshair_pos.x - 1, crosshair_pos.y - 1, 4, 4)
+		-- surface.SetDrawColor(255, 255, 255, 255)
+		-- surface.DrawRect(crosshair_pos.x, crosshair_pos.y, 2, 2)
+	-- end
 end
 hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
 
@@ -89,6 +106,16 @@ hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
 -- Called immediately after starting the gamemode 
 function Initialize()
 	hullz = 80
+	client_prop_light = false
+	
+	CreateClientConVar("ph_cl_halos", "1", true, false)
+	
+	-- Just like the server constant
+	USABLE_PROP_ENTITIES_CL = {
+		"prop_physics",
+		"prop_physics_multiplayer"
+	}
+	
 	-- surface.CreateFont("Arial", 14, 1200, true, false, "ph_arial")
 	surface.CreateFont( "MyFont",
 	{
@@ -156,7 +183,7 @@ usermessage.Hook("ClientPropSpawn", ClientPropSpawn)
 function RemoveClientPropUMSG(um)
 	if client_prop_model && client_prop_model:IsValid() then
 		client_prop_model:Remove()
-		 client_prop_model = nil
+		client_prop_model = nil
 	end
 end
 usermessage.Hook("RemoveClientPropUMSG", RemoveClientPropUMSG)
@@ -167,10 +194,96 @@ function GM:Think()
 	for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
 		if GetConVar("ph_better_prop_movement"):GetBool() then
 			if LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():GetPlayerPropEntity() && LocalPlayer():GetPlayerPropEntity():IsValid() && client_prop_model && client_prop_model:IsValid() then
-				client_prop_model:SetPos(LocalPlayer():GetPos() - Vector(0, 0, LocalPlayer():GetPlayerPropEntity():OBBMins().z))
+				if (client_prop_model:GetModel() == "models/player/kleiner.mdl") || table.HasValue(ADDITIONAL_STARTING_MODELS, client_prop_model:GetModel()) then
+					client_prop_model:SetPos(LocalPlayer():GetPos())
+				else
+					client_prop_model:SetPos(LocalPlayer():GetPos() - Vector(0, 0, LocalPlayer():GetPlayerPropEntity():OBBMins().z))
+				end
 				client_prop_model:SetModel(LocalPlayer():GetPlayerPropEntity():GetModel())
 				client_prop_model:SetAngles(LocalPlayer():GetPlayerPropEntity():GetAngles())
+				client_prop_model:SetSkin(LocalPlayer():GetPlayerPropEntity():GetSkin())
+			end
+		end
+	end
+	
+	if client_prop_light && LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():Team() == TEAM_PROPS then
+		local prop_light = DynamicLight(LocalPlayer():EntIndex())
+		if prop_light then
+			prop_light.pos = LocalPlayer():GetPos()
+			prop_light.r = 255
+			prop_light.g = 255
+			prop_light.b = 255
+			prop_light.brightness = 0.125
+			prop_light.decay = 1
+			prop_light.size = 128
+			prop_light.dietime = CurTime() + 0.1
+		end
+	end
+end
+
+
+-- Draws halos on team members
+function TeamDrawHalos()
+	if GetConVar("ph_cl_halos"):GetBool() then
+		for _, pl in pairs(player.GetAll()) do
+			if pl != LocalPlayer() && (pl && pl:IsValid() && pl:Alive() && pl:Team() == LocalPlayer():Team()) then
+				local pl_table = {}
+				if pl:GetPlayerPropEntity() && pl:GetPlayerPropEntity():IsValid() then
+					table.insert(pl_table, pl:GetPlayerPropEntity())
+				else
+					table.insert(pl_table, pl)
+				end
+				halo.Add(pl_table, team.GetColor(pl:Team()), 2, 2, 1, true, true)
+			end
+			
+			-- Something to tell if the prop is selectable
+			if LocalPlayer():Team() == TEAM_PROPS then
+				local trace = {}
+				trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60)
+				trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 10000
+				trace.filter = client_prop_model && ents.FindByClass("ph_prop")
+				
+				local trace2 = util.TraceLine(trace) 
+				if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(USABLE_PROP_ENTITIES_CL, trace2.Entity:GetClass()) then
+					local ent_table = {}
+					table.insert(ent_table, trace2.Entity)
+					halo.Add(ent_table, Color(0, 255, 0), 2, 2, 1, true, true)
+				end
 			end
 		end
 	end
 end
+hook.Add("PreDrawHalos", "TeamDrawHalos", TeamDrawHalos)
+
+
+-- Replaces the flashlight with a client-side dynamic light for props
+function PlayerSwitchDynamicLight(um)
+	if client_prop_light then
+		client_prop_light = false
+		if IsMounted("cstrike") then
+			surface.PlaySound("items/nvg_off.wav")
+		end
+	else
+		client_prop_light = true
+		if IsMounted("cstrike") then
+			surface.PlaySound("items/nvg_on.wav")
+		end
+	end
+end
+usermessage.Hook("PlayerSwitchDynamicLight", PlayerSwitchDynamicLight)
+
+
+-- Receive a list of usable prop entities
+function ServerUsablePropsToClient(len)
+	USABLE_PROP_ENTITIES_CL = net.ReadTable()
+end
+net.Receive("ServerUsablePropsToClient", ServerUsablePropsToClient)
+
+
+-- Turns the dynamic light OFF
+function DisableDynamicLight(um)
+	if client_prop_light then
+		client_prop_light = false
+	end
+end
+usermessage.Hook("DisableDynamicLight", DisableDynamicLight)

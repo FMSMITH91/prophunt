@@ -69,6 +69,10 @@ if !ConVarExists("ph_prop_collision") then
 	local ph_prop_collision = CreateConVar("ph_prop_collision", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props collide with each other?")
 end
 
+if !ConVarExists("ph_prop_additional_models") then
+	local ph_prop_additional_models = CreateConVar("ph_prop_additional_models", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props have different starting models instead of just Kleiner?")
+end
+
 if !ConVarExists("ph_hunter_fire_penalty") then
 	local ph_hunter_fire_penalty = CreateConVar("ph_hunter_fire_penalty", "5", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Health points removed from hunters when they shoot.")
 	local ph_hunter_kill_bonus = CreateConVar("ph_hunter_kill_bonus", "20", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How much health to give back to the Hunter after killing a prop.")

@@ -1,7 +1,12 @@
 -- Props will not be able to become these models
 BANNED_PROP_MODELS = {
 	"models/props/cs_assault/dollar.mdl",
+	"models/props/cs_assault/money.mdl",
 	"models/props/cs_office/snowman_arm.mdl",
+	"models/props/cs_office/computer_mouse.mdl",
+	"models/props/cs_office/projector_remote.mdl",
+	"models/props/cs_militia/reload_bullet_tray.mdl",
+	"models/foodnhouseholditems/egg.mdl"
 }
 
 
@@ -187,4 +192,14 @@ VICTORY_SOUNDS = {
 	"vo/announcer_success.wav",
 	"vo/announcer_victory.wav",
 	"vo/announcer_we_succeeded.wav"
+}
+
+-- Kleiner is no longer lonely
+ADDITIONAL_STARTING_MODELS = {
+	"models/player/kleiner.mdl",
+	"models/player/alyx.mdl",
+	"models/player/barney.mdl",
+	"models/player/eli.mdl",
+	"models/player/mossman.mdl",
+	"models/player/breen.mdl",
 }

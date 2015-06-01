@@ -29,7 +29,7 @@ end
 
 -- Player's prop entity
 function meta:GetPlayerPropEntity()
-	return self:GetNWBool("PlayerPropEntity", nil)
+	return self:GetNWEntity("PlayerPropEntity", nil)
 end
 
 

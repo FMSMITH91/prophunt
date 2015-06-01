@@ -29,6 +29,10 @@ USABLE_PROP_ENTITIES = {
 }
 
 
+-- We're going to get the usable prop table and send it over to the client with this network string
+util.AddNetworkString("ServerUsablePropsToClient")
+
+
 -- Send the required resources to the client
 for _, taunt in pairs(HUNTER_TAUNTS) do resource.AddFile("sound/"..taunt) end
 for _, taunt in pairs(PROP_TAUNTS) do resource.AddFile("sound/"..taunt) end
@@ -179,16 +183,17 @@ function GM:ShowSpare1(pl)
 	end	
 end
 
+function GM:CanStartRound()
+	if #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= 2 then return true end
+	return false
+end
+
 -- Called when a player leaves
 function PlayerDisconnected(pl)
 	pl:RemoveProp()
 end
 hook.Add("PlayerDisconnected", "PH_PlayerDisconnected", PlayerDisconnected)
 
-function GM:CanStartRound()
-	if #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= 2 then return true end
-	return false
-end
 
 -- Called when the players spawns
 function PlayerSpawn(pl)
@@ -205,6 +210,9 @@ function PlayerSpawn(pl)
 	pl.last_taunt_time = 0
 	
 	umsg.Start("ResetHull", pl)
+	umsg.End()
+	
+	umsg.Start("DisableDynamicLight", pl)
 	umsg.End()
 	
 	pl:SetCollisionGroup(COLLISION_GROUP_PASSABLE_DOOR)
@@ -256,13 +264,13 @@ function GM:OnPreRoundStart(num)
 						pl:SetTeam(TEAM_HUNTERS)
 					else
 						pl:SetTeam(TEAM_PROPS)
-					local props = team.GetScore( TEAM_PROPS )
-					local hunters = team.GetScore( TEAM_HUNTERS )
-	
-					team.SetScore( TEAM_PROPS, hunters )
-					team.SetScore( TEAM_HUNTERS, props )
 						pl:SendLua( [[notification.AddLegacy("You are in Prop Team now and you can rotate the prop around!", NOTIFY_UNDO, 20 )]] )
 						pl:SendLua( [[notification.AddLegacy("You can press R to lock the prop rotation!", NOTIFY_GENERIC, 20 )]] )
+						
+						-- Send some net stuff
+						net.Start("ServerUsablePropsToClient")
+							net.WriteTable(USABLE_PROP_ENTITIES)
+						net.Send(pl)
 					end
 				
 				pl:ChatPrint("Teams have been swapped!")
@@ -282,13 +290,32 @@ function GM:Think()
 	for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
 		if GetConVar("ph_better_prop_movement"):GetBool() then
 			if pl && pl:IsValid() && pl:Alive() && pl.ph_prop && pl.ph_prop:IsValid() then
-				pl.ph_prop:SetPos(pl:GetPos() - Vector(0, 0, pl.ph_prop:OBBMins().z))
+				if (pl.ph_prop:GetModel() == "models/player/kleiner.mdl") || table.HasValue(ADDITIONAL_STARTING_MODELS, pl.ph_prop:GetModel()) then
+					pl.ph_prop:SetPos(pl:GetPos())
+				else
+					pl.ph_prop:SetPos(pl:GetPos() - Vector(0, 0, pl.ph_prop:OBBMins().z))
+				end
 				if !(pl:GetPlayerLockedRot()) then
 					pl.ph_prop:SetAngles(pl:GetAngles())
 				end
 			end
 		end
 	end
+end
+
+
+-- Flashlight toggling
+function GM:PlayerSwitchFlashlight(pl, on)
+	if pl:Alive() && pl:Team() == TEAM_HUNTERS then
+		return true
+	end
+	
+	if pl:Alive() && pl:Team() == TEAM_PROPS then
+		umsg.Start("PlayerSwitchDynamicLight", pl)
+		umsg.End()
+	end
+	
+	return false
 end
 
 
