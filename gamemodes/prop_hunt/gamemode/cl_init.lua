@@ -1,4 +1,8 @@
+-- Include the needed files
 include("sh_init.lua")
+-- include("cl_hints.lua")
+
+overlaydraw = 0
 
 -- Decides where  the player view should be (forces third person for props)
 function GM:CalcView(pl, origin, angles, fov)
@@ -54,13 +58,19 @@ end
 
 -- Draw round timeleft and hunter release timeleft
 function HUDPaint()
+local ply = LocalPlayer()
 	if GetGlobalBool("InRound", false) then
-		-- local blindlock_time_left = (HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 		local blindlock_time_left = (GetConVarNumber("ph_hunter_blindlock_time") - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 		
 		if blindlock_time_left < 1 && blindlock_time_left > -6 then
 			blindlock_time_left_msg = "Ready or not, here we come!"
+			overlaydraw = 0
 		elseif blindlock_time_left > 0 then
+			if ply:Team() == TEAM_HUNTERS then
+				if ply:Alive() then
+					overlaydraw = 1
+				else end
+			end
 			blindlock_time_left_msg = "Hunters will be unblinded and released in "..string.ToMinutesSeconds(blindlock_time_left)
 		else
 			blindlock_time_left_msg = nil
@@ -102,6 +112,14 @@ function HUDPaint()
 end
 hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
 
+function DrawMaterial()
+	if blind then
+		draw.RoundedBox( 0, 0, 0, ScrW(), ScrH(), Color( 50, 50, 50, 255 ) )
+	else
+	end
+end
+	
+hook.Add( "HUDPaintBackground", "RenderBlindOverlay", DrawMaterial )
 
 -- Called immediately after starting the gamemode 
 function Initialize()

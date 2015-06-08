@@ -266,7 +266,11 @@ function GM:OnPreRoundStart(num)
 						pl:SetTeam(TEAM_PROPS)
 						pl:SendLua( [[notification.AddLegacy("You are in Prop Team now and you can rotate the prop around!", NOTIFY_UNDO, 20 )]] )
 						pl:SendLua( [[notification.AddLegacy("You can press R to lock the prop rotation!", NOTIFY_GENERIC, 20 )]] )
-						
+				local props = team.GetScore( TEAM_PROPS )
+				local hunters = team.GetScore( TEAM_HUNTERS )
+	
+				team.SetScore( TEAM_PROPS, hunters )
+				team.SetScore( TEAM_HUNTERS, props )
 						-- Send some net stuff
 						net.Start("ServerUsablePropsToClient")
 							net.WriteTable(USABLE_PROP_ENTITIES)
