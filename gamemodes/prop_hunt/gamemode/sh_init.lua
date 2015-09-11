@@ -46,7 +46,7 @@ GM.RoundBased				= true
 GM.RoundLimit				= ROUNDS_PER_MAP
 GM.RoundLength 				= ROUND_TIME
 GM.RoundPreStartTime		= 0
-GM.SuicideString			= "was died or died mysteriously."
+GM.SuicideString			= "died mysteriously."
 GM.TeamBased 				= true
 GM.AutomaticTeamBalance 	= false
 GM.ForceJoinBalancedTeams 	= true
@@ -70,7 +70,7 @@ if !ConVarExists("ph_prop_collision") then
 end
 
 if !ConVarExists("ph_prop_additional_models") then
-	local ph_prop_additional_models = CreateConVar("ph_prop_additional_models", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props have different starting models instead of just Kleiner?")
+	local ph_prop_additional_models = CreateConVar("ph_prop_additional_models", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props have different starting models instead of just Kleiner?")
 end
 
 if !ConVarExists("ph_hunter_fire_penalty") then

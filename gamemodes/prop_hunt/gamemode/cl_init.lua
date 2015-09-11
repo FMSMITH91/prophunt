@@ -60,6 +60,7 @@ end
 function HUDPaint()
 local ply = LocalPlayer()
 	if GetGlobalBool("InRound", false) then
+		-- local blindlock_time_left = (HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 		local blindlock_time_left = (GetConVarNumber("ph_hunter_blindlock_time") - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 		
 		if blindlock_time_left < 1 && blindlock_time_left > -6 then
@@ -168,10 +169,16 @@ function SetBlind(um)
 end
 usermessage.Hook("SetBlind", SetBlind)
 
+-- here you can add more than 2 additional freeze cam sounds. Every list ends with commas.
+local rndfrz = {
+	"misc/freeze_cam.wav",
+	"misc/freeze_cam_sad1.wav"
+}
 
 -- Plays the Freeze Cam sound
 function PlayFreezeCamSound(um)
-	surface.PlaySound("misc/freeze_cam.wav")
+	-- surface.PlaySound("misc/freeze_cam.wav") // if you want single Freeze Cam Sound instead 2, uncomment this, and comment below.
+	surface.PlaySound(table.Random(rndfrz))
 end
 usermessage.Hook("PlayFreezeCamSound", PlayFreezeCamSound)
 

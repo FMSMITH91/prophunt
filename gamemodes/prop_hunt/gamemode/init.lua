@@ -117,6 +117,8 @@ function GM:PlayerSetModel(pl)
 	
 	-- precache it
 	util.PrecacheModel(player_model)
+	
+	-- Set the model
 	pl:SetModel(player_model)
 end
 	
@@ -264,13 +266,16 @@ function GM:OnPreRoundStart(num)
 						pl:SetTeam(TEAM_HUNTERS)
 					else
 						pl:SetTeam(TEAM_PROPS)
-						pl:SendLua( [[notification.AddLegacy("You are in Prop Team now and you can rotate the prop around!", NOTIFY_UNDO, 20 )]] )
-						pl:SendLua( [[notification.AddLegacy("You can press R to lock the prop rotation!", NOTIFY_GENERIC, 20 )]] )
-				local props = team.GetScore( TEAM_PROPS )
-				local hunters = team.GetScore( TEAM_HUNTERS )
-	
-				team.SetScore( TEAM_PROPS, hunters )
-				team.SetScore( TEAM_HUNTERS, props )
+						-- i hope the logic is right... GetBool() if true = 1, else 0.
+						if GetConVar("ph_better_prop_movement"):GetBool() then
+							pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Rotate support! You can rotate the prop around by moving your mouse.", NOTIFY_UNDO, 20 )]] )
+							pl:SendLua( [[notification.AddLegacy("Additionally you can toggle lock rotation by pressing R key!", NOTIFY_GENERIC, 20 )]] )
+							pl:SendLua( [[surface.PlaySound("garrysmod/content_downloaded.wav")]] )
+						else
+							pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Classic mode!", NOTIFY_GENERIC, 20 )]] )
+							pl:SendLua( [[surface.PlaySound("ambient/water/drip3.wav")]] )
+						end
+						
 						-- Send some net stuff
 						net.Start("ServerUsablePropsToClient")
 							net.WriteTable(USABLE_PROP_ENTITIES)

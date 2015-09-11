@@ -5,7 +5,7 @@
 -When player tries to vote for map change the player sends to chat "rtv". (Not really a bug just didn't want to to use "MapVote - Fretta-like Map Voting" just yet.)
 -Hunters win when last hunter on team kills self.
 -When hunters or Props kills self then it will go against team score.
--On some maps as a hunter while blinded, screen will spaaz out. (It might be broke or might not who knows)
+-On some maps as a hunter while blinded, screen will spaaz out.
 -mod_studio: MOVETYPE_FOLLOW with no model. (This should be fixed)
 
 *Enhancements*
