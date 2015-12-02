@@ -1,0 +1,1 @@
+{"RTVPlayerCount":2,"MapLimit":24,"TimeLimit":28,"AllowCurrentMap":false,"MapPrefixes":{"1":"ph_"},"MapsBeforeRevote":3,"EnableCooldown":true}

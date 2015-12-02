@@ -1,4 +1,3 @@
-include( "sv_gmchanger.lua" )
 
 function GM:SetRoundWinner( ply, resulttext ) SetGlobalEntity( "RoundWinner", ply ) SetGlobalString( "RRText", tostring(resulttext) ) end
 function GM:SetRoundResult( i, resulttext ) SetGlobalInt( "RoundResult", i ) SetGlobalString( "RRText", tostring(resulttext) ) end
@@ -61,8 +60,7 @@ function GM:HasReachedRoundLimit( iNum )
 	local iRoundLimit = GAMEMODE:GetRoundLimit();
 	
 	if( iRoundLimit > 0 && iNum > iRoundLimit ) then
-		-- return true // Override into StartGamemodeVote to avoid Stuck. Otherwise if there's no changelevel happens it'll make you stuck forever.
-		GAMEMODE:StartGamemodeVote()
+		MapVote.Start()
 	end
 	
 	return false

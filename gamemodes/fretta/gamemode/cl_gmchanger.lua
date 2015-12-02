@@ -1,5 +1,3 @@
-include( "vgui/vgui_vote.lua" )
-
 g_PlayableGamemodes = {}
 g_bGotGamemodesTable = false
 

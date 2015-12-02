@@ -18,7 +18,7 @@ function GM:ShowHelp()
 									end
 
 		if ( GetConVarNumber( "fretta_voting" ) != 0 ) then
-			local btn = Help:AddSelectButton( "Vote For Change", function() RunConsoleCommand( "voteforchange" ) end )
+			local btn = Help:AddSelectButton( "Vote For Change", function() RunConsoleCommand( "say", "rtv" ) end )
 			btn.m_colBackground = Color( 255, 200, 100 )
 			btn:SetDisabled( LocalPlayer():GetNWBool( "WantsVote" ) ) 
 		end

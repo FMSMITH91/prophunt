@@ -22,7 +22,6 @@ AddCSLuaFile( 'vgui/vgui_gamenotice.lua' )
 AddCSLuaFile( 'vgui/vgui_scoreboard.lua' )
 AddCSLuaFile( 'vgui/vgui_scoreboard_team.lua' )
 AddCSLuaFile( 'vgui/vgui_scoreboard_small.lua' )
-AddCSLuaFile( 'vgui/vgui_vote.lua' )
 AddCSLuaFile( 'cl_hud.lua' )
 AddCSLuaFile( 'cl_deathnotice.lua' )
 AddCSLuaFile( 'cl_scores.lua' )
@@ -30,7 +29,6 @@ AddCSLuaFile( 'cl_notify.lua' )
 AddCSLuaFile( 'player_colours.lua' )
 
 include( "shared.lua" )
-include( "sv_gmchanger.lua" )
 include( "sv_spectator.lua" )
 include( "round_controller.lua" )
 include( "utility.lua" )
@@ -495,8 +493,7 @@ function GM:EndOfGame( bGamemodeVote )
 	
 		MsgN( "Starting gamemode voting..." )
 		PrintMessage( HUD_PRINTTALK, "Starting gamemode voting..." );
-		-- timer.Simple( GAMEMODE.VotingDelay, function() MapVote.Start() end )
-		timer.Simple( GAMEMODE.VotingDelay, function() GAMEMODE:StartGamemodeVote() end )
+		timer.Simple( GAMEMODE.VotingDelay, function() MapVote.Start() end )
 		
 	end
 

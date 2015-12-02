@@ -30,7 +30,7 @@ HUNTER_KILL_BONUS = GetConVarNumber("ph_hunter_kill_bonus")
 -- // DEV HELP: why this is not working anymore? \\ --
 LOSS_SOUNDS = {
 	"vo/announcer_failure.wav",
-	"vo/announcer_you_failed.wav",
+	"vo/announcer_you_failed.wav"
 }
 
 -- Sound files hunters can taunt with
@@ -59,7 +59,7 @@ HUNTER_TAUNTS = {
 	"vo/npc/male01/runforyourlife02.wav",
 	"vo/npc/male01/overhere01.wav",
 	"vo/npc/male01/overthere01.wav",
-	"vo/npc/male01/overthere02.wav",
+	"vo/npc/male01/overthere02.wav"
 }
 
 
@@ -162,7 +162,7 @@ PROP_TAUNTS = {
 	-- Additionals ==
 	
 	-- Moved from Hunter to Props (this supposed to be props...)
-	"taunts/hunters/laugh.wav",
+	"taunts/hunters/laugh.wav"
 }
 
 
@@ -189,7 +189,7 @@ SWAP_TEAMS_EVERY_ROUND = GetConVarNumber("ph_swap_teams_every_round")
 VICTORY_SOUNDS = {
 	"vo/announcer_success.wav",
 	"vo/announcer_victory.wav",
-	"vo/announcer_we_succeeded.wav",
+	"vo/announcer_we_succeeded.wav"
 }
 
 -- Kleiner is no longer lonely
@@ -199,5 +199,5 @@ ADDITIONAL_STARTING_MODELS = {
 	"models/player/barney.mdl",
 	"models/player/eli.mdl",
 	"models/player/mossman.mdl",
-	"models/player/breen.mdl",
+	"models/player/breen.mdl"
 }

@@ -82,21 +82,21 @@ end
 function GM:AddScoreboardKills( ScoreBoard )
 
 	local f = function( ply ) return ply:Frags() end
-	ScoreBoard:AddColumn( "Kills", 50, f, 0.5, nil, 6, 6 )
+	ScoreBoard:AddColumn( "Kills", 50, f, 0.5, nil, 5, 5 )
 
 end
 
 function GM:AddScoreboardDeaths( ScoreBoard )
 
 	local f = function( ply ) return ply:Deaths() end
-	ScoreBoard:AddColumn( "Deaths", 50, f, 0.5, nil, 6, 6 )
+	ScoreBoard:AddColumn( "Deaths", 75, f, 0.5, nil, 5, 5 )
 
 end
 
 function GM:AddScoreboardPing( ScoreBoard )
 
 	local f = function( ply ) return ply:Ping() end
-	ScoreBoard:AddColumn( "Ping", 50, f, 0.1, nil, 6, 6 )
+	ScoreBoard:AddColumn( "Ping", 50, f, 0.1, nil, 5, 5 )
 
 end
 
@@ -105,7 +105,7 @@ end
 function GM:PositionScoreboard( ScoreBoard )
 
 	if ( GAMEMODE.TeamBased ) then
-		ScoreBoard:SetSize( 800, ScrH() - 50 )
+		ScoreBoard:SetSize( 1024, ScrH() - 50 )
 		ScoreBoard:SetPos( (ScrW() - ScoreBoard:GetWide()) * 0.5,  25 )
 	else
 		ScoreBoard:SetSize( 420, ScrH() - 64 )
@@ -131,6 +131,13 @@ function GM:AddScoreboardWantsChange( ScoreBoard )
 
 end
 
+function GM:AddScoreboardRanks( ScoreBoard )
+
+	local f = function( ply ) return ply:GetNWString("usergroup") end
+	ScoreBoard:AddColumn( "Rank", 100, f, 0.5, nil, 5, 5 )
+
+end
+
 function GM:CreateScoreboard( ScoreBoard )
 
 	// This makes it so that it's behind chat & hides when you're in the menu
@@ -153,9 +160,10 @@ function GM:CreateScoreboard( ScoreBoard )
 	self:AddScoreboardAvatar( ScoreBoard )		// 1
 	self:AddScoreboardWantsChange( ScoreBoard )	// 2
 	self:AddScoreboardName( ScoreBoard )		// 3
-	self:AddScoreboardKills( ScoreBoard )		// 4
-	self:AddScoreboardDeaths( ScoreBoard )		// 5
-	self:AddScoreboardPing( ScoreBoard )		// 6
+	self:AddScoreboardRanks( ScoreBoard )		// 4
+	self:AddScoreboardKills( ScoreBoard )		// 5
+	self:AddScoreboardDeaths( ScoreBoard )		// 6
+	self:AddScoreboardPing( ScoreBoard )		// 7
 		
 	// Here we sort by these columns (and descending), in this order. You can define up to 4
 	ScoreBoard:SetSortColumns( { 4, true, 5, false, 3, false } )

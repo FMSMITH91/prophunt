@@ -1,6 +1,4 @@
--- Include the needed files
 include("sh_init.lua")
--- include("cl_hints.lua")
 
 overlaydraw = 0
 
