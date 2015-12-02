@@ -166,6 +166,6 @@ function GM:CreateScoreboard( ScoreBoard )
 	self:AddScoreboardPing( ScoreBoard )		// 7
 		
 	// Here we sort by these columns (and descending), in this order. You can define up to 4
-	ScoreBoard:SetSortColumns( { 4, true, 5, false, 3, false } )
+	ScoreBoard:SetSortColumns( { 5, true, 6, false, 3, false } )
 
 end
