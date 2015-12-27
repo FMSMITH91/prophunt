@@ -82,21 +82,21 @@ end
 function GM:AddScoreboardKills( ScoreBoard )
 
 	local f = function( ply ) return ply:Frags() end
-	ScoreBoard:AddColumn( "Kills", 50, f, 0.5, nil, 5, 5 )
+	ScoreBoard:AddColumn( "Kills", 40, f, 0.5, nil, 5, 5 )
 
 end
 
 function GM:AddScoreboardDeaths( ScoreBoard )
 
 	local f = function( ply ) return ply:Deaths() end
-	ScoreBoard:AddColumn( "Deaths", 75, f, 0.5, nil, 5, 5 )
+	ScoreBoard:AddColumn( "Deaths", 55, f, 0.5, nil, 5, 5 )
 
 end
 
 function GM:AddScoreboardPing( ScoreBoard )
 
 	local f = function( ply ) return ply:Ping() end
-	ScoreBoard:AddColumn( "Ping", 50, f, 0.1, nil, 5, 5 )
+	ScoreBoard:AddColumn( "Ping", 40, f, 0.1, nil, 5, 5 )
 
 end
 
@@ -105,10 +105,10 @@ end
 function GM:PositionScoreboard( ScoreBoard )
 
 	if ( GAMEMODE.TeamBased ) then
-		ScoreBoard:SetSize( 1024, ScrH() - 50 )
+		ScoreBoard:SetSize( math.min( 1024, ScrW() ), ScrH() - 50 )
 		ScoreBoard:SetPos( (ScrW() - ScoreBoard:GetWide()) * 0.5,  25 )
 	else
-		ScoreBoard:SetSize( 420, ScrH() - 64 )
+		ScoreBoard:SetSize( 512, ScrH() - 64 )
 		ScoreBoard:SetPos( (ScrW() - ScoreBoard:GetWide()) / 2, 32 )
 	end
 
@@ -134,7 +134,7 @@ end
 function GM:AddScoreboardRanks( ScoreBoard )
 
 	local f = function( ply ) return ply:GetNWString("usergroup") end
-	ScoreBoard:AddColumn( "Rank", 100, f, 0.5, nil, 5, 5 )
+	ScoreBoard:AddColumn( "Rank", 85, f, 0.5, nil, 5, 5 )
 
 end
 
