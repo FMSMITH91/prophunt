@@ -23,19 +23,24 @@ function GM:CalcView(pl, origin, angles, fov)
 		if GetConVar("ph_prop_camera_collisions"):GetBool() then
 			local trace = {}
 			local TraceOffset = math.Clamp(hullz, 0, 4)
+			
+			if hullz <= 32 then
+				hullz = 36
+			end
 
 			trace.start = origin + Vector(0, 0, hullz - 60)
 			trace.endpos = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
 			trace.filter = client_prop_model && ents.FindByClass("ph_prop")
 			trace.mins = Vector(-TraceOffset, -TraceOffset, -TraceOffset)
 			trace.maxs = Vector(TraceOffset, TraceOffset, TraceOffset)
-			local tr = util.TraceHull(trace)
+			local tr = util.TraceLine(trace)
 
 			view.origin = tr.HitPos
 		else
 			view.origin = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
 		end
 	else
+	-- hunter here
 	 	local wep = pl:GetActiveWeapon() 
 	 	if wep && wep != NULL then 
 	 		local func = wep.GetViewModelPosition 

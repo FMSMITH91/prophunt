@@ -222,19 +222,6 @@ end
 hook.Add("PlayerSpawn", "PH_PlayerSpawn", PlayerSpawn)
 
 
---[[
-function RemoveWeaponsAndItems()
-	for _, wep in pairs(ents.FindByClass("weapon_*")) do
-		wep:Remove()
-	end
-	
-	for _, item in pairs(ents.FindByClass("item_*")) do
-		item:Remove()
-	end
-end
-hook.Add("InitPostEntity", "PH_RemoveWeaponsAndItems", RemoveWeaponsAndItems)
-]]--
-
 -- Called when round ends
 function RoundEnd()
 	for _, pl in pairs(team.GetPlayers(TEAM_HUNTERS)) do

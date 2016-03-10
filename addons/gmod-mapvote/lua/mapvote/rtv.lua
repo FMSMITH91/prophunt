@@ -17,7 +17,7 @@ RTV._ActualWait = CurTime() + RTV.Wait
 RTV.PlayerCount = MapVote.Config.RTVPlayerCount or 3
 
 function RTV.ShouldChange()
-	return RTV.TotalVotes >= math.Round(#player.GetAll()*0.55)
+	return RTV.TotalVotes >= math.Round(#player.GetAll()*0.51)
 end
 
 function RTV.RemoveVote()
