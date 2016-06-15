@@ -46,11 +46,19 @@ GM.RoundBased				= true
 GM.RoundLimit				= ROUNDS_PER_MAP
 GM.RoundLength 				= ROUND_TIME
 GM.RoundPreStartTime		= 0
-GM.SuicideString			= "died mysteriously."
+GM.SuicideString			= "died mysteriously." -- i think this one is pretty obsolete.
 GM.TeamBased 				= true
 GM.AutomaticTeamBalance 	= false
 GM.ForceJoinBalancedTeams 	= true
 
+-- Additional xP
+if !ConVarExists("ph_use_custom_plmodel_for_prop") then
+	local ph_use_custom_plmodel_for_prop = CreateConVar("ph_use_custom_plmodel_for_prop", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "[EXPERIMENTAL] Should use a custom Player's Model for Props when the round begins?")
+end
+
+if !ConVarExists("ph_use_custom_plmodel") then
+	local ph_use_custom_plmodel = CreateConVar("ph_use_custom_plmodel", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should use a custom player model available for Hunters?\nPlease note that you must have to activate \'ph_use_custom_plmodel_for_prop\' too!")
+end
 
 -- D4UNKN0WNM4N2010: Yay! Prop Hunt specify cvars.
 if !ConVarExists("ph_prop_camera_collisions") then

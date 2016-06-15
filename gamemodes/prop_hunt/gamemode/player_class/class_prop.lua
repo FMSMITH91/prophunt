@@ -30,6 +30,9 @@ function CLASS:OnSpawn(pl)
 	pl.ph_prop:SetPos(pl:GetPos())
 	pl.ph_prop:SetAngles(pl:GetAngles())
 	pl.ph_prop:Spawn()
+	if GetConVar("ph_use_custom_plmodel_for_prop"):GetBool() then
+		pl.ph_prop:SetModel(player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel")))
+	end
 	pl.ph_prop:SetSolid(SOLID_BBOX)
 	if !GetConVar("ph_better_prop_movement"):GetBool() then
 		pl.ph_prop:SetParent(pl)

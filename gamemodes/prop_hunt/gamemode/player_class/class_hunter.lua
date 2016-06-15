@@ -5,9 +5,9 @@ local CLASS = {}
 -- Some settings for the class
 CLASS.DisplayName			= "Hunter"
 CLASS.WalkSpeed 			= 230
-CLASS.CrouchedWalkSpeed 	= 0.2
+CLASS.CrouchedWalkSpeed 	= 0.4
 CLASS.RunSpeed				= 290
-CLASS.DuckSpeed				= 0.5
+CLASS.DuckSpeed				= 0.2
 CLASS.JumpPower				= 200
 CLASS.DrawTeamRing			= false
 
@@ -17,8 +17,8 @@ function CLASS:Loadout(pl)
     pl:GiveAmmo(64, "Buckshot")
     pl:GiveAmmo(255, "SMG1")
     pl:GiveAmmo(12, "357")
-	pl:GiveAmmo(12, "XBowBolt")
-    
+    pl:GiveAmmo(12, "XBowBolt")
+	
     pl:Give("weapon_crowbar")
     pl:Give("weapon_shotgun")
     pl:Give("weapon_smg1")
@@ -44,19 +44,13 @@ function CLASS:OnSpawn(pl)
 
 	local unlock_time = math.Clamp(HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, HUNTER_BLINDLOCK_TIME)
 	
-	-- function MyLockFunc()
-	-- function MyUnlockFunc()
-	
 	local unblindfunc = function()
-		-- MyUnblindFunc(pl.Blind(false))
 		pl:Blind(false)
 	end
 	local lockfunc = function()
-		-- MyLockFunc(pl.Lock())
 		pl.Lock(pl)
 	end
 	local unlockfunc = function()
-		-- MyUnlockFunc(pl.UnLock())
 		pl.UnLock(pl)
 	end
 	

@@ -121,6 +121,22 @@
 			"type"		"CheckBox"
 			"default"	"0"
 		}
+		13
+		{
+			"name"		"ph_use_custom_plmodel"
+			"text"		"Hunters Custom Models"
+			"help"		"Should Team Hunters have Custom models?"
+			"type"		"CheckBox"
+			"default"	"0"
+		}
+		14
+		{
+			"name"		"ph_use_custom_plmodel_for_prop"
+			"text"		"Props Custom Models"
+			"help"		"Should Team Props have Custom models? (Enable for Hunter first!)"
+			"type"		"CheckBox"
+			"default"	"0"
+		}
 
 	}
 

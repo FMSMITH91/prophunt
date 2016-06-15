@@ -3,19 +3,14 @@
 
 -- Send the required lua files to the client
 AddCSLuaFile("cl_init.lua")
+AddCSLuaFile("cl_menu.lua")
 AddCSLuaFile("sh_config.lua")
 AddCSLuaFile("sh_init.lua")
 AddCSLuaFile("sh_player.lua")
 
-
--- If there is a mapfile send it to the client (sometimes servers want to change settings for certain maps)
-if file.Exists("../gamemodes/prop_hunt/gamemode/maps/"..game.GetMap()..".lua", "LUA") then
-	AddCSLuaFile("maps/"..game.GetMap()..".lua")
-end
-
-
 -- Include the required lua files
 include("sh_init.lua")
+include("sv_admin.lua")
 
 -- Server only constants
 EXPLOITABLE_DOORS = {
@@ -56,6 +51,7 @@ function GM:CheckPlayerDeathRoundEnd()
 		return
 	end
 	
+	--todo: add custom wins/lost sound on next update.
 end
 
 
@@ -83,42 +79,42 @@ function GM:PlayerCanPickupWeapon(pl, ent)
 end
 
 -- Make a variable for 4 unique combines.
-local playerModels = {}
-local function addModel(model)
-	local t = {}
-	t.model = model
-	table.insert(playerModels, t)
-end
-
--- delivered from stock Gmod's player manager
-addModel("combine")
-addModel("combineprison")
-addModel("combineelite")
-addModel("police")
+-- Clean up, sorry btw.
+local playerModels = {
+	"combine",
+	"combineprison",
+	"combineelite",
+	"police"
+	-- you may add more here.
+}
 
 function GM:PlayerSetModel(pl)
-	-- set antlion gib small for Prop model. Do not change into others because this might purposed as a hitbox.
+	-- set antlion gib small for Prop model. 
+	-- Do not change this into others because this might purposed as a hitbox for props.
 	local player_model = "models/Gibs/Antlion_gib_small_3.mdl"
 
-	-- set 4 combine models based cl_playermodel info declared from table.
-	local cl_playermodel = pl:GetInfo ( "cl_playermodel" )
+	-- Clean Up.
+	if GetConVar("ph_use_custom_plmodel"):GetBool() then
+		-- Use a delivered player model info from cl_playermodel ConVar.
+		-- This however will use a custom player selection. It'll immediately apply once it is selected.
+		local mdlinfo = pl:GetInfo("cl_playermodel")
+		local mdlname = player_manager.TranslatePlayerModel(mdlinfo)
+
+		if pl:Team() == TEAM_HUNTERS then
+			player_model = mdlname
+		end
+	else
+		-- Otherwise, Use Random one based from a table above.
+		local customModel = table.Random(playerModels)
+		local customMdlName = player_manager.TranslatePlayerModel(customModel)
+
+		if pl:Team() == TEAM_HUNTERS then
+			player_model = customMdlName
+		end
+	end
 	
-	-- make it random selection
-	local customModel = table.Random(playerModels)
-	cl_playermodel = customModel.model
-	
-	-- translate it
-	local modelname = player_manager.TranslatePlayerModel( cl_playermodel )
-	
-	-- for Hunter only
-    if pl:Team() == TEAM_HUNTERS then
-		player_model = modelname
-    end
-	
-	-- precache it
+	-- precache and Set the model.
 	util.PrecacheModel(player_model)
-	
-	-- Set the model
 	pl:SetModel(player_model)
 end
 	
@@ -298,6 +294,19 @@ function GM:Think()
 		end
 	end
 end
+
+-- Bonus Drop :D
+function PH_Props_OnBreak(ply, ent)
+	local pos = ent:GetPos()
+	if math.random() < 0.08 then -- 0.8% Chance of drops.
+		local dropent = ents.Create("ph_luckyball")
+		dropent:SetPos(Vector(pos.x, pos.y, pos.z + 32)) -- to make sure the Lucky Ball didn't fall underground and if the Prop's Center Origin is near underground, they'll spawn with extra +32 hammer unit.
+		dropent:SetAngles(Angle(0,0,0))
+		dropent:SetColor(Color(math.Round(math.random(0,255)),math.Round(math.random(0,255)),math.Round(math.random(0,255)),255))
+		dropent:Spawn()
+	end
+end
+hook.Add("PropBreak", "Props_OnBreak_WithDrops", PH_Props_OnBreak)
 
 
 -- Flashlight toggling

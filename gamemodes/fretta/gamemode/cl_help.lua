@@ -23,6 +23,11 @@ function GM:ShowHelp()
 			btn:SetDisabled( LocalPlayer():GetNWBool( "WantsVote" ) ) 
 		end
 		
+		local btnadd = Help:AddSelectButton("More Help/Menu", function()
+			LocalPlayer():ConCommand("ph_enhanced_show_help")
+		end)
+		btnadd.m_colBackground = Color(255,128,40)
+		
 		if ( GAMEMODE.TeamBased ) then
 			local btn = Help:AddSelectButton( "Change Team", function() GAMEMODE:ShowTeam() end )
 			btn.m_colBackground = Color( 120, 255, 100 )

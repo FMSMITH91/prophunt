@@ -122,22 +122,17 @@ net.Receive( "NPCKilledNPC", RecvNPCKilledNPC )
 --function GM:AddDeathNotice( victim, inflictor, attacker )
 function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 
-	local RdmDeathString = {}
-	local function addString(strtxt)
-		local t = {}
-		t.strtxt	= strtxt
-		table.insert(RdmDeathString, t)
-	end
+	local RdmDeathString = {
+		"suicided!",
+		"died mysteriously!",
+		"died by magic.",
+		"no-scoped themself.",
+		"rage-quited.",
+		"drunk.",
+		"died... better luck next time!"
+	}
 	
-	addString( "suicided!" )
-	addString( "died mysteriously!" )
-	addString( "died with magic." )
-	addString( "died and has no-scoped himself." )
-	addString( "rage-quited." )
-	addString( "died, better luck next time!" )
-	
-	local customText = table.Random( RdmDeathString )
-	local stringtext = customText.strtxt
+	local stringtext = table.Random( RdmDeathString )
 	
 	if ( !IsValid( g_DeathNotify ) ) then return end
 

@@ -119,6 +119,7 @@ function GM:StartEntitySpectate( pl )
 	
 		if ( GAMEMODE:IsValidSpectatorTarget( pl, CurrentSpectateEntity ) ) then
 			pl:SpectateEntity( CurrentSpectateEntity )
+			pl:SetupHands( CurrentSpectateEntity )
 			return
 		end
 	
@@ -142,6 +143,7 @@ function GM:NextEntitySpectate( pl )
 		
 		if ( GAMEMODE:IsValidSpectatorTarget( pl, Target ) ) then
 			pl:SpectateEntity( Target )
+			pl:SetupHands( Target )
 			return
 		end
 	
@@ -163,6 +165,7 @@ function GM:PrevEntitySpectate( pl )
 		
 		if ( GAMEMODE:IsValidSpectatorTarget( pl, Target ) ) then
 			pl:SpectateEntity( Target )
+			pl:SetupHands( Target )
 			return
 		end
 	

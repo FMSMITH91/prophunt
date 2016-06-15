@@ -1,4 +1,5 @@
 include("sh_init.lua")
+include("cl_menu.lua")
 
 overlaydraw = 0
 
@@ -98,21 +99,21 @@ local ply = LocalPlayer()
 	end
 	
 	-- Draw a crosshair so aiming is easier for props
-	-- if LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():Team() == TEAM_PROPS then
-		-- local trace = {}
-		-- trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60)
-		-- trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 10000
-		-- trace.filter = client_prop_model && ents.FindByClass("ph_prop")
+	 if LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():Team() == TEAM_PROPS then
+		local trace = {}
+			trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60)
+			trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 10000
+			trace.filter = client_prop_model && ents.FindByClass("ph_prop")
 		
-		-- local trace2 = util.TraceLine(trace)
+		local trace2 = util.TraceLine(trace)
 		
-		-- local crosshair_pos = trace2.HitPos:ToScreen()
+		local crosshair_pos = trace2.HitPos:ToScreen()
 		
-		-- surface.SetDrawColor(0, 0, 0, 255)
-		-- surface.DrawRect(crosshair_pos.x - 1, crosshair_pos.y - 1, 4, 4)
-		-- surface.SetDrawColor(255, 255, 255, 255)
-		-- surface.DrawRect(crosshair_pos.x, crosshair_pos.y, 2, 2)
-	-- end
+			surface.SetDrawColor(0, 0, 0, 255)
+			surface.DrawRect(crosshair_pos.x - 1, crosshair_pos.y - 1, 4, 4)
+			surface.SetDrawColor(255, 255, 255, 255)
+			surface.DrawRect(crosshair_pos.x, crosshair_pos.y, 2, 2)
+	end
 end
 hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
 
@@ -241,7 +242,7 @@ function GM:Think()
 			prop_light.r = 255
 			prop_light.g = 255
 			prop_light.b = 255
-			prop_light.brightness = 0.125
+			prop_light.brightness = 0.15
 			prop_light.decay = 1
 			prop_light.size = 128
 			prop_light.dietime = CurTime() + 0.1

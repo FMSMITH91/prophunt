@@ -1,10 +1,12 @@
--- Props will not be able to become these models
---[[ Add of your owns if you have problems, these lists are usually common props that
-has been used on every maps. ]]--
+-- Props will not be able change to these models.
+--[[ Add of your owns model restriction if you have problems. 
+	these lists are usually common props that has been used on every maps. 
+]]--
 BANNED_PROP_MODELS = {
 	"models/props/cs_assault/dollar.mdl",
 	"models/props/cs_office/snowman_arm.mdl",
 	"models/props/cs_militia/reload_bullet_tray.mdl",
+	"models/foodnhouseholditems/egg.mdl"
 }
 
 
@@ -27,7 +29,7 @@ HUNTER_KILL_BONUS = GetConVarNumber("ph_hunter_kill_bonus")
 -- If you loose one of these will be played
 -- Set blank to disable
 
--- // DEV HELP: why this is not working anymore? \\ --
+-- Todo: Enable this on next update.
 LOSS_SOUNDS = {
 	"vo/announcer_failure.wav",
 	"vo/announcer_you_failed.wav"
@@ -52,6 +54,9 @@ HUNTER_TAUNTS = {
 	
 	-- Half-Life 2
 	"vo/k_lab/ba_guh.wav",
+	
+	--Deus Ex
+	"taunts/props_extra/dx_augmented.wav",
 
 	-- Male
 	"vo/npc/male01/vanswer13.wav",
@@ -160,6 +165,27 @@ PROP_TAUNTS = {
 	"taunts/fixed/bees_fix.wav",
 	
 	-- Additionals ==
+	"taunts/props_extra/dx_idonotmoveout.wav",
+	"taunts/props_extra/dx_iloominarty.wav",
+	"taunts/props_extra/dx_imgonnawoopyourass.wav",
+	"taunts/props_extra/dx_lookatme.wav",
+	"taunts/props_extra/dx_molepeople.wav",
+	"taunts/props_extra/dx_thebomb.wav",
+	"taunts/props_extra/dx_thebomb2.wav",
+	"taunts/props_extra/ext_angry_german_kid.wav",
+	"taunts/props_extra/ext_blablaahah.wav",
+	"taunts/props_extra/ext_dance_music.wav",
+	"taunts/props_extra/ext_get_no_scope.wav",
+	"taunts/props_extra/ext_hl1_crackmod_ihateyou.wav",
+	"taunts/props_extra/ext_hl1_crackmod_watchyourrear.wav",
+	"taunts/props_extra/ext_hl1_crackmod_youareugly.wav",
+	"taunts/props_extra/ext_huladance.mp3",
+	"taunts/props_extra/ext_jojon_sina.wav",
+	"taunts/props_extra/ext_just_do_it_1.wav",
+	"taunts/props_extra/ext_just_do_it_2.wav",
+	"taunts/props_extra/ext_wepon.mp3",
+	"taunts/props_extra/ext_woo.wav",
+	"taunts/props_extra/ext_x_files.wav",
 	
 	-- Moved from Hunter to Props (this supposed to be props...)
 	"taunts/hunters/laugh.wav"
@@ -185,7 +211,7 @@ SWAP_TEAMS_EVERY_ROUND = GetConVarNumber("ph_swap_teams_every_round")
 -- If you win, one of these will be played
 -- Set blank to disable
 
--- // DEV HELP: why this is  not working anymore? \\ --
+-- Todo: Enable this on next update.
 VICTORY_SOUNDS = {
 	"vo/announcer_success.wav",
 	"vo/announcer_victory.wav",
