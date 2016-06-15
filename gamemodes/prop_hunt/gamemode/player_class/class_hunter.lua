@@ -18,7 +18,7 @@ function CLASS:Loadout(pl)
     pl:GiveAmmo(255, "SMG1")
     pl:GiveAmmo(12, "357")
     pl:GiveAmmo(12, "XBowBolt")
-	
+
     pl:Give("weapon_crowbar")
     pl:Give("weapon_shotgun")
     pl:Give("weapon_smg1")

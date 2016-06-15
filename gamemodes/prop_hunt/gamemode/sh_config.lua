@@ -5,8 +5,7 @@
 BANNED_PROP_MODELS = {
 	"models/props/cs_assault/dollar.mdl",
 	"models/props/cs_office/snowman_arm.mdl",
-	"models/props/cs_militia/reload_bullet_tray.mdl",
-	"models/foodnhouseholditems/egg.mdl"
+	"models/props/cs_militia/reload_bullet_tray.mdl"
 }
 
 
