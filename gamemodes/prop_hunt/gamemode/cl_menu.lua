@@ -80,6 +80,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 		
 		for k,v in pairs(Ph.luckyballprevpos) do
 			Ph:LuckyBallPreview(v[1],v[2])
+			util.PrecacheModel(v[1])
 		end
 		
 			local txtpv = vgui.Create("DLabel", panel)
@@ -209,11 +210,41 @@ function ph_BaseMainWindow(ply, cmd, args)
 		end
 		
 		local txt = vgui.Create("DLabel", panel)
-		txt:SetText("Use ULX Menu and go to Mute Players to see available mute options.\n\nNote: You can\'t mute admins or moderators!")
-		txt:SetPos(10,30)
-		txt:SetSize(400,64)
+		txt:SetText("Use ULX Menu and go to Mute Players to see available mute options.\n\nNote: You can\'t mute admins or moderators!\n\nProp Settings:")
+		txt:SetPos(10,38)
+		txt:SetSize(400,80)
+		
+		local chk2 = vgui.Create("DCheckBox", panel)
+		local numval = GetConVar("ph_cl_halos"):GetBool()
+		if numval == true then
+			chk2:SetChecked(true)
+			chk2:SetValue(1)
+		else
+			chk2:SetChecked(false)
+			chk2:SetValue(0)
+		end
+		chk2:SetSize(16, 16)
+		chk2:SetPos(10, 120)
+		function chk2:OnChange(bool)
+			if bool == true then
+				RunConsoleCommand("ph_cl_halos", "1")
+				notification.AddLegacy("Prop Halo effects has been enabled.", NOTIFY_GENERIC, 5)
+				surface.PlaySound("buttons/button9.wav")
+			else
+				RunConsoleCommand("ph_cl_halos", "0")
+				notification.AddLegacy("Prop Halo effects has been disabled.", NOTIFY_GENERIC, 5)
+				surface.PlaySound("buttons/button19.wav")
+			end
+		end
+		
+		local chx,chy = chk2:GetPos()
+		
+		local txt2 = vgui.Create("DLabel", panel)
+		txt2:SetText("Enable/Disable halo effect when choosing a prop")
+		txt2:SetSize(400,32)
+		txt2:SetPos(chx + 21, chy - 9)
 	
-	tab:AddSheet("Players", panel, "icon16/user_orange.png")
+	tab:AddSheet("Player", panel, "icon16/user_orange.png")
 	end
 	
 	-- Call All Functions, but Admin (must check by serverside user rights from sv_admin.lua)

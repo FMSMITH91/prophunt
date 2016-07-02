@@ -25,6 +25,7 @@ function GM:CalcView(pl, origin, angles, fov)
 			local trace = {}
 			local TraceOffset = math.Clamp(hullz, 0, 4)
 			
+			-- Fix camera collision bugs for smaller prop size.
 			if hullz <= 32 then
 				hullz = 36
 			end
@@ -131,7 +132,7 @@ function Initialize()
 	hullz = 80
 	client_prop_light = false
 	
-	CreateClientConVar("ph_cl_halos", "0", true, false)
+	CreateClientConVar("ph_cl_halos", "1", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
 	
 	-- Just like the server constant
 	USABLE_PROP_ENTITIES_CL = {
@@ -250,10 +251,12 @@ function GM:Think()
 	end
 end
 
-
 -- Draws halos on team members
 function TeamDrawHalos()
 	if GetConVar("ph_cl_halos"):GetBool() then
+		--[[ Warning: Causes massive LAGs on Public/Crowd Server!!! 
+		-- Enable this if you know what you are doing. Just play with halo.Add's Blur X/Y settings and it's passes.
+		
 		for _, pl in pairs(player.GetAll()) do
 			if pl != LocalPlayer() && (pl && pl:IsValid() && pl:Alive() && pl:Team() == LocalPlayer():Team()) then
 				local pl_table = {}
@@ -264,22 +267,30 @@ function TeamDrawHalos()
 				end
 				halo.Add(pl_table, team.GetColor(pl:Team()), 2, 2, 1, true, true)
 			end
-			
-			-- Something to tell if the prop is selectable
-			if LocalPlayer():Team() == TEAM_PROPS then
-				local trace = {}
+		end
+		]]--
+		
+		-- Something to tell if the prop is selectable
+		if LocalPlayer():Team() == TEAM_PROPS && LocalPlayer():Alive() then
+			local trace = {}
+			-- fix for smaller prop size. They should stay horizontal rather than looking straight down.
+			if hullz < 25 then
+				trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 30)
+				trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 30) + LocalPlayer():EyeAngles():Forward() * 100 -- 100 Hammer units.
+			else
 				trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60)
-				trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 10000
-				trace.filter = client_prop_model && ents.FindByClass("ph_prop")
-				
-				local trace2 = util.TraceLine(trace) 
-				if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(USABLE_PROP_ENTITIES_CL, trace2.Entity:GetClass()) then
-					local ent_table = {}
-					table.insert(ent_table, trace2.Entity)
-					halo.Add(ent_table, Color(0, 255, 0), 2, 2, 1, true, true)
-				end
+				trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 100
+			end
+			trace.filter = client_prop_model && ents.FindByClass("ph_prop")
+			
+			local trace2 = util.TraceLine(trace) 
+			if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(USABLE_PROP_ENTITIES_CL, trace2.Entity:GetClass()) then
+				local ent_table = {}
+				table.insert(ent_table, trace2.Entity)
+				halo.Add(ent_table, Color(20, 250, 0), 1.2, 1.2, 1, true, true)
 			end
 		end
+		
 	end
 end
 hook.Add("PreDrawHalos", "TeamDrawHalos", TeamDrawHalos)

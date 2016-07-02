@@ -71,8 +71,8 @@ SWEP.RunSightsPos			= Vector(6.369, -10.244, -3.689)
 SWEP.RunSightsAng			= Vector(6.446, 62.852, 0)
 
 -- Sound Override Tables
--- PLEASE NOTE: Without this provided the sound will remains "Delayed" because of networked SWEP.
--- Do not ever replace "SWEP.Primary.Sound" path into Literal Sound path, it is not recommended as the result it may Delayed or not playing often!
+-- PLEASE NOTE: Without this provided, the sound will remains "Delayed" because not being prechached.
+-- Do not ever replace "SWEP.Primary.Sound" into Literal Sound path (e.g: wepons/someweponssound.wav)
 
 -- BREN: Firing Sound
 local FS = {}

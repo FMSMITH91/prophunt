@@ -59,7 +59,7 @@ balls.randomtext = {
 	"Congrats, you just won the Internet!",
 	"My vision is augmented.",
 	"Trolling is \'A\' Art",
-	"Unicorn produce rainbows you know... with 20% cooler.", -- no I'm not brony, sorry :p
+	"Unicorn produce rainbows you know... with 20% cooler.",
 	"You know what's better than Lamborghini? K.N.O.W.L.E.D.G.E",
 	"0813-6928",
 	"SHUT UP NURSE!!",
@@ -123,7 +123,7 @@ balls.funclists = {
 	function(pl)
 		if not pl:HasWeapon("weapon_bugbait") then
 			pl:Give("weapon_bugbait")
-			pl:ChatPrint("[Lucky Ball] You got a free BUGBAIT... which does nothing. (unless antlion)")
+			pl:ChatPrint("[Lucky Ball] You got a free BUGBAIT... which does nothing. (unless you pet an antlions!)")
 		else
 			pl:ChatPrint(table.Random(balls.randomtext))
 		end

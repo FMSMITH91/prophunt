@@ -1,3 +1,5 @@
+-- Credits to M9K.
+
 if GetConVar("DebugM9K") == nil then
 	CreateConVar("DebugM9K", "0", { FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Debugging for some m9k stuff, turning it on won't change much.")
 end

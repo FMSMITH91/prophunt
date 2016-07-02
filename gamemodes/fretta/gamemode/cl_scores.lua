@@ -79,6 +79,13 @@ function GM:AddScoreboardName( ScoreBoard )
 
 end
 
+function GM:AddScoreboardRanks( ScoreBoard )
+
+	local f = function( ply ) return ply:GetNWString("usergroup") end
+	ScoreBoard:AddColumn( "Rank", 85, f, 0.5, nil, 5, 5 )
+
+end
+
 function GM:AddScoreboardKills( ScoreBoard )
 
 	local f = function( ply ) return ply:Frags() end
@@ -128,13 +135,6 @@ function GM:AddScoreboardWantsChange( ScoreBoard )
 				end
 				
 	ScoreBoard:AddColumn( "", 16, f, 2, nil, 6, 6 )
-
-end
-
-function GM:AddScoreboardRanks( ScoreBoard )
-
-	local f = function( ply ) return ply:GetNWString("usergroup") end
-	ScoreBoard:AddColumn( "Rank", 85, f, 0.5, nil, 5, 5 )
 
 end
 
