@@ -132,7 +132,7 @@ function Initialize()
 	hullz = 80
 	client_prop_light = false
 	
-	CreateClientConVar("ph_cl_halos", "1", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
+	CreateClientConVar("ph_cl_halos", "0", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
 	
 	-- Just like the server constant
 	USABLE_PROP_ENTITIES_CL = {
