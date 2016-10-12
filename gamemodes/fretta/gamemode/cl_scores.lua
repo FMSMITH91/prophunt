@@ -79,12 +79,12 @@ function GM:AddScoreboardName( ScoreBoard )
 
 end
 
-function GM:AddScoreboardRanks( ScoreBoard )
+--[[function GM:AddScoreboardRanks( ScoreBoard )
 
 	local f = function( ply ) return ply:GetNWString("usergroup") end
 	ScoreBoard:AddColumn( "Rank", 85, f, 0.5, nil, 5, 5 )
 
-end
+end--]]
 
 function GM:AddScoreboardKills( ScoreBoard )
 
@@ -160,12 +160,12 @@ function GM:CreateScoreboard( ScoreBoard )
 	self:AddScoreboardAvatar( ScoreBoard )		// 1
 	self:AddScoreboardWantsChange( ScoreBoard )	// 2
 	self:AddScoreboardName( ScoreBoard )		// 3
-	self:AddScoreboardRanks( ScoreBoard )		// 4
-	self:AddScoreboardKills( ScoreBoard )		// 5
-	self:AddScoreboardDeaths( ScoreBoard )		// 6
-	self:AddScoreboardPing( ScoreBoard )		// 7
+	--[[self:AddScoreboardRanks( ScoreBoard )		// 4 ]]--
+	self:AddScoreboardKills( ScoreBoard )		// 4
+	self:AddScoreboardDeaths( ScoreBoard )		// 5
+	self:AddScoreboardPing( ScoreBoard )		// 6
 		
 	// Here we sort by these columns (and descending), in this order. You can define up to 4
-	ScoreBoard:SetSortColumns( { 5, true, 6, false, 3, false } )
+	ScoreBoard:SetSortColumns( { 4, true, 5, false, 3, false } )
 
 end
