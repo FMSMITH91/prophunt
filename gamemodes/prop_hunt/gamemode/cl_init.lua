@@ -1,4 +1,5 @@
 include("sh_init.lua")
+include("sh_showwindowtaunt.lua")
 include("cl_menu.lua")
 
 overlaydraw = 0

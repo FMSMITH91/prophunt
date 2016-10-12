@@ -137,7 +137,22 @@
 			"type"		"CheckBox"
 			"default"	"0"
 		}
-
+		15
+		{
+			"name"		"ph_enable_custom_taunts"
+			"text"		"Custom Taunts"
+			"help"		"Enable custom taunts Window?"
+			"type"		"CheckBox"
+			"default"	"0"
+		}
+		16
+		{
+			"name"		"ph_customtaunts_delay"
+			"text"		"Custom Taunts delay"
+			"help"		"How many times Custom Taunt should be able to played again?"
+			"type"		"Numeric"
+			"default"	"6"
+		}
 	}
 
 }

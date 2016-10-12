@@ -17,7 +17,7 @@ RTV._ActualWait = CurTime() + RTV.Wait
 RTV.PlayerCount = MapVote.Config.RTVPlayerCount or 3
 
 function RTV.ShouldChange()
-	return RTV.TotalVotes >= math.Round(#player.GetAll()*0.51)
+	return RTV.TotalVotes >= math.Round(#player.GetAll()*0.66)
 end
 
 function RTV.RemoveVote()
@@ -25,26 +25,10 @@ function RTV.RemoveVote()
 end
 
 function RTV.Start()
-			if GAMEMODE_NAME == "terrortown" then
-				net.Start("RTV_Delay")
-        		net.Broadcast()
- 
-				hook.Add("TTTEndRound", "MapvoteDelayed", function()
-					MapVote.Start(nil, nil, nil, nil)
-				end)
-			elseif GAMEMODE_NAME == "deathrun" then
-				net.Start("RTV_Delay")
-        		net.Broadcast()
-
-				hook.Add("RoundEnd", "MapvoteDelayed", function()
-					MapVote.Start(nil, nil, nil, nil)
-				end)
-			else
-				PrintMessage( HUD_PRINTTALK, "The vote has been rocked, map vote imminent")
-				timer.Simple(4, function()
-					MapVote.Start(nil, nil, nil, nil)
-				end)
-			end
+	PrintMessage( HUD_PRINTTALK, "The vote has been rocked, map vote imminent")
+	timer.Simple(4, function()
+		MapVote.Start(nil, nil, nil, nil)
+	end)
 end
 
 

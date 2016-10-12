@@ -33,10 +33,19 @@ else
     recentmaps = {}
 end
 
-if file.Exists( "mapvote/config.txt", "DATA" ) then
-    MapVote.Config = util.JSONToTable(file.Read("mapvote/config.txt", "DATA"))
+if ConVarExists("mv_maplimit") then
+	print("[MapVote] Loading ConVars...")
+	MapVote.Config = {
+		MapLimit 		= GetConVar("mv_maplimit"):GetInt(),
+		TimeLimit 		= GetConVar("mv_timelimit"):GetInt(),
+		AllowCurrentMap = GetConVar("mv_allowcurmap"):GetBool(),
+		EnableCooldown 	= GetConVar("mv_cooldown"):GetBool(),
+		MapsBeforeRevote = GetConVar("mv_mapbeforerevote"):GetBool(),
+		RTVPlayerCount 	= GetConVar("mv_rtvcount"):GetInt(),
+		MapPrefixes 	= string.Explode(",", GetConVar("mv_mapprefix"):GetString())
+	}
 else
-    MapVote.Config = {}
+	MapVote.Config = {}
 end
 
 function CoolDownDoStuff()
@@ -55,11 +64,11 @@ function CoolDownDoStuff()
     file.Write("mapvote/recentmaps.txt", util.TableToJSON(recentmaps))
 end
 
-function MapVote.Start(length, current, limit, prefix, callback)
+function MapVote.Start(length, current, limit, prefix)
     current = current or MapVote.Config.AllowCurrentMap or false
     length = length or MapVote.Config.TimeLimit or 28
     limit = limit or MapVote.Config.MapLimit or 24
-    cooldown = MapVote.Config.EnableCooldown or MapVote.Config.EnableCooldown == nil and true
+    cooldown = MapVote.Config.EnableCooldown or true
     prefix = prefix or MapVote.Config.MapPrefixes
 
     local is_expression = false
@@ -160,13 +169,8 @@ function MapVote.Start(length, current, limit, prefix, callback)
         
         
         timer.Simple(4, function()
-            if (hook.Run("MapVoteChange", map) != false) then
-                if (callback) then
-                    callback(map)
-                else
-                    RunConsoleCommand("changelevel", map)
-                end
-            end
+            hook.Run("MapVoteChange", map)
+            RunConsoleCommand("changelevel", map)
         end)
     end)
 end

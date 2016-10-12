@@ -1,44 +1,51 @@
--- Props will not be able change to these models.
---[[ Add of your owns model restriction if you have problems. 
-	these lists are usually common props that has been used on every maps. 
-]]--
+-- Global Var for custom taunt, delivering from taunts/prop -or- hunter_taunts.lua
+PH_TAUNT_CUSTOM = {}
+include("taunts/hunter_taunts.lua")
+include("taunts/prop_taunts.lua")
+
+-- \\ General Gamemode Config // --
+
+-- Maximum time (in minutes) for this fretta gamemode (Default: 30)
+GAME_TIME = GetConVarNumber("ph_game_time")
+-- Number of seconds hunters are blinded/locked at the beginning of the map (Default: 30)
+HUNTER_BLINDLOCK_TIME = GetConVarNumber("ph_hunter_blindlock_time")
+-- Health points removed from hunters when they shoot  (Default: 25)
+HUNTER_FIRE_PENALTY = GetConVarNumber("ph_hunter_fire_penalty")
+-- How much health to give back to the Hunter after killing a prop (Default: 20)
+HUNTER_KILL_BONUS = GetConVarNumber("ph_hunter_kill_bonus")
+-- Seconds a player has to wait before they can taunt again (Default: 2 or 3)
+TAUNT_DELAY = 2
+-- Rounds played on a map (Default: 10)
+ROUNDS_PER_MAP = GetConVarNumber("ph_rounds_per_map")
+-- Time (in seconds) for each round (Default: 300)
+ROUND_TIME = GetConVarNumber("ph_round_time")
+-- Determains if players should be team swapped every round [0 = No, 1 = Yes] (Default: 1)
+SWAP_TEAMS_EVERY_ROUND = GetConVarNumber("ph_swap_teams_every_round")
+-- Time (in seconds) for props to play custom taunts again (Default: 6)
+CUSTOM_TAUNT_DELAY = GetConVarNumber("ph_customtaunts_delay")
+
+-- Banned Props models
+--[[ Add one of your owns model restriction if you have problems. 
+	these lists are usually common props that has been used on every maps. ]]--
 BANNED_PROP_MODELS = {
 	"models/props/cs_assault/dollar.mdl",
+	"models/props/cs_assault/money.mdl",
 	"models/props/cs_office/snowman_arm.mdl",
 	"models/props/cs_militia/reload_bullet_tray.mdl"
 }
 
-
--- Maximum time (in minutes) for this fretta gamemode (Default: 30)
-GAME_TIME = GetConVarNumber("ph_game_time")
-
-
--- Number of seconds hunters are blinded/locked at the beginning of the map (Default: 30)
-HUNTER_BLINDLOCK_TIME = GetConVarNumber("ph_hunter_blindlock_time")
-
-
--- Health points removed from hunters when they shoot  (Default: 25)
-HUNTER_FIRE_PENALTY = GetConVarNumber("ph_hunter_fire_penalty")
-
-
--- How much health to give back to the Hunter after killing a prop (Default: 100)
-HUNTER_KILL_BONUS = GetConVarNumber("ph_hunter_kill_bonus")
-
-
--- If you loose one of these will be played
--- Set blank to disable
-
--- Todo: Enable this on next update.
-LOSS_SOUNDS = {
-	"vo/announcer_failure.wav",
-	"vo/announcer_you_failed.wav"
+-- Additional Props Models instead of being Kleiner so... he will no longer lonely.
+ADDITIONAL_STARTING_MODELS = {
+	"models/player/kleiner.mdl",
+	"models/player/alyx.mdl",
+	"models/player/barney.mdl",
+	"models/player/eli.mdl",
+	"models/player/mossman.mdl",
+	"models/player/breen.mdl"
 }
 
--- Sound files hunters can taunt with
--- You need at least 2 files listed here
+--[[ // DO NOT MODIFY! use from taunts/prop_taunts.lua or hunter_taunts.lua instead! \\ ]]--
 HUNTER_TAUNTS = {
-
-	-- Normal Taunts
 	"taunts/hunters/come_to_papa.wav",
 	"taunts/hunters/father.mp3",
 	"taunts/hunters/fireassis.wav",
@@ -50,14 +57,6 @@ HUNTER_TAUNTS = {
 	"taunts/hunters/rude.mp3",
 	"taunts/hunters/soul.mp3",
 	"taunts/hunters/illfindyou.mp3",
-	
-	-- Half-Life 2
-	"vo/k_lab/ba_guh.wav",
-	
-	--Deus Ex
-	"taunts/props_extra/dx_augmented.wav",
-
-	-- Male
 	"vo/npc/male01/vanswer13.wav",
 	"vo/npc/male01/thehacks01.wav",
 	"vo/npc/male01/runforyourlife02.wav",
@@ -66,9 +65,7 @@ HUNTER_TAUNTS = {
 	"vo/npc/male01/overthere02.wav"
 }
 
-
--- Sound files props can taunt with
--- You need at least 2 files listed here
+--[[ // DO NOT MODIFY! use from taunts/props_taunts.lua or hunters_taunts.lua instead! \\ ]]--
 PROP_TAUNTS = {
 	"taunts/boom_headshot.wav",
 	"taunts/go_away_or_i_shall.wav",
@@ -115,15 +112,9 @@ PROP_TAUNTS = {
 	"taunts/props/33.mp3",
 	"taunts/props/34.mp3",
 	"taunts/props/35.mp3",
-	
-	-- // Half-life 2 taunts \\ --
-	
-	-- Citadel part
 	"vo/citadel/br_ohshit.wav",
 	"vo/citadel/br_youfool.wav",
 	"vo/citadel/br_youneedme.wav",
-	
-	-- Coast part
 	"vo/coast/odessa/male01/nlo_cheer01.wav",
 	"vo/coast/odessa/male01/nlo_cheer02.wav",
 	"vo/coast/odessa/male01/nlo_cheer03.wav",
@@ -131,20 +122,12 @@ PROP_TAUNTS = {
 	"vo/coast/odessa/female01/nlo_cheer01.wav",
 	"vo/coast/odessa/female01/nlo_cheer02.wav",
 	"vo/coast/odessa/female01/nlo_cheer03.wav",
-	
-	-- Gman
 	"vo/gman_misc/gman_riseshine.wav",
-	
-	-- // General NPC Quotes \\ --
-		
-	-- Barney
 	"vo/npc/barney/ba_damnit.wav",
 	"vo/npc/barney/ba_laugh01.wav",
 	"vo/npc/barney/ba_laugh02.wav",
 	"vo/npc/barney/ba_laugh03.wav",
 	"vo/npc/barney/ba_laugh04.wav",
-	
-	-- Male Citizen
 	"vo/npc/male01/hacks01.wav",
 	"vo/npc/male01/hacks02.wav",
 	"vo/npc/male01/vanswer01.wav",
@@ -155,74 +138,31 @@ PROP_TAUNTS = {
 	"vo/npc/male01/question26.wav",
 	"vo/npc/male01/incoming02.wav",
 	"vo/npc/male01/gethellout.wav",
-	
-	-- Father Grigori
 	"vo/ravenholm/madlaugh04.wav",
-	
-	-- Fixed taunts
 	"taunts/fixed/13_fix.wav",
 	"taunts/fixed/bees_fix.wav",
-	
-	-- Additionals ==
-	"taunts/props_extra/dx_idonotmoveout.wav",
-	"taunts/props_extra/dx_iloominarty.wav",
-	"taunts/props_extra/dx_imgonnawoopyourass.wav",
-	"taunts/props_extra/dx_lookatme.wav",
-	"taunts/props_extra/dx_molepeople.wav",
-	"taunts/props_extra/dx_thebomb.wav",
-	"taunts/props_extra/dx_thebomb2.wav",
-	"taunts/props_extra/ext_angry_german_kid.wav",
-	"taunts/props_extra/ext_blablaahah.wav",
-	"taunts/props_extra/ext_dance_music.wav",
-	"taunts/props_extra/ext_get_no_scope.wav",
-	"taunts/props_extra/ext_hl1_crackmod_ihateyou.wav",
-	"taunts/props_extra/ext_hl1_crackmod_watchyourrear.wav",
-	"taunts/props_extra/ext_hl1_crackmod_youareugly.wav",
-	"taunts/props_extra/ext_huladance.mp3",
-	"taunts/props_extra/ext_jojon_sina.wav",
-	"taunts/props_extra/ext_just_do_it_1.wav",
-	"taunts/props_extra/ext_just_do_it_2.wav",
-	"taunts/props_extra/ext_wepon.mp3",
-	"taunts/props_extra/ext_woo.wav",
-	"taunts/props_extra/ext_x_files.wav",
-	
-	-- Moved from Hunter to Props (this supposed to be props...)
 	"taunts/hunters/laugh.wav"
 }
 
+-- Add custom taunts, if any. See taunts/prop_taunts.lua or taunts/hunter_taunts.lua for more info.
+local function AddDemTaunt()
+	print("[PH: Enhanced] Adding custom prop taunts...")
+	if PH_TAUNT_CUSTOM.PROP != nil then
+		for k,prop in pairs(PH_TAUNT_CUSTOM.PROP) do 
+			table.insert(PROP_TAUNTS, prop)
+		end
+	else
+		print("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
+	end
+	
+	print("[PH: Enhanced] Adding custom hunter taunts...")
+	if PH_TAUNT_CUSTOM.HUNTER != nil then
+		for k,hunter in pairs(PH_TAUNT_CUSTOM.HUNTER) do 
+			table.insert(HUNTER_TAUNTS, hunter)
+		end
+	else
+		print("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
+	end
+end
 
--- Seconds a player has to wait before they can taunt again (Default: 2 or 3)
-TAUNT_DELAY = 2
-
-
--- Rounds played on a map (Default: 10)
-ROUNDS_PER_MAP = GetConVarNumber("ph_rounds_per_map")
-
-
--- Time (in seconds) for each round (Default: 300)
-ROUND_TIME = GetConVarNumber("ph_round_time")
-
-
--- Determains if players should be team swapped every round [0 = No, 1 = Yes] (Default: 1)
-SWAP_TEAMS_EVERY_ROUND = GetConVarNumber("ph_swap_teams_every_round")
-
-
--- If you win, one of these will be played
--- Set blank to disable
-
--- Todo: Enable this on next update.
-VICTORY_SOUNDS = {
-	"vo/announcer_success.wav",
-	"vo/announcer_victory.wav",
-	"vo/announcer_we_succeeded.wav"
-}
-
--- Kleiner is no longer lonely
-ADDITIONAL_STARTING_MODELS = {
-	"models/player/kleiner.mdl",
-	"models/player/alyx.mdl",
-	"models/player/barney.mdl",
-	"models/player/eli.mdl",
-	"models/player/mossman.mdl",
-	"models/player/breen.mdl"
-}
+AddDemTaunt()

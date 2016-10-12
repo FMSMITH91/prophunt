@@ -17,8 +17,8 @@ function CLASS:Loadout(pl)
     pl:GiveAmmo(64, "Buckshot")
     pl:GiveAmmo(255, "SMG1")
     pl:GiveAmmo(12, "357")
-    pl:GiveAmmo(12, "XBowBolt")
-
+	pl:GiveAmmo(12, "XBowBolt")
+    
     pl:Give("weapon_crowbar")
     pl:Give("weapon_shotgun")
     pl:Give("weapon_smg1")
@@ -45,13 +45,19 @@ function CLASS:OnSpawn(pl)
 	local unlock_time = math.Clamp(HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, HUNTER_BLINDLOCK_TIME)
 	
 	local unblindfunc = function()
-		pl:Blind(false)
+		if pl:IsValid() then
+			pl:Blind(false)
+		end
 	end
 	local lockfunc = function()
-		pl.Lock(pl)
+		if pl:IsValid() then
+			pl.Lock(pl)
+		end
 	end
 	local unlockfunc = function()
-		pl.UnLock(pl)
+		if pl:IsValid() then
+			pl.UnLock(pl)
+		end
 	end
 	
 	if unlock_time > 2 then

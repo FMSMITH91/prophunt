@@ -1,3 +1,12 @@
+
+if SERVER then
+	if engine.ActiveGamemode() != "prop_hunt" then
+		return
+	end
+end
+
+print("[PH: Enhanced] Initialising Custom SWEP...")
+
 -- //Variables that are used on both client and server
 SWEP.Category                           = ""
 SWEP.Gun                                        = ""

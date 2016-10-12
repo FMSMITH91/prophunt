@@ -5,12 +5,16 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("cl_menu.lua")
 AddCSLuaFile("sh_config.lua")
+AddCSLuaFile("taunts/hunter_taunts.lua")
+AddCSLuaFile("taunts/prop_taunts.lua")
 AddCSLuaFile("sh_init.lua")
 AddCSLuaFile("sh_player.lua")
+AddCSLuaFile("sh_showwindowtaunt.lua")
 
 -- Include the required lua files
 include("sh_init.lua")
 include("sv_admin.lua")
+include("sh_showwindowtaunt.lua")
 
 -- Server only constants
 EXPLOITABLE_DOORS = {
@@ -23,14 +27,42 @@ USABLE_PROP_ENTITIES = {
 	"prop_physics_multiplayer"
 }
 
+-- Player Join/Leave message
+-- Player Dis/Connect Event Listener
+gameevent.Listen( "player_connect" )
+hook.Add( "player_connect", "AnnouncePLJoin", function( data )
+	for k, v in pairs( player.GetAll() ) do
+		v:PrintMessage( HUD_PRINTTALK, data.name .. " has connected to the server." )
+	end
+end )
+
+gameevent.Listen( "player_disconnect" )
+hook.Add( "player_disconnect", "AnnouncePLLeave", function( data )
+	for k,v in pairs( player.GetAll() ) do
+		v:PrintMessage( HUD_PRINTTALK, data.name .. " has left the server (Reason: " .. data.reason ..")" )
+	end
+end )
 
 -- We're going to get the usable prop table and send it over to the client with this network string
 util.AddNetworkString("ServerUsablePropsToClient")
+-- Additional network string for Custom Taunts window
+util.AddNetworkString("PH_ForceCloseTauntWindow")
+util.AddNetworkString("PH_AllowTauntWindow")
 
+-- This doesn't required...
+-- for _, taunt in pairs(HUNTER_TAUNTS) do resource.AddFile("sound/"..taunt) end
+-- for _, taunt in pairs(PROP_TAUNTS) do resource.AddFile("sound/"..taunt) end
 
--- Send the required resources to the client
-for _, taunt in pairs(HUNTER_TAUNTS) do resource.AddFile("sound/"..taunt) end
-for _, taunt in pairs(PROP_TAUNTS) do resource.AddFile("sound/"..taunt) end
+-- Force Close taunt window function, determined whenever the round ends, or team winning.
+local function ForceCloseTauntWindow(num)
+	if num == 1 then
+		net.Start("PH_ForceCloseTauntWindow")
+		net.Broadcast()
+	elseif num == 0 then
+		net.Start("PH_AllowTauntWindow")
+		net.Broadcast()
+	end
+end
 
 -- Called alot
 function GM:CheckPlayerDeathRoundEnd()
@@ -42,18 +74,20 @@ function GM:CheckPlayerDeathRoundEnd()
 
 	if table.Count(Teams) == 0 then
 		GAMEMODE:RoundEndWithResult(1001, "Draw, everyone loses!")
+		ForceCloseTauntWindow(1)
 		return
 	end
 
 	if table.Count(Teams) == 1 then
 		local TeamID = table.GetFirstKey(Teams)
-		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(TeamID).." win!")
+		-- debug
+		MsgAll("Round Result: "..team.GetName(TeamID).." ("..TeamID..") Wins!\n")
+		-- End Round
+		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(TeamID).." win!") -- fix end result that often opposited as "Props Win" or "Hunter Win".
+		ForceCloseTauntWindow(1)
 		return
 	end
-	
-	--todo: add custom wins/lost sound on next update.
 end
-
 
 -- Called when an entity takes damage
 function EntityTakeDamage(ent, dmginfo)
@@ -68,7 +102,6 @@ function EntityTakeDamage(ent, dmginfo)
 end
 hook.Add("EntityTakeDamage", "PH_EntityTakeDamage", EntityTakeDamage)
 
-
 -- Called when player tries to pickup a weapon
 function GM:PlayerCanPickupWeapon(pl, ent)
  	if pl:Team() != TEAM_HUNTERS then
@@ -77,6 +110,11 @@ function GM:PlayerCanPickupWeapon(pl, ent)
 	
 	return true
 end
+
+function PH_ResetCustomTauntWindowState()
+	ForceCloseTauntWindow(0)
+end
+hook.Add("PostCleanupMap", "PH_ResetCustomTauntWindow", PH_ResetCustomTauntWindowState)
 
 -- Make a variable for 4 unique combines.
 -- Clean up, sorry btw.
@@ -235,6 +273,7 @@ function GM:RoundTimerEnd()
 	end
    
 	GAMEMODE:RoundEndWithResult(TEAM_PROPS, "Props win!")
+	ForceCloseTauntWindow(1)
 end
 
 
@@ -308,6 +347,14 @@ function PH_Props_OnBreak(ply, ent)
 end
 hook.Add("PropBreak", "Props_OnBreak_WithDrops", PH_Props_OnBreak)
 
+-- Force Close the Taunt Menu whenever the prop is being killed.
+function close_PlayerKilledSilently(ply)
+	if ply:Team() == TEAM_PROPS then
+		net.Start( "PH_ForceCloseTauntWindow" )
+		net.Send(ply)
+	end
+end
+hook.Add("PlayerSilentDeath", "SilentDed_ForceClose", close_PlayerKilledSilently)
 
 -- Flashlight toggling
 function GM:PlayerSwitchFlashlight(pl, on)

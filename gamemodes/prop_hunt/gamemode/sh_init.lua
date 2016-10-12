@@ -2,22 +2,13 @@
 include("sh_config.lua")
 include("sh_player.lua")
 
-
--- Include the configuration for this map
-if file.Exists("../gamemodes/prop_hunt/gamemode/maps/"..game.GetMap()..".lua", "LUA") || file.Exists("../lua_temp/prop_hunt/gamemode/maps/"..game.GetMap()..".lua", "LUA") then
-	include("maps/"..game.GetMap()..".lua")
-end
-
-
 -- Fretta!
 DeriveGamemode("fretta")
 IncludePlayerClasses()
 
-
 -- Information about the gamemode
 GM.Name		= "Enhanced Prop Hunt"
 GM.Author	= "Wolvindra-Vinzuerio and D4UNKN0WNM4N2010 (Enhanced), original by Kowalski/AMT"
-
 
 -- Help info
 GM.Help = [[Prop Hunt is a twist on the classic backyard game Hide and Seek.
@@ -29,8 +20,7 @@ TEAM HUNTER:
 As a Hunter you will be blindfolded for the first ]]..HUNTER_BLINDLOCK_TIME..[[ seconds of the round while the Props hide. When your blindfold is taken off, you will need to find props controlled by players and kill them. Damaging non-player props will lower your health significantly. 
 However, killing a Prop will increase your health by ]]..HUNTER_KILL_BONUS..[[ points.
 
-Both teams can press [F3] to play a taunt sound.]]
-
+Both teams can press [F3] to play a taunt sound. Props can press [C] for custom taunts.]]
 
 -- Fretta configuration
 GM.GameLength				= GetConVarNumber("ph_game_time")
@@ -79,6 +69,15 @@ end
 
 if !ConVarExists("ph_prop_additional_models") then
 	local ph_prop_additional_models = CreateConVar("ph_prop_additional_models", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props have different starting models instead of just Kleiner?")
+end
+
+-- Custom Taunts ConVars
+if !ConVarExists("ph_customtaunts_delay") then
+	local ph_customtaunts_delay = CreateConVar("ph_customtaunts_delay", "6", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play custom taunt again? (Default is 6)")
+end
+
+if !ConVarExists("ph_enable_custom_taunts") then
+	local ph_enable_custom_taunts = CreateConVar("ph_enable_custom_taunts", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Enable custom taunts for prop teams by pressing C? (Default 0)\n  You must have a list of custom taunts to enable this.")
 end
 
 if !ConVarExists("ph_hunter_fire_penalty") then

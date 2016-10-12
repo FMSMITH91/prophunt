@@ -43,7 +43,7 @@ net.Receive("RAM_MapVoteStart", function()
         MapVote.Panel:Remove()
     end
     
-    MapVote.Panel = vgui.Create("RAM_VoteScreen")
+    MapVote.Panel = vgui.Create("VoteScreen")
     MapVote.Panel:SetMaps(MapVote.CurrentMaps)
 end)
 
@@ -108,7 +108,7 @@ function PANEL:Init()
     end
 
     self.closeButton.DoClick = function()
-        print("HI")
+        print("MapVote has started...")
         self:SetVisible(false)
     end
 
@@ -140,7 +140,8 @@ function PANEL:PerformLayout()
     local extra = math.Clamp(300, 0, ScrW() - 640)
     self.Canvas:StretchToParent(0, 0, 0, 0)
     self.Canvas:SetWide(640 + extra)
-    self.Canvas:SetTall(cy -60)
+    // self.Canvas:SetTall(cy -60)
+	self.Canvas:SetTall(640)
     self.Canvas:SetPos(0, 0)
     self.Canvas:CenterHorizontal()
     self.Canvas:SetZPos(0)
@@ -325,4 +326,4 @@ function PANEL:Flash(id)
     end
 end
 
-derma.DefineControl("RAM_VoteScreen", "", PANEL, "DPanel")
+derma.DefineControl("VoteScreen", "", PANEL, "DPanel")
