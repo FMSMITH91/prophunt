@@ -27,6 +27,9 @@ USABLE_PROP_ENTITIES = {
 	"prop_physics_multiplayer"
 }
 
+-- Voice Control Constant init
+VOICE_IS_END_ROUND = 0
+
 -- Player Join/Leave message
 -- Player Dis/Connect Event Listener
 gameevent.Listen( "player_connect" )
@@ -49,10 +52,6 @@ util.AddNetworkString("ServerUsablePropsToClient")
 util.AddNetworkString("PH_ForceCloseTauntWindow")
 util.AddNetworkString("PH_AllowTauntWindow")
 
--- This doesn't required...
--- for _, taunt in pairs(HUNTER_TAUNTS) do resource.AddFile("sound/"..taunt) end
--- for _, taunt in pairs(PROP_TAUNTS) do resource.AddFile("sound/"..taunt) end
-
 -- Force Close taunt window function, determined whenever the round ends, or team winning.
 local function ForceCloseTauntWindow(num)
 	if num == 1 then
@@ -74,6 +73,7 @@ function GM:CheckPlayerDeathRoundEnd()
 
 	if table.Count(Teams) == 0 then
 		GAMEMODE:RoundEndWithResult(1001, "Draw, everyone loses!")
+		VOICE_IS_END_ROUND = 1
 		ForceCloseTauntWindow(1)
 		return
 	end
@@ -84,9 +84,82 @@ function GM:CheckPlayerDeathRoundEnd()
 		MsgAll("Round Result: "..team.GetName(TeamID).." ("..TeamID..") Wins!\n")
 		-- End Round
 		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(TeamID).." win!") -- fix end result that often opposited as "Props Win" or "Hunter Win".
+		VOICE_IS_END_ROUND = 1
 		ForceCloseTauntWindow(1)
 		return
 	end
+end
+
+-- Player Voice & Chat Control to prevent Metagaming. (As requested by some server owners/suggestors.)
+-- Control Player Voice
+local alltalk = GetConVar("sv_alltalk")
+function GM:PlayerCanHearPlayersVoice(listen, speaker)
+	
+	local alltalk_cvar = alltalk:GetInt()
+	if (alltalk_cvar > 0) then return true, false end
+	
+	-- prevent Loopback check.
+	if (listen == speaker) then return false, false end
+
+	-- Only alive players can listen other living players.
+	if listen:Alive() && speaker:Alive() then return true, false end
+	
+	-- Event: On Round Start. Living Players don't listen to dead players.
+	if VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false, false end
+	
+	-- Listen to all dead players while you dead.
+	if !listen:Alive() && !speaker:Alive() then return true, false end
+	
+	-- However, Living players can be heard from dead players.
+	if !listen:Alive() && speaker:Alive() then return true, false end
+	
+	-- Event: On Round End/Time End. Listen to everyone.
+	if VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true, false end
+
+	-- Spectator can only read from themselves.
+	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false, false end
+	
+	-- This is for ULX "Permanent Gag". Uncomment this if you have issues.
+	-- if speaker:GetPData( "permgagged" ) == "true" then return false, false end
+end
+
+-- Control Players Chat
+function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
+	
+	if ( onteam ) then
+		-- Generic Specific OnTeam chats
+		if ( !IsValid( speaker ) || !IsValid( listen ) ) then return false end
+		if ( listen:Team() != speaker:Team() ) then return false end
+		
+		-- ditto, this is same as below.
+		if listen:Alive() && speaker:Alive() then return true end
+		if VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false end
+		if !listen:Alive() && !speaker:Alive() then return true end
+		if !listen:Alive() && speaker:Alive() then return true end
+		if VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true end
+		if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
+	end
+	
+	-- Generic Checks
+	if ( !IsValid( speaker ) || !IsValid( listen ) ) then return false end
+	
+	-- Only alive players can see other living players.
+	if listen:Alive() && speaker:Alive() then return true end
+	
+	-- Event: On Round Start. Living Players don't see dead players' chat.
+	if VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false end
+	
+	-- See Chat to all dead players while you dead.
+	if !listen:Alive() && !speaker:Alive() then return true end
+	
+	-- However, Living players' chat can be seen from dead players.
+	if !listen:Alive() && speaker:Alive() then return true end
+	
+	-- Event: On Round End/Time End. See Chat to everyone.
+	if VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true end
+
+	-- Spectator can only read from themselves.
+	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
 end
 
 -- Called when an entity takes damage
@@ -112,7 +185,10 @@ function GM:PlayerCanPickupWeapon(pl, ent)
 end
 
 function PH_ResetCustomTauntWindowState()
+	-- Force close any taunt menu windows
 	ForceCloseTauntWindow(0)
+	-- Extra additional
+	VOICE_IS_END_ROUND = 0
 end
 hook.Add("PostCleanupMap", "PH_ResetCustomTauntWindow", PH_ResetCustomTauntWindowState)
 
@@ -273,6 +349,7 @@ function GM:RoundTimerEnd()
 	end
    
 	GAMEMODE:RoundEndWithResult(TEAM_PROPS, "Props win!")
+	VOICE_IS_END_ROUND = 1
 	ForceCloseTauntWindow(1)
 end
 
