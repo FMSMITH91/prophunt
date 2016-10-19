@@ -105,7 +105,6 @@ PROP_TAUNTS = {
 	"taunts/props/26.wav",
 	"taunts/props/27.wav",
 	"taunts/props/28.wav",
-	"taunts/props/29.wav",
 	"taunts/props/30.wav",
 	"taunts/props/31.mp3",
 	"taunts/props/32.mp3",
