@@ -44,13 +44,3 @@ MapVote.Allow = false
 
 MapVote.UPDATE_VOTE = 1
 MapVote.UPDATE_WIN = 3
-
-if SERVER then
-    AddCSLuaFile()
-    AddCSLuaFile("mapvote/cl_mapvote.lua")
-
-    include("mapvote/sv_mapvote.lua")
-    include("mapvote/rtv.lua")
-else
-    include("mapvote/cl_mapvote.lua")
-end

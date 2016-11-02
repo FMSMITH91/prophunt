@@ -2,6 +2,19 @@
 include("sh_config.lua")
 include("sh_player.lua")
 
+-- mapvote
+if SERVER then
+    AddCSLuaFile("sh_mapvote.lua")
+    AddCSLuaFile("mapvote/cl_mapvote.lua")
+
+	include("sh_mapvote.lua")
+    include("mapvote/sv_mapvote.lua")
+    include("mapvote/rtv.lua")
+else
+	include("sh_mapvote.lua")
+    include("mapvote/cl_mapvote.lua")
+end
+
 -- Fretta!
 DeriveGamemode("fretta")
 IncludePlayerClasses()
