@@ -1,10 +1,9 @@
 -- Include needed files
 include("shared.lua")
 
-
 -- Called every frame?
 function ENT:Draw()
-	if GetConVar("ph_better_prop_movement"):GetBool() then
+	if CL_BETTER_PROP_MOVEMENT then
 		if (LocalPlayer():GetPlayerPropEntity() != self.Entity) then
 			self.Entity:DrawModel()
 			self.Entity:DrawShadow(true)

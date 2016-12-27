@@ -10,11 +10,7 @@ include("shared.lua")
 
 -- Called when the entity initializes
 function ENT:Initialize()
-	if GetConVar("ph_prop_additional_models"):GetBool() then
-		self:SetModel(table.Random(ADDITIONAL_STARTING_MODELS))
-	else
-		self:SetModel("models/player/kleiner.mdl")
-	end
+	self:SetModel("models/player/kleiner.mdl")
 	self.health = 100
 end 
 

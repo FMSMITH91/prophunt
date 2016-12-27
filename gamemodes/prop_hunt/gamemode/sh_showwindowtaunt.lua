@@ -24,7 +24,7 @@ if CLIENT then
 	end)
 	
 	local function MainFrame()
-		if !GetConVar("ph_enable_custom_taunts"):GetBool() then
+		if !CUSTOM_TAUNT_ENABLED then
 			chat.AddText(Color(220,0,0),"[PH: Enhanced - Taunt] Warning: This server has custom taunts disabled.")
 			return
 		end
@@ -33,7 +33,7 @@ if CLIENT then
 	
 		local frame = vgui.Create("DFrame")
 		frame:SetSize(400,600)
-		frame:SetTitle("Prop Hunt | Custom Taunt List")
+		frame:SetTitle("Prop Hunt | Taunt List")
 		frame:Center()
 		frame:MakePopup()
 		
@@ -55,27 +55,45 @@ if CLIENT then
 		list:SetPos(10,52)
 		list:SetSize(380,528)
 		
-		for _,snd in pairs(PROP_TAUNTS) do
+		-- Determine if prop or hunter taunt list to be used
+		local TEAM_TAUNTS = PROP_TAUNTS
+		if (LocalPlayer():Team() == TEAM_HUNTERS) then
+			TEAM_TAUNTS = HUNTER_TAUNTS
+		end
+		
+		for _,snd in pairs(TEAM_TAUNTS) do
 			list:AddLine(snd)
 		end
 		
 		local comb = vgui.Create("DComboBox", frame)
 		comb:SetPos(10,28)
 		comb:SetSize(380, 20)
-		comb:SetValue("All Taunts")
-			comb:AddChoice("Original Taunts")
-			comb:AddChoice("Custom Taunts")
-			
+		comb:SetValue("Original Taunts")
+		comb:AddChoice("Original Taunts")
+		comb:AddChoice("Custom Taunts")
+		
 		comb.OnSelect = function(pnl, idx, val)
 			if val == "Original Taunts" then
 				list:Clear()
-				for k,v in pairs(PROP_TAUNTS) do
-					list:AddLine(v)
+				if TEAM_TAUNTS then
+					for k,v in pairs(TEAM_TAUNTS) do
+						list:AddLine(v)
+					end
 				end
 			elseif val == "Custom Taunts" then
 				list:Clear()
-				for k,v in pairs(PH_TAUNT_CUSTOM.PROP) do
-					list:AddLine(v)
+				if LocalPlayer():Team() == TEAM_PROPS then
+					if PH_TAUNT_CUSTOM.PROP then
+						for k,v in pairs(PH_TAUNT_CUSTOM.PROP) do
+							list:AddLine(v)
+						end
+					end
+				else
+					if PH_TAUNT_CUSTOM.HUNTER then
+						for k,v in pairs(PH_TAUNT_CUSTOM.HUNTER) do
+							list:AddLine(v)
+						end
+					end
 				end
 			end
 		end
@@ -94,34 +112,28 @@ if CLIENT then
 			end
 			
 			local menu = DermaMenu()
-			menu:AddOption("Play for self", function() surface.PlaySound(getline); print("Playing: "..getline); end):SetIcon("icon16/control_play.png")
-			menu:AddOption("Play as Taunt (everyone can hear)", function() SendToServer(); end):SetIcon("icon16/sound.png")
-			menu:AddOption("Play as Taunt and Close (everyone can hear)", function() SendToServer(); frame:Close(); end):SetIcon("icon16/sound_delete.png")
+			menu:AddOption("Play (Local)", function() surface.PlaySound(getline); print("Playing: "..getline); end):SetIcon("icon16/control_play.png")
+			menu:AddOption("Play (Global)", function() SendToServer(); end):SetIcon("icon16/sound.png")
+			menu:AddOption("Play and Close (Global)", function() SendToServer(); frame:Close(); end):SetIcon("icon16/sound_delete.png")
 			menu:AddSpacer()
-			menu:AddOption("Close", function() end)
+			menu:AddOption("Close", function() frame:Close(); end):SetIcon("icon16/delete.png")
 			menu:Open()
 		end
 	end
 	
 	concommand.Add("ph_showtaunts", function()
-	if LocalPlayer():Team() == TEAM_PROPS && LocalPlayer():Alive() && isforcedclose != true then
+	if LocalPlayer():Alive() && isforcedclose != true then
 		if isopened != true then
 			MainFrame()
 		end	
 	else
-		chat.AddText(Color(220,40,0),"[PH: Enhanced - Taunt] Notice: ",Color(220,220,220),"You can only play custom taunts when you\'re Alive as a Prop and you can\'t play taunts while you dead!")
+		chat.AddText(Color(220,40,0),"[PH: Enhanced - Taunt] Notice: ",Color(220,220,220),"You can only play custom taunts when you\'re alive!")
 	end
-	end, nil, "Show Prop Hunt taunt list, so You can select and play for self or play as a taunt.")
+	end, nil, "Show Prop Hunt taunt list, so you can select and play for self or play as a taunt.")
 	
 	local function BindPress(ply, bind, pressed)
 		if string.find(bind, "+menu_context") and pressed then
-			if LocalPlayer():Team() == TEAM_PROPS && LocalPlayer():Alive() && isforcedclose != true then
-				if isopened != true then
-					MainFrame()
-				end
-			else
-				chat.AddText(Color(220,40,0),"[PH: Enhanced - Taunt] Notice: ",Color(220,220,220),"You can only play custom taunts when you\'re Alive as a Prop and you can\'t play taunts while you dead!")
-			end
+			RunConsoleCommand("ph_showtaunts")
 		end
 	end
 	hook.Add("PlayerBindPress", "PlayerBindPress_menuContext", BindPress)

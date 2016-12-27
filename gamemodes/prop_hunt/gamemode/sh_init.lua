@@ -1,8 +1,18 @@
+-- Verbose mode
+function printverbose(text)
+	if PRINT_VERBOSE_ENABLED && text then
+		print(tostring(text))
+	end
+end
+if !ConVarExists("ph_print_verbose") then
+	local ph_print_verbose = CreateConVar("ph_print_verbose", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Some printed messages will only appear if this is enabled.")
+end
+
 -- Include the required lua files
 include("sh_config.lua")
 include("sh_player.lua")
 
--- mapvote
+-- MapVote
 if SERVER then
     AddCSLuaFile("sh_mapvote.lua")
     AddCSLuaFile("mapvote/cl_mapvote.lua")
@@ -80,10 +90,6 @@ if !ConVarExists("ph_prop_collision") then
 	local ph_prop_collision = CreateConVar("ph_prop_collision", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props collide with each other?")
 end
 
-if !ConVarExists("ph_prop_additional_models") then
-	local ph_prop_additional_models = CreateConVar("ph_prop_additional_models", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props have different starting models instead of just Kleiner?")
-end
-
 -- Custom Taunts ConVars
 if !ConVarExists("ph_customtaunts_delay") then
 	local ph_customtaunts_delay = CreateConVar("ph_customtaunts_delay", "6", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play custom taunt again? (Default is 6)")
@@ -91,6 +97,14 @@ end
 
 if !ConVarExists("ph_enable_custom_taunts") then
 	local ph_enable_custom_taunts = CreateConVar("ph_enable_custom_taunts", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Enable custom taunts for prop teams by pressing C? (Default 0)\n  You must have a list of custom taunts to enable this.")
+end
+
+if !ConVarExists("ph_enable_lucky_balls") then
+	local ph_enable_lucky_balls = CreateConVar("ph_enable_lucky_balls", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_NOTIFY }, "If you hate lucky balls, we're sorry. :(")
+end
+
+if !ConVarExists("ph_enable_plnames") then
+	local ph_enable_plnames = CreateConVar("ph_enable_plnames", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Serverside control for if a clients see client\'s team player names through walls.")
 end
 
 if !ConVarExists("ph_hunter_fire_penalty") then
@@ -120,7 +134,7 @@ function GM:CreateTeams()
 	team.SetClass(TEAM_PROPS, {"Prop"})
 end
 
-
+-- Check collisions
 function CheckPropCollision(entA, entB)
 	if !GetConVar("ph_prop_collision"):GetBool() && (entA && entB && ((entA:IsPlayer() && entA:Team() == TEAM_PROPS && entB:IsValid() && entB:GetClass() == "ph_prop") || (entB:IsPlayer() && entB:Team() == TEAM_PROPS && entA:IsValid() && entA:GetClass() == "ph_prop"))) then
 		return false

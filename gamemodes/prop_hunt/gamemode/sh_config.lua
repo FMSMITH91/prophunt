@@ -1,5 +1,9 @@
+-- Verbose mode (print extra stuff in console) boolean (Default: false)
+PRINT_VERBOSE_ENABLED = GetConVar("ph_print_verbose"):GetBool()
+
 -- Global Var for custom taunt, delivering from taunts/prop -or- hunter_taunts.lua
 PH_TAUNT_CUSTOM = {}
+PH_TAUNT_FILE_LIST = {}
 include("taunts/hunter_taunts.lua")
 include("taunts/prop_taunts.lua")
 
@@ -7,22 +11,36 @@ include("taunts/prop_taunts.lua")
 
 -- Maximum time (in minutes) for this fretta gamemode (Default: 30)
 GAME_TIME = GetConVarNumber("ph_game_time")
+
 -- Number of seconds hunters are blinded/locked at the beginning of the map (Default: 30)
 HUNTER_BLINDLOCK_TIME = GetConVarNumber("ph_hunter_blindlock_time")
--- Health points removed from hunters when they shoot  (Default: 5)
+
+-- Health points removed from hunters when they shoot  (Default: 25)
 HUNTER_FIRE_PENALTY = GetConVarNumber("ph_hunter_fire_penalty")
--- How much health to give back to the Hunter after killing a prop (Default: 20)
+
+-- How much health to give back to the Hunter after killing a prop (Default: 100)
 HUNTER_KILL_BONUS = GetConVarNumber("ph_hunter_kill_bonus")
+
 -- Seconds a player has to wait before they can taunt again (Default: 2 or 3)
 TAUNT_DELAY = 2
+
 -- Rounds played on a map (Default: 10)
 ROUNDS_PER_MAP = GetConVarNumber("ph_rounds_per_map")
+
 -- Time (in seconds) for each round (Default: 300)
 ROUND_TIME = GetConVarNumber("ph_round_time")
+
 -- Determains if players should be team swapped every round [0 = No, 1 = Yes] (Default: 1)
 SWAP_TEAMS_EVERY_ROUND = GetConVarNumber("ph_swap_teams_every_round")
+
+-- Boolean if custom taunts enabled (Default: FALSE)
+CUSTOM_TAUNT_ENABLED = GetConVar("ph_enable_custom_taunts"):GetBool()
+
 -- Time (in seconds) for props to play custom taunts again (Default: 6)
 CUSTOM_TAUNT_DELAY = GetConVarNumber("ph_customtaunts_delay")
+
+-- Time (in seconds) for cvar variable update to happen (Default: 1)
+UPDATE_CVAR_TO_VARIABLE_ADD = 1
 
 -- Banned Props models
 --[[ Add one of your owns model restriction if you have problems. 
@@ -30,18 +48,7 @@ CUSTOM_TAUNT_DELAY = GetConVarNumber("ph_customtaunts_delay")
 BANNED_PROP_MODELS = {
 	"models/props/cs_assault/dollar.mdl",
 	"models/props/cs_assault/money.mdl",
-	"models/props/cs_office/snowman_arm.mdl",
-	"models/props/cs_militia/reload_bullet_tray.mdl"
-}
-
--- Additional Props Models instead of being Kleiner so... he will no longer lonely.
-ADDITIONAL_STARTING_MODELS = {
-	"models/player/kleiner.mdl",
-	"models/player/alyx.mdl",
-	"models/player/barney.mdl",
-	"models/player/eli.mdl",
-	"models/player/mossman.mdl",
-	"models/player/breen.mdl"
+	"models/props/cs_office/snowman_arm.mdl"
 }
 
 --[[ // DO NOT MODIFY! use from taunts/prop_taunts.lua or hunter_taunts.lua instead! \\ ]]--
@@ -143,31 +150,70 @@ PROP_TAUNTS = {
 	"taunts/hunters/laugh.wav"
 }
 
+-- Custom Player Model bans for props
+PROP_PLMODEL_BANS = {
+	"models/player.mdl"
+}
+
 -- Add custom taunts, if any. See taunts/prop_taunts.lua or taunts/hunter_taunts.lua for more info.
 local function AddDemTaunt()
-	print("[PH: Enhanced] Adding custom prop taunts and making it available for downloads...")
+	printverbose("[PH: Enhanced] Finalising custom prop taunts.")
 	if PH_TAUNT_CUSTOM.PROP != nil then
-		for k,prop in pairs(PH_TAUNT_CUSTOM.PROP) do 
-			table.insert(PROP_TAUNTS, prop)
+		for k,prop in pairs(PH_TAUNT_CUSTOM.PROP) do
+			-- We do not need this?
+			-- table.insert(PROP_TAUNTS, prop)
 			if (SERVER) then
 				resource.AddFile("sound/"..prop)
 			end
 		end
 	else
-		print("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
+		printverbose("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
 	end
 	
-	print("[PH: Enhanced] Adding custom hunter taunts and making it available for downloads...")
+	printverbose("[PH: Enhanced] Finalising custom hunter taunts.")
 	if PH_TAUNT_CUSTOM.HUNTER != nil then
-		for k,hunter in pairs(PH_TAUNT_CUSTOM.HUNTER) do 
-			table.insert(HUNTER_TAUNTS, hunter)
+		for k,hunter in pairs(PH_TAUNT_CUSTOM.HUNTER) do
+			-- We do not need this?
+			-- table.insert(HUNTER_TAUNTS, hunter)
 			if (SERVER) then
 				resource.AddFile("sound/"..hunter)
 			end
 		end
 	else
-		print("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
+		printverbose("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
 	end
 end
-
 AddDemTaunt()
+
+-- Add the custom player model bans for props
+local function AddBadPLModels()
+
+	-- Create base config area
+	if ( !file.Exists( "prop_hunt-enhanced", "DATA" ) ) then
+	
+		file.CreateDir( "prop_hunt-enhanced" )
+	
+	end
+
+	-- Create actual config
+	if ( !file.Exists( "prop_hunt-enhanced/prop_playermodel_bans.txt", "DATA" ) ) then
+	
+		file.Write("prop_hunt-enhanced/prop_playermodel_bans.txt", util.TableToJSON(PROP_PLMODEL_BANS, true))
+	
+	end
+
+	-- Check and make sure the file still exists in case something caused it to not be created
+	if ( file.Exists( "prop_hunt-enhanced/prop_playermodel_bans.txt", "DATA" ) ) then
+	
+		local PROP_PLMODEL_BANS_READ = util.JSONToTable( file.Read( "prop_hunt-enhanced/prop_playermodel_bans.txt", "DATA" ) )
+		for k, v in pairs(PROP_PLMODEL_BANS_READ) do
+			if !table.HasValue(PROP_PLMODEL_BANS, string.lower(v)) then
+				printverbose("[PH: Enhanced] Adding custom prop model ban: "..string.lower(v))
+				table.insert(PROP_PLMODEL_BANS, string.lower(v))
+			end
+		end
+	
+	end
+
+end
+AddBadPLModels()

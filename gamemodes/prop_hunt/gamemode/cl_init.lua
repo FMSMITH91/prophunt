@@ -1,8 +1,46 @@
+-- Include these
 include("sh_init.lua")
 include("sh_showwindowtaunt.lua")
 include("cl_menu.lua")
+include("cl_targetid.lua")
 
 overlaydraw = 0
+
+-- Convars are bad at networking sometimes
+CL_BETTER_PROP_MOVEMENT = true
+CL_CAMERA_COLLISIONS = false
+
+-- Glimpse of thirdperson (Timed)
+CL_THIRDPERSON_TIMED = 0
+
+-- Serverside control of plhalos
+CL_PLNAMES_SERVERENABLED = 0
+
+-- Add some network stuff here (dirty code sry)
+function PH_BetterPropMovement(len)
+	CL_BETTER_PROP_MOVEMENT = net.ReadBool()
+end
+net.Receive("PH_BetterPropMovement", PH_BetterPropMovement)
+
+function PH_CameraCollisions(len)
+	CL_CAMERA_COLLISIONS = net.ReadBool()
+end
+net.Receive("PH_CameraCollisions", PH_CameraCollisions)
+
+function PH_CustomTauntEnabled(len)
+	CUSTOM_TAUNT_ENABLED = net.ReadBool()
+end
+net.Receive("PH_CustomTauntEnabled", PH_CustomTauntEnabled)
+
+function PH_CustomTauntDelay(len)
+	CUSTOM_TAUNT_DELAY = net.ReadInt(8)
+end
+net.Receive("PH_CustomTauntDelay", PH_CustomTauntDelay)
+
+function PH_PlayerName_AboveHead(len)
+	CL_PLNAMES_SERVERENABLED = net.ReadBool()
+end
+net.Receive("PH_PlayerName_AboveHead", PH_PlayerName_AboveHead)
 
 -- Decides where  the player view should be (forces third person for props)
 function GM:CalcView(pl, origin, angles, fov)
@@ -22,28 +60,25 @@ function GM:CalcView(pl, origin, angles, fov)
  	
  	-- Give the active weapon a go at changing the viewmodel position 
 	if pl:Team() == TEAM_PROPS && pl:Alive() then
-		if GetConVar("ph_prop_camera_collisions"):GetBool() then
+		if CL_CAMERA_COLLISIONS then
 			local trace = {}
-			local TraceOffset = math.Clamp(hullz, 0, 4)
 			
 			-- Fix camera collision bugs for smaller prop size.
 			if hullz <= 32 then
 				hullz = 36
 			end
-
+			
 			trace.start = origin + Vector(0, 0, hullz - 60)
 			trace.endpos = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
 			trace.filter = client_prop_model && ents.FindByClass("ph_prop")
-			trace.mins = Vector(-TraceOffset, -TraceOffset, -TraceOffset)
-			trace.maxs = Vector(TraceOffset, TraceOffset, TraceOffset)
 			local tr = util.TraceLine(trace)
-
+			
 			view.origin = tr.HitPos
 		else
 			view.origin = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
 		end
-	else
-	-- hunter here
+	elseif pl:Team() == TEAM_HUNTERS && pl:Alive() then
+		-- hunter here
 	 	local wep = pl:GetActiveWeapon() 
 	 	if wep && wep != NULL then 
 	 		local func = wep.GetViewModelPosition 
@@ -56,6 +91,20 @@ function GM:CalcView(pl, origin, angles, fov)
 	 			view.origin, view.angles, view.fov = func(wep, pl, origin*1, angles*1, fov) -- Note: *1 to copy the object so the child function can't edit it. 
 	 		end 
 	 	end
+		-- hunter glimpse of thirdperson
+		if CL_THIRDPERSON_TIMED > CurTime() then
+			local trace = {}
+			
+			trace.start = origin
+			trace.endpos = origin + (angles:Forward() * -80)
+			trace.filter = player.GetAll()
+			trace.maxs = Vector(4, 4, 4)
+			trace.mins = Vector(-4, -4, -4)
+			local tr = util.TraceHull(trace)
+			
+			view.drawviewer = true
+			view.origin = tr.HitPos
+		end
 	end
  	
  	return view 
@@ -65,6 +114,17 @@ end
 -- Draw round timeleft and hunter release timeleft
 function HUDPaint()
 local ply = LocalPlayer()
+	-- Draw text players.
+	if CL_PLNAMES_SERVERENABLED && GetConVar("ph_cl_pltext"):GetBool() then
+		for _, pl in pairs(player.GetAll()) do
+			if pl != LocalPlayer() && (pl && pl:IsValid() && pl:Alive() && pl:Team() == LocalPlayer():Team() && !pl:IsLineOfSightClear(LocalPlayer())) then
+				if  (GetConVarNumber("ph_cl_pltext") > 0) then
+					draw.DrawText(pl:Name(), "TargetID", (pl:EyePos() + Vector(0, 0, 32)):ToScreen().x, (pl:EyePos() + Vector(0, 0, 32)):ToScreen().y, team.GetColor(pl:Team()), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+				end
+			end
+		end
+	end
+	
 	if GetGlobalBool("InRound", false) then
 		-- local blindlock_time_left = (HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 		local blindlock_time_left = (GetConVarNumber("ph_hunter_blindlock_time") - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
@@ -99,23 +159,6 @@ local ply = LocalPlayer()
 		local steamx = (ScrW()/2) - 32
 		draw.SimpleTextOutlined("You were killed by "..LocalPlayer():GetNWEntity("PlayerKilledByPlayerEntity", nil):Name(), "TrebuchetBig", textx, ScrH()*0.75, Color(255, 10, 10, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1.5, Color(0, 0, 0, 255))
 	end
-	
-	-- Draw a crosshair so aiming is easier for props
-	 if LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():Team() == TEAM_PROPS then
-		local trace = {}
-			trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60)
-			trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 10000
-			trace.filter = client_prop_model && ents.FindByClass("ph_prop")
-		
-		local trace2 = util.TraceLine(trace)
-		
-		local crosshair_pos = trace2.HitPos:ToScreen()
-		
-			surface.SetDrawColor(0, 0, 0, 255)
-			surface.DrawRect(crosshair_pos.x - 1, crosshair_pos.y - 1, 4, 4)
-			surface.SetDrawColor(255, 255, 255, 255)
-			surface.DrawRect(crosshair_pos.x, crosshair_pos.y, 2, 2)
-	end
 end
 hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
 
@@ -134,6 +177,8 @@ function Initialize()
 	client_prop_light = false
 	
 	CreateClientConVar("ph_cl_halos", "0", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
+	--CreateClientConVar("ph_cl_plhalos", "8", true, false, "Toggle Enable/Disable Halo effects on players & disable automatically if over this limit.")
+	CreateClientConVar("ph_cl_pltext", "1", true, false, "Options for Text above players. 0 = Disable. 1 = Enable.")
 	
 	-- Just like the server constant
 	USABLE_PROP_ENTITIES_CL = {
@@ -205,7 +250,6 @@ usermessage.Hook("SetHull", SetHull)
 -- Player has a client-side prop model
 function ClientPropSpawn(um)
 	client_prop_model = ents.CreateClientProp("models/player/kleiner.mdl")
-	-- client_prop_model = ents.CreateClientProp(LocalPlayer():GetPlayerPropEntity():GetModel())
 end
 usermessage.Hook("ClientPropSpawn", ClientPropSpawn)
 
@@ -223,9 +267,9 @@ usermessage.Hook("RemoveClientPropUMSG", RemoveClientPropUMSG)
 -- Called every client frame.
 function GM:Think()
 	for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
-		if GetConVar("ph_better_prop_movement"):GetBool() then
+		if CL_BETTER_PROP_MOVEMENT then
 			if LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():GetPlayerPropEntity() && LocalPlayer():GetPlayerPropEntity():IsValid() && client_prop_model && client_prop_model:IsValid() then
-				if (client_prop_model:GetModel() == "models/player/kleiner.mdl") || table.HasValue(ADDITIONAL_STARTING_MODELS, client_prop_model:GetModel()) then
+				if client_prop_model:GetModel() == "models/player/kleiner.mdl" then
 					client_prop_model:SetPos(LocalPlayer():GetPos())
 				else
 					client_prop_model:SetPos(LocalPlayer():GetPos() - Vector(0, 0, LocalPlayer():GetPlayerPropEntity():OBBMins().z))
@@ -254,23 +298,8 @@ end
 
 -- Draws halos on team members
 function TeamDrawHalos()
+
 	if GetConVar("ph_cl_halos"):GetBool() then
-		--[[ Warning: Causes massive LAGs on Public/Crowd Server!!! 
-		-- Enable this if you know what you are doing. Just play with halo.Add's Blur X/Y settings and it's passes.
-		
-		for _, pl in pairs(player.GetAll()) do
-			if pl != LocalPlayer() && (pl && pl:IsValid() && pl:Alive() && pl:Team() == LocalPlayer():Team()) then
-				local pl_table = {}
-				if pl:GetPlayerPropEntity() && pl:GetPlayerPropEntity():IsValid() then
-					table.insert(pl_table, pl:GetPlayerPropEntity())
-				else
-					table.insert(pl_table, pl)
-				end
-				halo.Add(pl_table, team.GetColor(pl:Team()), 2, 2, 1, true, true)
-			end
-		end
-		]]--
-		
 		-- Something to tell if the prop is selectable
 		if LocalPlayer():Team() == TEAM_PROPS && LocalPlayer():Alive() then
 			local trace = {}
