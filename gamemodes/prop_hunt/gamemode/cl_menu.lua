@@ -12,7 +12,7 @@ Shortcuts:
 
 Features:
   - [NEW] Added new custom taunt window
-  - [NEW] Enhanced MapVote system with ConVar config
+  - [NEW] Enhanced system with ConVar config
   - [NEW] GitHub Repo is now available
   - Enhanced codes and bug fixes
   - Enhanced Lucky Ball system.
@@ -325,7 +325,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 		local lblx = vgui.Create("DLabel", panel)
 		lblx:SetPos(15,225)
 		lblx:SetSize(400,24)
-		lblx:SetText("To cancel mapvote, type !unmap_vote or unmap_vote in the console!")
+		lblx:SetText("To cancel mapvote, type !unmapvote or unmapvote in the console!")
 	
 	tab:AddSheet("Admins", panel, "icon16/user_gray.png")
 	end

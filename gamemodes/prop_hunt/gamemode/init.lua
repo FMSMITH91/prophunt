@@ -381,6 +381,11 @@ function GM:OnPreRoundStart(num)
 						net.Start("ServerUsablePropsToClient")
 							net.WriteTable(USABLE_PROP_ENTITIES)
 						net.Send(pl)
+						local propscore = team.GetScore( TEAM_PROPS )
+						local huntscore = team.GetScore( TEAM_HUNTERS )
+	
+						team.SetScore( TEAM_PROPS, huntscore )
+						team.SetScore( TEAM_HUNTERS, propscore )
 					end
 				
 				pl:ChatPrint("Teams have been swapped!")

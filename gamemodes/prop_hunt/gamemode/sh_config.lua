@@ -145,19 +145,25 @@ PROP_TAUNTS = {
 
 -- Add custom taunts, if any. See taunts/prop_taunts.lua or taunts/hunter_taunts.lua for more info.
 local function AddDemTaunt()
-	print("[PH: Enhanced] Adding custom prop taunts...")
+	print("[PH: Enhanced] Adding custom prop taunts and making it available for downloads...")
 	if PH_TAUNT_CUSTOM.PROP != nil then
 		for k,prop in pairs(PH_TAUNT_CUSTOM.PROP) do 
 			table.insert(PROP_TAUNTS, prop)
+			if (SERVER) then
+				resource.AddFile("sound/"..prop)
+			end
 		end
 	else
 		print("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
 	end
 	
-	print("[PH: Enhanced] Adding custom hunter taunts...")
+	print("[PH: Enhanced] Adding custom hunter taunts and making it available for downloads...")
 	if PH_TAUNT_CUSTOM.HUNTER != nil then
 		for k,hunter in pairs(PH_TAUNT_CUSTOM.HUNTER) do 
 			table.insert(HUNTER_TAUNTS, hunter)
+			if (SERVER) then
+				resource.AddFile("sound/"..hunter)
+			end
 		end
 	else
 		print("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
