@@ -118,6 +118,13 @@ function MapVote.Start(length, current, limit, prefix)
         
         if(limit and amt >= limit) then break end
     end
+	
+	for k,v in pairs( player.GetAll() ) do
+
+		v:Freeze(true)
+		v:ConCommand( "-showscores" )
+		
+	end
     
     net.Start("RAM_MapVoteStart")
         net.WriteUInt(#vote_maps, 32)

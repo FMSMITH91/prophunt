@@ -491,8 +491,8 @@ function GM:EndOfGame( bGamemodeVote )
 	
 	if ( bGamemodeVote ) then
 	
-		MsgN( "Starting gamemode voting..." )
-		PrintMessage( HUD_PRINTTALK, "Starting gamemode voting..." );
+		MsgN( "Starting map voting..." )
+		PrintMessage( HUD_PRINTTALK, "Starting map voting..." );
 		timer.Simple( GAMEMODE.VotingDelay, function() MapVote.Start() end )
 		
 	end
