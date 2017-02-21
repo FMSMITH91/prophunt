@@ -1,4 +1,5 @@
 -- Help & documentation of how to add your custom taunts: http://www.wolvindra.net/phe_faq
+-- There is no need anymore to read from Help & Documentation as the gamemode now automatically finds taunts (Unless adding sounds from other directories than props_custom)
 
 -- PROP TAUNT LISTS
 PH_TAUNT_CUSTOM.PROP = {
@@ -25,3 +26,31 @@ PH_TAUNT_CUSTOM.PROP = {
 	"taunts/props_extra/ext_wepon.mp3",
 	"taunts/props_extra/ext_x_files.wav"	-- don't add comma (,) at the end of the list!
 }
+
+-- Create custom taunt directory if needed and find custom taunts if it all exists
+-- Directory Existant
+if !file.Exists("sound/taunts/props_custom/", "GAME") then
+	printverbose("[PH: Enhanced] Custom prop taunts cannot be detected because one or more directories are missing!!")
+	printverbose("[PH: Enhanced] Make sure this directory exists: sound/taunts/props_custom/ !")
+end
+
+-- Let us go find them shall we
+if file.Exists("sound/taunts/props_custom/", "GAME") then
+	-- Add WAV
+	PH_TAUNT_FILE_LIST.PROP = file.Find("sound/taunts/props_custom/*.wav", "GAME")
+	printverbose("[PH: Enhanced] Looking for custom WAV taunts.")
+	if #PH_TAUNT_FILE_LIST.PROP < 1 then printverbose("[PH: Enhanced] There is nothing here??") end
+	for k, v in pairs(PH_TAUNT_FILE_LIST.PROP) do
+		printverbose("[PH: Enhanced] Detected & adding custom prop taunt: sound/taunts/props_custom/"..v.." .")
+		table.insert(PH_TAUNT_CUSTOM.PROP, "taunts/props_custom/"..v)
+	end
+	
+	-- Add MP3
+	PH_TAUNT_FILE_LIST.PROP = file.Find("sound/taunts/props_custom/*.mp3", "GAME")
+	printverbose("[PH: Enhanced] Looking for custom MP3 taunts.")
+	if #PH_TAUNT_FILE_LIST.PROP < 1 then printverbose("[PH: Enhanced] There is nothing here??") end
+	for k, v in pairs(PH_TAUNT_FILE_LIST.PROP) do
+		printverbose("[PH: Enhanced] Detected & adding custom prop taunt: sound/taunts/props_custom/"..v.." .")
+		table.insert(PH_TAUNT_CUSTOM.PROP, "taunts/props_custom/"..v)
+	end
+end

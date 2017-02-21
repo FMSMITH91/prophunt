@@ -4,6 +4,7 @@
 -- Send the required lua files to the client
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("cl_menu.lua")
+AddCSLuaFile("cl_targetid.lua")
 AddCSLuaFile("sh_config.lua")
 AddCSLuaFile("taunts/hunter_taunts.lua")
 AddCSLuaFile("taunts/prop_taunts.lua")
@@ -30,8 +31,10 @@ USABLE_PROP_ENTITIES = {
 -- Voice Control Constant init
 VOICE_IS_END_ROUND = 0
 
+-- Update cvar to variables changes every so seconds
+UPDATE_CVAR_TO_VARIABLE = 0
+
 -- Player Join/Leave message
--- Player Dis/Connect Event Listener
 gameevent.Listen( "player_connect" )
 hook.Add( "player_connect", "AnnouncePLJoin", function( data )
 	for k, v in pairs( player.GetAll() ) do
@@ -51,6 +54,12 @@ util.AddNetworkString("ServerUsablePropsToClient")
 -- Additional network string for Custom Taunts window
 util.AddNetworkString("PH_ForceCloseTauntWindow")
 util.AddNetworkString("PH_AllowTauntWindow")
+-- Perhaps force this instead of using convars?
+util.AddNetworkString("PH_BetterPropMovement")
+util.AddNetworkString("PH_CameraCollisions")
+util.AddNetworkString("PH_CustomTauntEnabled")
+util.AddNetworkString("PH_CustomTauntDelay")
+util.AddNetworkString("PH_PlayerName_AboveHead")
 
 -- Force Close taunt window function, determined whenever the round ends, or team winning.
 local function ForceCloseTauntWindow(num)
@@ -75,6 +84,8 @@ function GM:CheckPlayerDeathRoundEnd()
 		GAMEMODE:RoundEndWithResult(1001, "Draw, everyone loses!")
 		VOICE_IS_END_ROUND = 1
 		ForceCloseTauntWindow(1)
+		
+		hook.Call("PH_OnRoundDraw", nil)
 		return
 	end
 
@@ -86,8 +97,11 @@ function GM:CheckPlayerDeathRoundEnd()
 		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(TeamID).." win!") -- fix end result that often opposited as "Props Win" or "Hunter Win".
 		VOICE_IS_END_ROUND = 1
 		ForceCloseTauntWindow(1)
+		
+		hook.Call("PH_OnRoundWinTeam", nil, TeamID)
 		return
 	end
+	
 end
 
 -- Player Voice & Chat Control to prevent Metagaming. (As requested by some server owners/suggestors.)
@@ -142,6 +156,9 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 		if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
 	end
 	
+	local alltalk_cvar = alltalk:GetInt()
+	if (alltalk_cvar > 0) then return true end
+	
 	-- Generic Checks
 	if ( !IsValid( speaker ) || !IsValid( listen ) ) then return false end
 	
@@ -172,6 +189,8 @@ function EntityTakeDamage(ent, dmginfo)
 		if att:Health() <= 0 then
 			MsgAll(att:Name() .. " felt guilty for hurting so many innocent props and committed suicide\n")
 			att:Kill()
+			
+			hook.Call("PH_HunterDeathPenalty", nil, att)
 		end
 	end
 end
@@ -207,7 +226,7 @@ local playerModels = {
 function GM:PlayerSetModel(pl)
 	-- set antlion gib small for Prop model. 
 	-- Do not change this into others because this might purposed as a hitbox for props.
-	local player_model = "models/Gibs/Antlion_gib_small_3.mdl"
+	local player_model = "models/gibs/antlion_gib_small_3.mdl"
 
 	-- Clean Up.
 	if GetConVar("ph_use_custom_plmodel"):GetBool() then
@@ -281,7 +300,11 @@ end
 
 -- Called when player presses [F3]. Plays a taunt for their team
 function GM:ShowSpare1(pl)
-	if GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + TAUNT_DELAY <= CurTime() && #PROP_TAUNTS > 1 && #HUNTER_TAUNTS > 1 then
+	if GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() then
+		pl:ConCommand("ph_showtaunts")
+	end
+	
+	if !GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + TAUNT_DELAY <= CurTime() && #PROP_TAUNTS > 1 && #HUNTER_TAUNTS > 1 then
 		repeat
 			if pl:Team() == TEAM_HUNTERS then
 				rand_taunt = table.Random(HUNTER_TAUNTS)
@@ -290,7 +313,7 @@ function GM:ShowSpare1(pl)
 			end
 		until rand_taunt != pl.last_taunt
 		
-		pl.last_taunt_time = CurTime()
+		pl.last_taunt_time = CurTime() + TAUNT_DELAY
 		pl.last_taunt = rand_taunt
 		
 		pl:EmitSound(rand_taunt, 100)
@@ -308,7 +331,6 @@ function PlayerDisconnected(pl)
 end
 hook.Add("PlayerDisconnected", "PH_PlayerDisconnected", PlayerDisconnected)
 
-
 -- Called when the players spawns
 function PlayerSpawn(pl)
 	pl:SetNWBool("PlayerLockedRotation", false)
@@ -317,7 +339,7 @@ function PlayerSpawn(pl)
 	pl:Blind(false)
 	pl:RemoveProp()
 	pl:RemoveClientProp()
-	pl:SetColor( Color(255, 255, 255, 255))
+	pl:SetColor(Color(255, 255, 255, 255))
 	pl:SetRenderMode( RENDERMODE_TRANSALPHA )
 	pl:UnLock()
 	pl:ResetHull()
@@ -330,6 +352,13 @@ function PlayerSpawn(pl)
 	umsg.End()
 	
 	pl:SetCollisionGroup(COLLISION_GROUP_PASSABLE_DOOR)
+	
+	-- Do something with jump power
+	if pl:Team() == TEAM_HUNTERS then
+		pl:SetJumpPower(160)
+	elseif pl:Team() == TEAM_PROPS then
+		pl:SetJumpPower(160 * 1.4)
+	end
 end
 hook.Add("PlayerSpawn", "PH_PlayerSpawn", PlayerSpawn)
 
@@ -353,6 +382,8 @@ function GM:RoundTimerEnd()
 	GAMEMODE:RoundEndWithResult(TEAM_PROPS, "Props win!")
 	VOICE_IS_END_ROUND = 1
 	ForceCloseTauntWindow(1)
+	
+	hook.Call("PH_OnTimerEnd", nil)
 end
 
 
@@ -360,38 +391,38 @@ end
 function GM:OnPreRoundStart(num)
 	game.CleanUpMap()
 	
-		if GetGlobalInt("RoundNumber") != 1 && (SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0 || SWAP_TEAMS_POINTS_ZERO==1)) then
+	if GetGlobalInt("RoundNumber") != 1 && (SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0 || SWAP_TEAMS_POINTS_ZERO==1)) then
 		for _, pl in pairs(player.GetAll()) do
-				if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
-					if pl:Team() == TEAM_PROPS then
-						pl:SetTeam(TEAM_HUNTERS)
+			if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
+				if pl:Team() == TEAM_PROPS then
+					pl:SetTeam(TEAM_HUNTERS)
+				else
+					pl:SetTeam(TEAM_PROPS)
+					if GetConVar("ph_better_prop_movement"):GetBool() then
+						pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Rotate support! You can rotate the prop around by moving your mouse.", NOTIFY_UNDO, 20 )]] )
+						pl:SendLua( [[notification.AddLegacy("Additionally you can toggle lock rotation by pressing R key!", NOTIFY_GENERIC, 20 )]] )
+						pl:SendLua( [[surface.PlaySound("garrysmod/content_downloaded.wav")]] )
 					else
-						pl:SetTeam(TEAM_PROPS)
-						-- i hope the logic is right... GetBool() if true = 1, else 0.
-						if GetConVar("ph_better_prop_movement"):GetBool() then
-							pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Rotate support! You can rotate the prop around by moving your mouse.", NOTIFY_UNDO, 20 )]] )
-							pl:SendLua( [[notification.AddLegacy("Additionally you can toggle lock rotation by pressing R key!", NOTIFY_GENERIC, 20 )]] )
-							pl:SendLua( [[surface.PlaySound("garrysmod/content_downloaded.wav")]] )
-						else
-							pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Classic mode!", NOTIFY_GENERIC, 20 )]] )
-							pl:SendLua( [[surface.PlaySound("ambient/water/drip3.wav")]] )
-						end
-						
-						-- Send some net stuff
-						net.Start("ServerUsablePropsToClient")
-							net.WriteTable(USABLE_PROP_ENTITIES)
-						net.Send(pl)
-						local propscore = team.GetScore( TEAM_PROPS )
-						local huntscore = team.GetScore( TEAM_HUNTERS )
-	
-						team.SetScore( TEAM_PROPS, huntscore )
-						team.SetScore( TEAM_HUNTERS, propscore )
+						pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Classic mode!", NOTIFY_GENERIC, 20 )]] )
+						pl:SendLua( [[surface.PlaySound("ambient/water/drip3.wav")]] )
 					end
-				
-				pl:ChatPrint("Teams have been swapped!")
-
+					
+					-- Send some net stuff
+					net.Start("ServerUsablePropsToClient")
+						net.WriteTable(USABLE_PROP_ENTITIES)
+					net.Send(pl)
+					local propscore = team.GetScore( TEAM_PROPS )
+					local huntscore = team.GetScore( TEAM_HUNTERS )
+	
+					team.SetScore( TEAM_PROPS, huntscore )
+					team.SetScore( TEAM_HUNTERS, propscore )
+				end
+			
+			pl:ChatPrint("Teams have been swapped!")
 			end
 		end
+		
+		hook.Call("PH_OnPreRoundStart", nil, SWAP_TEAMS_EVERY_ROUND)
 	end
 	
 	UTIL_StripAllPlayers()
@@ -402,10 +433,11 @@ end
 
 -- Called every server tick.
 function GM:Think()
+	-- Prop Rotation
 	for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
 		if GetConVar("ph_better_prop_movement"):GetBool() then
 			if pl && pl:IsValid() && pl:Alive() && pl.ph_prop && pl.ph_prop:IsValid() then
-				if (pl.ph_prop:GetModel() == "models/player/kleiner.mdl") || table.HasValue(ADDITIONAL_STARTING_MODELS, pl.ph_prop:GetModel()) then
+				if pl.ph_prop:GetModel() == "models/player/kleiner.mdl" then
 					pl.ph_prop:SetPos(pl:GetPos())
 				else
 					pl.ph_prop:SetPos(pl:GetPos() - Vector(0, 0, pl.ph_prop:OBBMins().z))
@@ -416,17 +448,50 @@ function GM:Think()
 			end
 		end
 	end
+	
+	-- Extra check here for changes cvars
+	if UPDATE_CVAR_TO_VARIABLE < CurTime() then
+		-- Update better prop movement variable
+		net.Start("PH_BetterPropMovement")
+			net.WriteBool(GetConVar("ph_better_prop_movement"):GetBool())
+		net.Broadcast()
+		
+		-- Update camera collisions variable
+		net.Start("PH_CameraCollisions")
+			net.WriteBool(GetConVar("ph_prop_camera_collisions"):GetBool())
+		net.Broadcast()
+		
+		-- Update camera collisions variable
+		net.Start("PH_CustomTauntEnabled")
+			net.WriteBool(GetConVar("ph_enable_custom_taunts"):GetBool())
+		net.Broadcast()
+		
+		-- Update custom taunt delay variable
+		net.Start("PH_CustomTauntDelay")
+			net.WriteInt(GetConVarNumber("ph_customtaunts_delay"), 8) -- 8 bits so we don't send too much information here
+		net.Broadcast()
+		
+		-- Update plhalos enabled variable
+		net.Start("PH_PlayerName_AboveHead")
+			net.WriteBool(GetConVar("ph_enable_plnames"):GetBool())
+		net.Broadcast()
+		
+		-- Make sure to update every so seconds and not constantly
+		UPDATE_CVAR_TO_VARIABLE = CurTime() + UPDATE_CVAR_TO_VARIABLE_ADD
+	end
 end
 
 -- Bonus Drop :D
 function PH_Props_OnBreak(ply, ent)
-	local pos = ent:GetPos()
-	if math.random() < 0.08 then -- 0.8% Chance of drops.
-		local dropent = ents.Create("ph_luckyball")
-		dropent:SetPos(Vector(pos.x, pos.y, pos.z + 32)) -- to make sure the Lucky Ball didn't fall underground and if the Prop's Center Origin is near underground, they'll spawn with extra +32 hammer unit.
-		dropent:SetAngles(Angle(0,0,0))
-		dropent:SetColor(Color(math.Round(math.random(0,255)),math.Round(math.random(0,255)),math.Round(math.random(0,255)),255))
-		dropent:Spawn()
+	if GetConVar("ph_enable_lucky_balls"):GetBool() then
+		local pos = ent:GetPos()
+		if math.random() < 0.08 then -- 8% Chance of drops.
+			local dropent = ents.Create("ph_luckyball")
+			dropent:SetPos(Vector(pos.x, pos.y, pos.z + 32)) -- to make sure the Lucky Ball didn't fall underground.
+			dropent:SetAngles(Angle(0,0,0))
+			dropent:SetColor(Color(math.Round(math.random(0,255)),math.Round(math.random(0,255)),math.Round(math.random(0,255)),255))
+			dropent:Spawn()
+		end
 	end
 end
 hook.Add("PropBreak", "Props_OnBreak_WithDrops", PH_Props_OnBreak)
@@ -453,7 +518,6 @@ function GM:PlayerSwitchFlashlight(pl, on)
 	
 	return false
 end
-
 
 -- Player pressed a key
 function PlayerPressedKey(pl, key)

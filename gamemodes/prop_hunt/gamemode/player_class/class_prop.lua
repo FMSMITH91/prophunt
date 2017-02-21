@@ -31,7 +31,15 @@ function CLASS:OnSpawn(pl)
 	pl.ph_prop:SetAngles(pl:GetAngles())
 	pl.ph_prop:Spawn()
 	if GetConVar("ph_use_custom_plmodel_for_prop"):GetBool() then
-		pl.ph_prop:SetModel(player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel")))
+		if table.HasValue(PROP_PLMODEL_BANS, string.lower(player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel")))) then
+			pl.ph_prop:SetModel("models/player/kleiner.mdl")
+			pl:ChatPrint("Your custom playermodel was banned from Props.")
+		elseif table.HasValue(PROP_PLMODEL_BANS, string.lower(pl:GetInfo("cl_playermodel"))) then
+			pl.ph_prop:SetModel("models/player/kleiner.mdl")
+			pl:ChatPrint("Your custom playermodel was banned from Props.")
+		else
+			pl.ph_prop:SetModel(player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel")))
+		end
 	end
 	pl.ph_prop:SetSolid(SOLID_BBOX)
 	if !GetConVar("ph_better_prop_movement"):GetBool() then
@@ -42,9 +50,11 @@ function CLASS:OnSpawn(pl)
 	
 	if GetConVar("ph_better_prop_movement"):GetBool() then
 		-- Give it a delay
-		timer.Simple(0.5, function()
-			umsg.Start("ClientPropSpawn", pl)
-			umsg.End()
+		timer.Simple(0.1, function()
+			if pl:IsValid() then
+				umsg.Start("ClientPropSpawn", pl)
+				umsg.End()
+			end
 		end)
 	end
 	

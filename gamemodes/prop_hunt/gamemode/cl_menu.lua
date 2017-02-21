@@ -210,7 +210,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 		end
 		
 		local txt = vgui.Create("DLabel", panel)
-		txt:SetText("Use ULX Menu and go to Mute Players to see available mute options.\n\nNote: You can\'t mute admins or moderators!\n\nProp Settings:")
+		txt:SetText("Use ULX Menu and go to Mute Players to see available mute options.\n\nNote: You can\'t mute admins or moderators!\n\nPlayer Settings:")
 		txt:SetPos(10,38)
 		txt:SetSize(400,80)
 		
@@ -243,6 +243,36 @@ function ph_BaseMainWindow(ply, cmd, args)
 		txt2:SetText("Enable/Disable halo effect when choosing a prop")
 		txt2:SetSize(400,32)
 		txt2:SetPos(chx + 21, chy - 9)
+		
+		local chk3 = vgui.Create("DCheckBox", panel)
+		local numval = GetConVar("ph_cl_pltext"):GetBool()
+		if numval == true then
+			chk3:SetChecked(true)
+			chk3:SetValue(1)
+		else
+			chk3:SetChecked(false)
+			chk3:SetValue(0)
+		end
+		chk3:SetSize(16, 16)
+		chk3:SetPos(10, 140)
+		function chk3:OnChange(bool)
+			if bool == true then
+				RunConsoleCommand("ph_cl_pltext", "1")
+				notification.AddLegacy("Player Names has been enabled.", NOTIFY_GENERIC, 5)
+				surface.PlaySound("buttons/button9.wav")
+			else
+				RunConsoleCommand("ph_cl_pltext", "0")
+				notification.AddLegacy("Player Names has been disabled.", NOTIFY_GENERIC, 5)
+				surface.PlaySound("buttons/button19.wav")
+			end
+		end
+		
+		local chx,chy = chk3:GetPos()
+		
+		local txt3 = vgui.Create("DLabel", panel)
+		txt3:SetText("Enable player names above their heads through wall")
+		txt3:SetSize(400,32)
+		txt3:SetPos(chx + 21, chy - 9)
 	
 	tab:AddSheet("Player", panel, "icon16/user_orange.png")
 	end
@@ -290,9 +320,10 @@ function ph_BaseMainWindow(ply, cmd, args)
 		{"Enable Prop Camera Collissions?", 60, "ph_prop_camera_collisions"},
 		{"Enable Freezecam?", 80, "ph_freezecam"},
 		{"Enable Prop Collission?", 100, "ph_prop_collision"},
-		{"Enable Random Additional Models?", 120, "ph_prop_additional_models"},
-		{"Swap Teams Everyround? (Keep this remain checked)", 140, "ph_swap_teams_every_round"},
-		{"Enable Custom Taunts?", 160, "ph_enable_custom_taunts"}
+		{"Swap Teams Everyround? (Keep this remain checked)", 120, "ph_swap_teams_every_round"},
+		{"Enable Custom Taunts?", 140, "ph_enable_custom_taunts"},
+		{"Enable Lucky Balls?", 160, "ph_enable_lucky_balls"},
+		{"Allow Player Team Names appear through wall?", 180, "ph_enable_plnames"}
 	}
 	
 	function Ph:ShowAdminMenu()

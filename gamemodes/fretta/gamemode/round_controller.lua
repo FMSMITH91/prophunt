@@ -60,8 +60,7 @@ function GM:HasReachedRoundLimit( iNum )
 	local iRoundLimit = GAMEMODE:GetRoundLimit();
 	
 	if( iRoundLimit > 0 && iNum > iRoundLimit ) then
-		GAMEMODE:EndOfGame( true )
-		timer.Simple( GAMEMODE.VotingDelay, function() MapVote.Start() end )
+		MapVote.Start()
 	end
 	
 	return false

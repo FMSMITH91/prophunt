@@ -10,11 +10,7 @@ include("shared.lua")
 
 -- Called when the entity initializes
 function ENT:Initialize()
-	if GetConVar("ph_prop_additional_models"):GetBool() then
-		self:SetModel(table.Random(ADDITIONAL_STARTING_MODELS))
-	else
-		self:SetModel("models/player/kleiner.mdl")
-	end
+	self:SetModel("models/player/kleiner.mdl")
 	self.health = 100
 end 
 
@@ -82,6 +78,8 @@ function ENT:OnTakeDamage(dmg)
 			attacker:AddFrags(1)
 			pl:AddDeaths(1)
 			attacker:SetHealth(math.Clamp(attacker:Health() + GetConVarNumber("ph_hunter_kill_bonus"), 1, 100))
+			
+			hook.Call("PH_OnPropKilled", nil, pl, attacker)
 			
 			pl:RemoveProp()
 			pl:RemoveClientProp()
