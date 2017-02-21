@@ -31,10 +31,10 @@ function CLASS:OnSpawn(pl)
 	pl.ph_prop:SetAngles(pl:GetAngles())
 	pl.ph_prop:Spawn()
 	if GetConVar("ph_use_custom_plmodel_for_prop"):GetBool() then
-		if table.HasValue(PROP_PLMODEL_BANS, string.lower(player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel")))) then
+		if table.HasValue(PHE.PROP_PLMODEL_BANS, string.lower(player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel")))) then
 			pl.ph_prop:SetModel("models/player/kleiner.mdl")
 			pl:ChatPrint("Your custom playermodel was banned from Props.")
-		elseif table.HasValue(PROP_PLMODEL_BANS, string.lower(pl:GetInfo("cl_playermodel"))) then
+		elseif table.HasValue(PHE.PROP_PLMODEL_BANS, string.lower(pl:GetInfo("cl_playermodel"))) then
 			pl.ph_prop:SetModel("models/player/kleiner.mdl")
 			pl:ChatPrint("Your custom playermodel was banned from Props.")
 		else

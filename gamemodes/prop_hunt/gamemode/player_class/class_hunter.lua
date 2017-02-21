@@ -42,7 +42,7 @@ function CLASS:OnSpawn(pl)
 	pl:SetAvoidPlayers(false)
 	pl:CrosshairEnable()
 
-	local unlock_time = math.Clamp(HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, HUNTER_BLINDLOCK_TIME)
+	local unlock_time = math.Clamp(PHE.HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, PHE.HUNTER_BLINDLOCK_TIME)
 	
 	local unblindfunc = function()
 		if pl:IsValid() then

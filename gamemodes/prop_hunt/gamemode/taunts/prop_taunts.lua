@@ -2,7 +2,7 @@
 -- There is no need anymore to read from Help & Documentation as the gamemode now automatically finds taunts (Unless adding sounds from other directories than props_custom)
 
 -- PROP TAUNT LISTS
-PH_TAUNT_CUSTOM.PROP = {
+PHE.PH_TAUNT_CUSTOM.PROP = {
 	-- Delete these comment line (--) below to enable your custom taunts. Here's the example how to add your custom taunts:
 	"taunts/props_extra/dx_idonotmoveout.wav", -- dont forget to add comma first with other list too! (,)
 	"taunts/props_extra/dx_iloominarty.wav",
@@ -37,20 +37,20 @@ end
 -- Let us go find them shall we
 if file.Exists("sound/taunts/props_custom/", "GAME") then
 	-- Add WAV
-	PH_TAUNT_FILE_LIST.PROP = file.Find("sound/taunts/props_custom/*.wav", "GAME")
+	PHE.PH_TAUNT_FILE_LIST.PROP = file.Find("sound/taunts/props_custom/*.wav", "GAME")
 	printverbose("[PH: Enhanced] Looking for custom WAV taunts.")
-	if #PH_TAUNT_FILE_LIST.PROP < 1 then printverbose("[PH: Enhanced] There is nothing here??") end
-	for k, v in pairs(PH_TAUNT_FILE_LIST.PROP) do
+	if #PHE.PH_TAUNT_FILE_LIST.PROP < 1 then printverbose("[PH: Enhanced] Custom Taunt: There is nothing here??") end
+	for k, v in pairs(PHE.PH_TAUNT_FILE_LIST.PROP) do
 		printverbose("[PH: Enhanced] Detected & adding custom prop taunt: sound/taunts/props_custom/"..v.." .")
-		table.insert(PH_TAUNT_CUSTOM.PROP, "taunts/props_custom/"..v)
+		table.insert(PHE.PH_TAUNT_CUSTOM.PROP, "taunts/props_custom/"..v)
 	end
 	
 	-- Add MP3
-	PH_TAUNT_FILE_LIST.PROP = file.Find("sound/taunts/props_custom/*.mp3", "GAME")
+	PHE.PH_TAUNT_FILE_LIST.PROP = file.Find("sound/taunts/props_custom/*.mp3", "GAME")
 	printverbose("[PH: Enhanced] Looking for custom MP3 taunts.")
-	if #PH_TAUNT_FILE_LIST.PROP < 1 then printverbose("[PH: Enhanced] There is nothing here??") end
-	for k, v in pairs(PH_TAUNT_FILE_LIST.PROP) do
+	if #PHE.PH_TAUNT_FILE_LIST.PROP < 1 then printverbose("[PH: Enhanced] Custom Taunt: There is nothing here??") end
+	for k, v in pairs(PHE.PH_TAUNT_FILE_LIST.PROP) do
 		printverbose("[PH: Enhanced] Detected & adding custom prop taunt: sound/taunts/props_custom/"..v.." .")
-		table.insert(PH_TAUNT_CUSTOM.PROP, "taunts/props_custom/"..v)
+		table.insert(PHE.PH_TAUNT_CUSTOM.PROP, "taunts/props_custom/"..v)
 	end
 end

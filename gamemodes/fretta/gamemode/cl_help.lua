@@ -23,10 +23,19 @@ function GM:ShowHelp()
 			btn:SetDisabled( LocalPlayer():GetNWBool( "WantsVote" ) ) 
 		end
 		
-		local btnadd = Help:AddSelectButton("More Help/Menu", function()
+		-- Internal Select buttons.
+		local btnadd = Help:AddSelectButton("Prop Hunt Menu", function()
 			LocalPlayer():ConCommand("ph_enhanced_show_help")
 		end)
 		btnadd.m_colBackground = Color(255,128,40)
+		
+		local btnadd2 = Help:AddSelectButton("Mute Players", function()
+			LocalPlayer():ConCommand("ph_mute_window")
+		end)
+		btnadd2.m_colBackground = Color(20,100,250)
+		
+		-- Add a hook if you want to make another custom buttons by calling PH_AddSplashHelpButton.
+		hook.Call("PH_AddSplashHelpButton", nil, Help)
 		
 		if ( GAMEMODE.TeamBased ) then
 			local btn = Help:AddSelectButton( "Change Team", function() GAMEMODE:ShowTeam() end )

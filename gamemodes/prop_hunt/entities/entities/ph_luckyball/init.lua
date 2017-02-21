@@ -78,6 +78,7 @@ balls.randomtext = {
 	"You don't realise that (nearly) all those were actually easter eggs? :P"
 }
 
+-- You may edit here!
 balls.funclists = {
 	function(pl)
 		pl:ChatPrint(table.Random(balls.randomtext))
@@ -165,13 +166,15 @@ balls.funclists = {
 		end
 	end
 }
-	
+-- Don't Edit below unless you know what you're doing.
 
 function balls:The_LuckyDrop(pl)
 	-- For hunter only.
 	if pl:Team() == TEAM_HUNTERS && pl:Alive() then
 		balls.getfunction = table.Random(balls.funclists)
 		balls.getfunction(pl)
+		
+		hook.Call("PH_OnLuckyBallPickup", nil, pl)
 	end
 	-- Other than that, It will return empty and do nothing.
 end

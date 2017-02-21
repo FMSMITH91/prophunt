@@ -2,37 +2,39 @@
 -- Special thanks for Kowalski that merged into his github. You may check on his prop hunt workshop page. --
 
 -- Send the required lua files to the client
+AddCSLuaFile("sh_init.lua")
+AddCSLuaFile("sh_player.lua")
+
+AddCSLuaFile("taunts/hunter_taunts.lua")
+AddCSLuaFile("taunts/prop_taunts.lua")
+
+AddCSLuaFile("cl_tauntwindow.lua")
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("cl_menu.lua")
 AddCSLuaFile("cl_targetid.lua")
-AddCSLuaFile("sh_config.lua")
-AddCSLuaFile("taunts/hunter_taunts.lua")
-AddCSLuaFile("taunts/prop_taunts.lua")
-AddCSLuaFile("sh_init.lua")
-AddCSLuaFile("sh_player.lua")
-AddCSLuaFile("sh_showwindowtaunt.lua")
+AddCSLuaFile("cl_mutewindow.lua")
 
 -- Include the required lua files
 include("sh_init.lua")
 include("sv_admin.lua")
-include("sh_showwindowtaunt.lua")
+include("sv_tauntwindow.lua")
 
 -- Server only constants
-EXPLOITABLE_DOORS = {
+PHE.EXPLOITABLE_DOORS = {
 	"func_door",
 	"prop_door_rotating", 
 	"func_door_rotating"
 }
-USABLE_PROP_ENTITIES = {
+PHE.USABLE_PROP_ENTITIES = {
 	"prop_physics",
 	"prop_physics_multiplayer"
 }
 
 -- Voice Control Constant init
-VOICE_IS_END_ROUND = 0
+PHE.VOICE_IS_END_ROUND = 0
 
 -- Update cvar to variables changes every so seconds
-UPDATE_CVAR_TO_VARIABLE = 0
+PHE.UPDATE_CVAR_TO_VARIABLE = 0
 
 -- Player Join/Leave message
 gameevent.Listen( "player_connect" )
@@ -54,12 +56,13 @@ util.AddNetworkString("ServerUsablePropsToClient")
 -- Additional network string for Custom Taunts window
 util.AddNetworkString("PH_ForceCloseTauntWindow")
 util.AddNetworkString("PH_AllowTauntWindow")
--- Perhaps force this instead of using convars?
+-- Some extra checks that these convars isn't updating for client.
 util.AddNetworkString("PH_BetterPropMovement")
 util.AddNetworkString("PH_CameraCollisions")
 util.AddNetworkString("PH_CustomTauntEnabled")
 util.AddNetworkString("PH_CustomTauntDelay")
 util.AddNetworkString("PH_PlayerName_AboveHead")
+--util.AddNetworkString("PH_IsCustomTauntEnabled")
 
 -- Force Close taunt window function, determined whenever the round ends, or team winning.
 local function ForceCloseTauntWindow(num)
@@ -82,7 +85,7 @@ function GM:CheckPlayerDeathRoundEnd()
 
 	if table.Count(Teams) == 0 then
 		GAMEMODE:RoundEndWithResult(1001, "Draw, everyone loses!")
-		VOICE_IS_END_ROUND = 1
+		PHE.VOICE_IS_END_ROUND = 1
 		ForceCloseTauntWindow(1)
 		
 		hook.Call("PH_OnRoundDraw", nil)
@@ -95,7 +98,7 @@ function GM:CheckPlayerDeathRoundEnd()
 		MsgAll("Round Result: "..team.GetName(TeamID).." ("..TeamID..") Wins!\n")
 		-- End Round
 		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(TeamID).." win!") -- fix end result that often opposited as "Props Win" or "Hunter Win".
-		VOICE_IS_END_ROUND = 1
+		PHE.VOICE_IS_END_ROUND = 1
 		ForceCloseTauntWindow(1)
 		
 		hook.Call("PH_OnRoundWinTeam", nil, TeamID)
@@ -121,7 +124,7 @@ function GM:PlayerCanHearPlayersVoice(listen, speaker)
 	if listen:Alive() && speaker:Alive() then return true, false end
 	
 	-- Event: On Round Start. Living Players don't listen to dead players.
-	if VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false, false end
+	if PHE.VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false, false end
 	
 	-- Listen to all dead players while you dead.
 	if !listen:Alive() && !speaker:Alive() then return true, false end
@@ -130,7 +133,7 @@ function GM:PlayerCanHearPlayersVoice(listen, speaker)
 	if !listen:Alive() && speaker:Alive() then return true, false end
 	
 	-- Event: On Round End/Time End. Listen to everyone.
-	if VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true, false end
+	if PHE.VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true, false end
 
 	-- Spectator can only read from themselves.
 	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false, false end
@@ -149,10 +152,10 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 		
 		-- ditto, this is same as below.
 		if listen:Alive() && speaker:Alive() then return true end
-		if VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false end
+		if PHE.VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false end
 		if !listen:Alive() && !speaker:Alive() then return true end
 		if !listen:Alive() && speaker:Alive() then return true end
-		if VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true end
+		if PHE.VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true end
 		if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
 	end
 	
@@ -166,7 +169,7 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 	if listen:Alive() && speaker:Alive() then return true end
 	
 	-- Event: On Round Start. Living Players don't see dead players' chat.
-	if VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false end
+	if PHE.VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false end
 	
 	-- See Chat to all dead players while you dead.
 	if !listen:Alive() && !speaker:Alive() then return true end
@@ -175,7 +178,7 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 	if !listen:Alive() && speaker:Alive() then return true end
 	
 	-- Event: On Round End/Time End. See Chat to everyone.
-	if VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true end
+	if PHE.VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true end
 
 	-- Spectator can only read from themselves.
 	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
@@ -185,7 +188,7 @@ end
 function EntityTakeDamage(ent, dmginfo)
     local att = dmginfo:GetAttacker()
 	if GAMEMODE:InRound() && ent && (ent:GetClass() != "ph_prop" && ent:GetClass() != "func_breakable" && ent:GetClass() != "prop_door_rotating" && ent:GetClass() != "prop_dynamic*") && !ent:IsPlayer() && att && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive() then
-		att:SetHealth(att:Health() - HUNTER_FIRE_PENALTY)
+		att:SetHealth(att:Health() - PHE.HUNTER_FIRE_PENALTY)
 		if att:Health() <= 0 then
 			MsgAll(att:Name() .. " felt guilty for hurting so many innocent props and committed suicide\n")
 			att:Kill()
@@ -209,7 +212,7 @@ function PH_ResetCustomTauntWindowState()
 	-- Force close any taunt menu windows
 	ForceCloseTauntWindow(0)
 	-- Extra additional
-	VOICE_IS_END_ROUND = 0
+	PHE.VOICE_IS_END_ROUND = 0
 end
 hook.Add("PostCleanupMap", "PH_ResetCustomTauntWindow", PH_ResetCustomTauntWindowState)
 
@@ -257,8 +260,8 @@ end
 function GM:PlayerUse(pl, ent)
 	if !pl:Alive() || pl:Team() == TEAM_SPECTATOR || pl:Team() == TEAM_UNASSIGNED then return false end
 	
-	if pl:Team() == TEAM_PROPS && pl:IsOnGround() && !pl:Crouching() && table.HasValue(USABLE_PROP_ENTITIES, ent:GetClass()) && ent:GetModel() then
-		if table.HasValue(BANNED_PROP_MODELS, ent:GetModel()) then
+	if pl:Team() == TEAM_PROPS && pl:IsOnGround() && !pl:Crouching() && table.HasValue(PHE.USABLE_PROP_ENTITIES, ent:GetClass()) && ent:GetModel() then
+		if table.HasValue(PHE.BANNED_PROP_MODELS, ent:GetModel()) then
 			pl:ChatPrint("That prop has been banned by the server.")
 		elseif ent:GetPhysicsObject():IsValid() && pl.ph_prop:GetModel() != ent:GetModel() then
 			local ent_health = math.Clamp(ent:GetPhysicsObject():GetVolume() / 250, 1, 200)
@@ -290,7 +293,7 @@ function GM:PlayerUse(pl, ent)
 	end
 	
 	-- Prevent the door exploit
-	if table.HasValue(EXPLOITABLE_DOORS, ent:GetClass()) && pl.last_door_time && pl.last_door_time + 1 > CurTime() then
+	if table.HasValue(PHE.EXPLOITABLE_DOORS, ent:GetClass()) && pl.last_door_time && pl.last_door_time + 1 > CurTime() then
 		return false
 	end
 	
@@ -380,7 +383,7 @@ function GM:RoundTimerEnd()
 	end
    
 	GAMEMODE:RoundEndWithResult(TEAM_PROPS, "Props win!")
-	VOICE_IS_END_ROUND = 1
+	PHE.VOICE_IS_END_ROUND = 1
 	ForceCloseTauntWindow(1)
 	
 	hook.Call("PH_OnTimerEnd", nil)
@@ -391,7 +394,7 @@ end
 function GM:OnPreRoundStart(num)
 	game.CleanUpMap()
 	
-	if GetGlobalInt("RoundNumber") != 1 && (SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0 || SWAP_TEAMS_POINTS_ZERO==1)) then
+	if GetGlobalInt("RoundNumber") != 1 && (PHE.SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0 || SWAP_TEAMS_POINTS_ZERO==1)) then
 		for _, pl in pairs(player.GetAll()) do
 			if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
 				if pl:Team() == TEAM_PROPS then
@@ -409,7 +412,7 @@ function GM:OnPreRoundStart(num)
 					
 					-- Send some net stuff
 					net.Start("ServerUsablePropsToClient")
-						net.WriteTable(USABLE_PROP_ENTITIES)
+						net.WriteTable(PHE.USABLE_PROP_ENTITIES)
 					net.Send(pl)
 					local propscore = team.GetScore( TEAM_PROPS )
 					local huntscore = team.GetScore( TEAM_HUNTERS )
@@ -422,7 +425,7 @@ function GM:OnPreRoundStart(num)
 			end
 		end
 		
-		hook.Call("PH_OnPreRoundStart", nil, SWAP_TEAMS_EVERY_ROUND)
+		hook.Call("PH_OnPreRoundStart", nil, PHE.SWAP_TEAMS_EVERY_ROUND)
 	end
 	
 	UTIL_StripAllPlayers()
@@ -450,7 +453,7 @@ function GM:Think()
 	end
 	
 	-- Extra check here for changes cvars
-	if UPDATE_CVAR_TO_VARIABLE < CurTime() then
+	if PHE.UPDATE_CVAR_TO_VARIABLE < CurTime() then
 		-- Update better prop movement variable
 		net.Start("PH_BetterPropMovement")
 			net.WriteBool(GetConVar("ph_better_prop_movement"):GetBool())
@@ -476,8 +479,14 @@ function GM:Think()
 			net.WriteBool(GetConVar("ph_enable_plnames"):GetBool())
 		net.Broadcast()
 		
+		--[[
+		net.Start("PH_IsCustomTauntEnabled")
+			net.WriteBool(GetConVar("ph_enable_custom_taunts"):GetBool())
+		net.Broadcast()
+		]]
+		
 		-- Make sure to update every so seconds and not constantly
-		UPDATE_CVAR_TO_VARIABLE = CurTime() + UPDATE_CVAR_TO_VARIABLE_ADD
+		PHE.UPDATE_CVAR_TO_VARIABLE = CurTime() + PHE.UPDATE_CVAR_TO_VARIABLE_ADD
 	end
 end
 

@@ -11,7 +11,7 @@ function PHE_MapVote( calling_ply, votetime, should_cancel )
 		end
 	else
 		if SERVER then
-			print("WARNING: MapVote system is Unavailable!")
+			print("WARNING: MapVote system is not available!")
 		end
 	end
 end

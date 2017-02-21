@@ -2,22 +2,19 @@ local Ph = {}
 
 -- Warning: May Clutter as fuck... yiff, anything!
 
-Ph.txthelp = [[Welcome to Prop Hunt: Enhanced!
+Ph.txthelp = [[Welcome to Prop Hunt: Enhanced! [14 G]
 Shortcuts:
 [F1] : Splash screen menu
 [F2] : Change Team
-[F3] : Play a taunts.
-[C] : Show Custom taunt window (if server enables it)
+[F3] or [C] : Play a taunt.
 [R] : Lock prop rotation
 
 Features:
-  - [NEW] Added new custom taunt window
-  - [NEW] Enhanced system with ConVar config
-  - [NEW] GitHub Repo is now available
-  - Enhanced codes and bug fixes
+  - [NEW] New mute system.
+  - Changed some codes and variables + new hooks
+  - Fixed ConVars that not being networked properly
+  - GitHub Repo: 14g
   - Enhanced Lucky Ball system.
-  - Added Custom Hunter & Props playermodel
-
 Have fun!
 ]]
 
@@ -29,7 +26,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 	-- basic window properties
 	local frm = vgui.Create("DFrame")
 	frm:SetSize(865,500)
-	frm:SetTitle("Prop Hunt: Enhanced | More Menus")
+	frm:SetTitle("Prop Hunt: Enhanced - Menus")
 	frm:Center()
 	frm:MakePopup()
 	
@@ -195,22 +192,20 @@ function ph_BaseMainWindow(ply, cmd, args)
 	end
 	
 	function Ph:PlayerMuteFunction()
-		-- I'll use ol' method in ULX instead. If you want to enhance in a nice way, let me know if you have done it.
 		local panel = vgui.Create("DPanel", tab)
 		panel:SetBackgroundColor(Color(100,100,100,255))
-		
-		-- button.
+	
 		local btn = vgui.Create("DButton", panel)
-		btn:SetText("Show Menu")
+		btn:SetText("Mute Player")
 		btn:SetPos(10,5)
 		btn:SetSize(128,32)
 		btn.DoClick = function()
-			ply:ConCommand("xgui")
+			ply:ConCommand("ph_mute_window")
 			frm:Close()
 		end
 		
 		local txt = vgui.Create("DLabel", panel)
-		txt:SetText("Use ULX Menu and go to Mute Players to see available mute options.\n\nNote: You can\'t mute admins or moderators!\n\nPlayer Settings:")
+		txt:SetText("Show list of players that you wish to mute one of them.\n\nNote: You can\'t mute admins or moderators!\n\nPlayer Settings:")
 		txt:SetPos(10,38)
 		txt:SetSize(400,80)
 		
@@ -281,6 +276,21 @@ function ph_BaseMainWindow(ply, cmd, args)
 	Ph:HelpSelections()
 	Ph:PlayerMuteFunction()
 	Ph:PlayerModelSelections()
+	
+	-- Custom Hook Menu here. Give 1 second for better safe-calling...
+	timer.Simple(1, function()
+		hook.Call("PH_CustomTabMenu", nil, tab)
+	end)
+	
+	-- example usage:
+	--[[
+	hook.Add("PH_CustomMenu", "Menu_Donator", function(tab) 
+		-- 'tab' means for the DPropertySheet.
+		-- Any VGUI that you have created MUST be parented to the 'tab' argument!
+		
+		-- //code...
+	end)
+	]]
 	
 	-- Just quick simple menu instead making copy paste all over again.
 	function Ph:CreateSimpleMenu(checkname, chkposy, cmd, parentui)

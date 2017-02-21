@@ -148,8 +148,17 @@
 			"type"		"Numeric"
 			"default"	"6"
 		}
-		
+
 		16
+		{
+			"name"		"ph_normal_taunt_delay"
+			"text"		"Normal taunts delay"
+			"help"		"How many in seconds delay for props to play normal [F3] taunt again? (Default is 2)"
+			"type"		"Numeric"
+			"default"	"6"
+		}
+		
+		17
 		{
 			"name"		"ph_enable_lucky_balls"
 			"text"		"Enable Lucky Balls"
@@ -158,7 +167,7 @@
 			"default"	"1"
 		}
 		
-		17
+		18
 		{
 			"name"		"ph_enable_plnames"
 			"text"		"Allow Player Names"
