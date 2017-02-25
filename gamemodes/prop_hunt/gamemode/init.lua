@@ -307,16 +307,16 @@ function GM:ShowSpare1(pl)
 		pl:ConCommand("ph_showtaunts")
 	end
 	
-	if !GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + TAUNT_DELAY <= CurTime() && #PROP_TAUNTS > 1 && #HUNTER_TAUNTS > 1 then
+	if !GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + PHE.TAUNT_DELAY <= CurTime() && #PHE.PROP_TAUNTS > 1 && #PHE.HUNTER_TAUNTS > 1 then
 		repeat
 			if pl:Team() == TEAM_HUNTERS then
-				rand_taunt = table.Random(HUNTER_TAUNTS)
+				rand_taunt = table.Random(PHE.HUNTER_TAUNTS)
 			else
-				rand_taunt = table.Random(PROP_TAUNTS)
+				rand_taunt = table.Random(PHE.PROP_TAUNTS)
 			end
 		until rand_taunt != pl.last_taunt
 		
-		pl.last_taunt_time = CurTime() + TAUNT_DELAY
+		pl.last_taunt_time = CurTime() + PHE.TAUNT_DELAY
 		pl.last_taunt = rand_taunt
 		
 		pl:EmitSound(rand_taunt, 100)
