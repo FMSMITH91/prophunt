@@ -50,6 +50,9 @@ function GM:Initialize()
 	*/
 	
 	// If we're round based, wait 3 seconds before the first round starts
+	
+	--GAMEMODE:SetInRound( false ) --iguess?
+	
 	if ( GAMEMODE.RoundBased ) then
 		timer.Simple( 3, function() GAMEMODE:StartRoundBasedGame() end )
 	end

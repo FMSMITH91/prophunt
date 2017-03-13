@@ -175,6 +175,24 @@
 			"type"		"CheckBox"
 			"default"	"0"
 		}
+		
+		19
+		{
+			"name"		"ph_waitforplayers"
+			"text"		"Wait for Players"
+			"help"		"Should we wait for players for proper round?"
+			"type"		"CheckBox"
+			"default"	"0"
+		}
+		
+		20
+		{
+			"name"		"ph_min_waitforplayers"
+			"text"		"Minimum Players to wait"
+			"help"		"Numbers of mininum players that we should wait for round start. Value must not contain less than 1."
+			"type"		"Numeric"
+			"default"	"1"
+		}
 	}
 
 }

@@ -2,14 +2,6 @@ local isplayed = false
 local isopened = false
 local isforcedclose = false
 
---[[
-local IS_CUSTOM_TAUNT_ENABLED = false
-
-net.Receive("PH_IsCustomTauntEnabled", function()
-	IS_CUSTOM_TAUNT_ENABLED = net.ReadBool()
-end)
-]]
-
 net.Receive("PH_ForceCloseTauntWindow", function()
 	isforcedclose = true
 end)
@@ -19,7 +11,7 @@ net.Receive("PH_AllowTauntWindow", function()
 end)
 
 local function MainFrame()
-	if !PHE.CUSTOM_TAUNT_ENABLED then
+	if PHE.CUSTOM_TAUNT_ENABLED == 0 then
 		chat.AddText(Color(220,0,0),"[PH: Enhanced - Taunt] Warning: This server has custom taunts disabled.")
 		return
 	end
@@ -28,9 +20,13 @@ local function MainFrame()
 
 	local frame = vgui.Create("DFrame")
 	frame:SetSize(400,600)
-	frame:SetTitle("Prop Hunt | Taunt List")
+	frame:SetTitle("Prop Hunt | Taunt List (Double Click to Taunt)")
 	frame:Center()
-	frame:MakePopup()
+	frame:SetVisible(true)
+	frame:ShowCloseButton(true)
+	-- Make sure they have Mouse & Keyboard interactions.
+	frame:SetMouseInputEnabled(true)
+	frame:SetKeyboardInputEnabled(true)
 	
 	frame.OnClose = function()
 		isopened = false
@@ -111,9 +107,24 @@ local function MainFrame()
 		menu:AddOption("Play (Global)", function() SendToServer(); end):SetIcon("icon16/sound.png")
 		menu:AddOption("Play and Close (Global)", function() SendToServer(); frame:Close(); end):SetIcon("icon16/sound_delete.png")
 		menu:AddSpacer()
-		menu:AddOption("Close", function() frame:Close(); end):SetIcon("icon16/delete.png")
+		menu:AddOption("Close Menu", function() frame:Close(); end):SetIcon("icon16/cross.png")
 		menu:Open()
 	end
+	
+	list.DoDoubleClick = function(id,line)		
+		if isplayed != true then
+			net.Start("CL2SV_PlayThisTaunt"); net.WriteString(tostring(list:GetLine(list:GetSelectedLine(id)):GetValue(1))); net.SendToServer();
+			isplayed = true
+			timer.Simple(PHE.CUSTOM_TAUNT_DELAY, function() isplayed = false; end)
+		else
+			chat.AddText(Color(220,40,0),"[PH: Enhanced - Taunt] Warning: ",Color(220,220,220),"You have to wait "..PHE.CUSTOM_TAUNT_DELAY.." seconds to play this taunt again!")
+		end
+		
+		if GetConVar("ph_cl_autoclose_taunt"):GetBool() then frame:Close(); end
+	end
+	
+	frame:MakePopup()
+	frame:SetKeyboardInputEnabled(false)
 end
 
 concommand.Add("ph_showtaunts", function()

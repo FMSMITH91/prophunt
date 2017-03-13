@@ -12,6 +12,7 @@ include("shared.lua")
 function ENT:Initialize()
 	self:SetModel("models/player/kleiner.mdl")
 	self.health = 100
+	self.Entity:SetMoveType(MOVETYPE_NONE)
 end 
 
 

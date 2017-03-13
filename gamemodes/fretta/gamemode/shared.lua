@@ -35,7 +35,7 @@ GM.NoPlayerPlayerDamage = false 	// Allow players to hurt each other?
 GM.NoNonPlayerPlayerDamage = false 	// Allow damage from non players (physics, fire etc)
 GM.NoPlayerFootsteps = false		// When true, all players have silent footsteps
 GM.PlayerCanNoClip = false			// When true, players can use noclip without sv_cheats
-GM.TakeFragOnSuicide = true			// -1 frag on suicide
+GM.TakeFragOnSuicide = false		// -1 frag on suicide
 
 GM.MaximumDeathLength = 0			// Player will repspawn if death length > this (can be 0 to disable)
 GM.MinimumDeathLength = 2			// Player has to be dead for at least this long

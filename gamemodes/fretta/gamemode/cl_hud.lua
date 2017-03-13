@@ -73,6 +73,10 @@ function GM:RefreshHUD()
 		GAMEMODE:UpdateHUD_Dead( WaitingToRespawn, InRound )
 	else
 		GAMEMODE:UpdateHUD_Alive( InRound )
+		
+		if ( GetGlobalBool( "RoundWaitForPlayers" ) && ( ( team.NumPlayers( TEAM_HUNTERS ) < 1 ) || ( team.NumPlayers( TEAM_PROPS ) < 1 ) ) ) then
+			GAMEMODE:UpdateHUD_WaitForPlayers( InRound )
+		end
 	end
 	
 end
@@ -84,6 +88,19 @@ function GM:HUDPaint()
 	GAMEMODE:OnHUDPaint()
 	GAMEMODE:RefreshHUD()
 	
+end
+
+function GM:UpdateHUD_WaitForPlayers( InRound )
+
+	if ( InRound && Alive ) then
+	
+		local WaitText = vgui.Create( "DHudElement" );
+			WaitText:SizeToContents()
+			WaitText:SetText( "Waiting for players..." )
+		GAMEMODE:AddHUDItem( WaitText, 8 )
+	
+	end
+
 end
 
 function GM:UpdateHUD_RoundResult( RoundResult, Alive )

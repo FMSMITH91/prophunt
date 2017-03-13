@@ -18,7 +18,7 @@ CL_THIRDPERSON_TIMED = 0
 -- Serverside control of plhalos
 CL_PLNAMES_SERVERENABLED = 0
 
--- Add some network stuff here (dirty code sry)
+-- Add some network stuff here (Warning: Dirty/Unoptimised code)
 function PH_BetterPropMovement(len)
 	CL_BETTER_PROP_MOVEMENT = net.ReadBool()
 end
@@ -30,7 +30,7 @@ end
 net.Receive("PH_CameraCollisions", PH_CameraCollisions)
 
 function PH_CustomTauntEnabled(len)
-	PHE.CUSTOM_TAUNT_ENABLED = net.ReadBool()
+	PHE.CUSTOM_TAUNT_ENABLED = net.ReadInt(8)
 end
 net.Receive("PH_CustomTauntEnabled", PH_CustomTauntEnabled)
 
@@ -43,6 +43,19 @@ function PH_PlayerName_AboveHead(len)
 	CL_PLNAMES_SERVERENABLED = net.ReadBool()
 end
 net.Receive("PH_PlayerName_AboveHead", PH_PlayerName_AboveHead)
+
+-- Receive the Winning Notification
+net.Receive("PH_RoundDraw_Snd", function(len)
+	if GetConVar("ph_cl_endround_sound"):GetBool() then
+		surface.PlaySound(table.Random(PHE.WINNINGSOUNDS["Draw"]))
+	end
+end)
+net.Receive("PH_TeamWinning_Snd", function(len)
+	local snd = net.ReadString()
+	if GetConVar("ph_cl_endround_sound"):GetBool() then
+		surface.PlaySound(snd)
+	end
+end)
 
 -- Decides where  the player view should be (forces third person for props)
 function GM:CalcView(pl, origin, angles, fov)
@@ -181,6 +194,8 @@ function Initialize()
 	CreateClientConVar("ph_cl_halos", "0", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
 	--CreateClientConVar("ph_cl_plhalos", "8", true, false, "Toggle Enable/Disable Halo effects on players & disable automatically if over this limit.")
 	CreateClientConVar("ph_cl_pltext", "1", true, false, "Options for Text above players. 0 = Disable. 1 = Enable.")
+	CreateClientConVar("ph_cl_endround_sound", "1", true, false, "Play a sound when round ends? 0 to disable.")
+	CreateClientConVar("ph_cl_autoclose_taunt", "1", true, false, "Auto close the taunt window (When Double Clicking on them)?")
 	
 	-- Just like the server constant
 	USABLE_PROP_ENTITIES_CL = {

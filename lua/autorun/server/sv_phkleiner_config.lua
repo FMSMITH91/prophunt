@@ -29,12 +29,19 @@ local function CreatePlayerClip()
 		PH_Create_PlayerClip(Vector(1049, -1432, -50), Vector(1058, -217, 1400))
 		
 		-- Force all players become Kleiner on respawn!
-		timer.Simple(0.5, function()
+		timer.Simple(1, function()
 			for k,v in pairs(ents.FindByClass("ph_prop")) do
 				v:SetModel("models/player/kleiner.mdl")
+				v:DrawShadow(false)
 			end
 		end)
 		
+		-- Disable all shadows
+		local ShadowControl = ents.Create( "shadow_control" )
+		ShadowControl:SetPos( Vector( 0, 0, 0 ) )
+		ShadowControl:SetKeyValue( "disableallshadows", "1" )
+		ShadowControl:Spawn()
+		ShadowControl:Activate()
 	end
 end
 hook.Add("PostCleanupMap", "PH_AddClipBrush", CreatePlayerClip)

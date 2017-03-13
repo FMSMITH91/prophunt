@@ -33,8 +33,9 @@ PHE.ROUND_TIME = GetConVarNumber("ph_round_time")
 -- Determains if players should be team swapped every round [0 = No, 1 = Yes] (Default: 1)
 PHE.SWAP_TEAMS_EVERY_ROUND = GetConVarNumber("ph_swap_teams_every_round")
 
--- Boolean if custom taunts enabled (Default: FALSE)
-PHE.CUSTOM_TAUNT_ENABLED = GetConVar("ph_enable_custom_taunts"):GetBool()
+-- Boolean if custom taunts enabled (Default: 0)
+--PHE.CUSTOM_TAUNT_ENABLED = GetConVar("ph_enable_custom_taunts"):GetBool()
+PHE.CUSTOM_TAUNT_ENABLED = GetConVar("ph_enable_custom_taunts"):GetInt()
 
 -- Time (in seconds) for props to play custom taunts again (Default: 6)
 PHE.CUSTOM_TAUNT_DELAY = GetConVarNumber("ph_customtaunts_delay")
@@ -154,6 +155,12 @@ PHE.PROP_TAUNTS = {
 -- Custom Player Model bans for props
 PHE.PROP_PLMODEL_BANS = {
 	"models/player.mdl"
+}
+
+PHE.WINNINGSOUNDS = {
+	[1] 		= "misc/ph_hunterwin.mp3", 	-- hunter
+	[2]			= "misc/ph_propwin.mp3",	-- props
+	["Draw"]	= {"misc/ph_rounddraw_1.mp3", "misc/ph_rounddraw_2.mp3"}
 }
 
 -- Add custom taunts, if any. See taunts/prop_taunts.lua or taunts/hunter_taunts.lua for more info.

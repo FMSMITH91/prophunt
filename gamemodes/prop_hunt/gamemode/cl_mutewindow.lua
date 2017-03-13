@@ -18,7 +18,11 @@ function ph_MutePlayer(ply,cmd,arg,args)
 	frame:SetSize(300,500)
 	frame:SetTitle("Mute Player [Double Click to mute]")
 	frame:Center()
-	frame:MakePopup()
+	frame:SetVisible(true)
+	frame:ShowCloseButton(true)
+	-- Make sure they have Mouse & Keyboard interactions.
+	frame:SetMouseInputEnabled(true)
+	frame:SetKeyboardInputEnabled(true)
 	
 	local list = vgui.Create("DListView", frame)
 	list:SetPos( 5, 24 )
@@ -56,6 +60,9 @@ function ph_MutePlayer(ply,cmd,arg,args)
 		end
 		
 	end
+	
+	frame:MakePopup()
+	frame:SetKeyboardInputEnabled(false)
 	
 end
 concommand.Add("ph_mute_window", ph_MutePlayer)

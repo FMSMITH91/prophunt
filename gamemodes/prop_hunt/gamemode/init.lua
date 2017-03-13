@@ -62,7 +62,9 @@ util.AddNetworkString("PH_CameraCollisions")
 util.AddNetworkString("PH_CustomTauntEnabled")
 util.AddNetworkString("PH_CustomTauntDelay")
 util.AddNetworkString("PH_PlayerName_AboveHead")
---util.AddNetworkString("PH_IsCustomTauntEnabled")
+-- Round Winning Sound
+util.AddNetworkString("PH_RoundDraw_Snd")
+util.AddNetworkString("PH_TeamWinning_Snd")
 
 -- Force Close taunt window function, determined whenever the round ends, or team winning.
 local function ForceCloseTauntWindow(num)
@@ -88,6 +90,9 @@ function GM:CheckPlayerDeathRoundEnd()
 		PHE.VOICE_IS_END_ROUND = 1
 		ForceCloseTauntWindow(1)
 		
+		net.Start("PH_RoundDraw_Snd")
+		net.Broadcast()
+		
 		hook.Call("PH_OnRoundDraw", nil)
 		return
 	end
@@ -97,9 +102,20 @@ function GM:CheckPlayerDeathRoundEnd()
 		-- debug
 		MsgAll("Round Result: "..team.GetName(TeamID).." ("..TeamID..") Wins!\n")
 		-- End Round
-		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(TeamID).." win!") -- fix end result that often opposited as "Props Win" or "Hunter Win".
+		GAMEMODE:RoundEndWithResult(TeamID, team.GetName(TeamID).." win!")
 		PHE.VOICE_IS_END_ROUND = 1
 		ForceCloseTauntWindow(1)
+		
+		-- send the win notification
+		if TeamID == TEAM_HUNTERS then
+			net.Start("PH_TeamWinning_Snd")
+			net.WriteString(PHE.WINNINGSOUNDS[TEAM_HUNTERS])
+			net.Broadcast()
+		elseif TeamID == TEAM_PROPS then
+			net.Start("PH_TeamWinning_Snd")
+			net.WriteString(PHE.WINNINGSOUNDS[TEAM_PROPS])
+			net.Broadcast()
+		end
 		
 		hook.Call("PH_OnRoundWinTeam", nil, TeamID)
 		return
@@ -138,7 +154,7 @@ function GM:PlayerCanHearPlayersVoice(listen, speaker)
 	-- Spectator can only read from themselves.
 	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false, false end
 	
-	-- This is for ULX "Permanent Gag". Uncomment this if you have issues.
+	-- This is for ULX "Permanent Gag". Uncomment this if you have some issues.
 	-- if speaker:GetPData( "permgagged" ) == "true" then return false, false end
 end
 
@@ -187,6 +203,15 @@ end
 -- Called when an entity takes damage
 function EntityTakeDamage(ent, dmginfo)
     local att = dmginfo:GetAttacker()
+	
+	-- Code from: https://facepunch.com/showthread.php?t=1500179 , Special thanks from AlcoholicoDrogadicto(http://steamcommunity.com/profiles/76561198082241865/) for suggesting this.
+    if GAMEMODE:InRound() && ent && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && ent.ph_prop then
+        --Debug purpose.
+		printverbose("!! " .. ent:Name() .. "'s PLAYER entity appears to have taken damage, we can redirect it to the prop! (Model is: " .. ent.ph_prop:GetModel() .. ")")
+        ent.ph_prop:TakeDamageInfo(dmginfo)
+        return
+    end
+	
 	if GAMEMODE:InRound() && ent && (ent:GetClass() != "ph_prop" && ent:GetClass() != "func_breakable" && ent:GetClass() != "prop_door_rotating" && ent:GetClass() != "prop_dynamic*") && !ent:IsPlayer() && att && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive() then
 		att:SetHealth(att:Health() - PHE.HUNTER_FIRE_PENALTY)
 		if att:Health() <= 0 then
@@ -229,7 +254,7 @@ local playerModels = {
 function GM:PlayerSetModel(pl)
 	-- set antlion gib small for Prop model. 
 	-- Do not change this into others because this might purposed as a hitbox for props.
-	local player_model = "models/gibs/antlion_gib_small_3.mdl"
+	local player_model = "models/gibs/antlion_gib_small_3.mdl" -- todo: change into the smallest block from PHX's props.
 
 	-- Clean Up.
 	if GetConVar("ph_use_custom_plmodel"):GetBool() then
@@ -303,11 +328,13 @@ end
 
 -- Called when player presses [F3]. Plays a taunt for their team
 function GM:ShowSpare1(pl)
-	if GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() then
+	-- if GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() then
+	if (GetConVar("ph_enable_custom_taunts"):GetInt() == 1) && GAMEMODE:InRound() then
 		pl:ConCommand("ph_showtaunts")
 	end
 	
-	if !GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + PHE.TAUNT_DELAY <= CurTime() && #PHE.PROP_TAUNTS > 1 && #PHE.HUNTER_TAUNTS > 1 then
+	--if !GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + PHE.TAUNT_DELAY <= CurTime() && #PHE.PROP_TAUNTS > 1 && #PHE.HUNTER_TAUNTS > 1 then
+	if ((GetConVar("ph_enable_custom_taunts"):GetInt() == 0) or (GetConVar("ph_enable_custom_taunts"):GetInt() == 2)) && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + PHE.TAUNT_DELAY <= CurTime() && #PHE.PROP_TAUNTS > 1 && #PHE.HUNTER_TAUNTS > 1 then
 		repeat
 			if pl:Team() == TEAM_HUNTERS then
 				rand_taunt = table.Random(PHE.HUNTER_TAUNTS)
@@ -386,6 +413,10 @@ function GM:RoundTimerEnd()
 	PHE.VOICE_IS_END_ROUND = 1
 	ForceCloseTauntWindow(1)
 	
+	net.Start("PH_TeamWinning_Snd")
+	net.WriteString(PHE.WINNINGSOUNDS[TEAM_PROPS])
+	net.Broadcast()
+	
 	hook.Call("PH_OnTimerEnd", nil)
 end
 
@@ -394,7 +425,11 @@ end
 function GM:OnPreRoundStart(num)
 	game.CleanUpMap()
 	
-	if GetGlobalInt("RoundNumber") != 1 && (PHE.SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0 || SWAP_TEAMS_POINTS_ZERO==1)) then
+	if GetGlobalInt("RoundNumber") != 1 && (PHE.SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0)) then
+	--[[if ( GetConVar("ph_waitforplayers"):GetBool() && 
+		( team.NumPlayers( TEAM_HUNTERS ) >= GetConVar("ph_min_waitforplayers"):GetInt() ) && ( team.NumPlayers( TEAM_PROPS ) >= GetConVar("ph_min_waitforplayers"):GetInt() ) && 
+		(PHE.SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0))) then
+		]]--
 		for _, pl in pairs(player.GetAll()) do
 			if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
 				if pl:Team() == TEAM_PROPS then
@@ -452,6 +487,8 @@ function GM:Think()
 		end
 	end
 	
+	--MsgAll("ROUND IS NOW: "..GetGlobalInt("RoundNumber").."\n")
+	
 	-- Extra check here for changes cvars
 	if PHE.UPDATE_CVAR_TO_VARIABLE < CurTime() then
 		-- Update better prop movement variable
@@ -466,7 +503,7 @@ function GM:Think()
 		
 		-- Update camera collisions variable
 		net.Start("PH_CustomTauntEnabled")
-			net.WriteBool(GetConVar("ph_enable_custom_taunts"):GetBool())
+			net.WriteInt(GetConVarNumber("ph_enable_custom_taunts"), 8)
 		net.Broadcast()
 		
 		-- Update custom taunt delay variable
@@ -478,12 +515,6 @@ function GM:Think()
 		net.Start("PH_PlayerName_AboveHead")
 			net.WriteBool(GetConVar("ph_enable_plnames"):GetBool())
 		net.Broadcast()
-		
-		--[[
-		net.Start("PH_IsCustomTauntEnabled")
-			net.WriteBool(GetConVar("ph_enable_custom_taunts"):GetBool())
-		net.Broadcast()
-		]]
 		
 		-- Make sure to update every so seconds and not constantly
 		PHE.UPDATE_CVAR_TO_VARIABLE = CurTime() + PHE.UPDATE_CVAR_TO_VARIABLE_ADD
@@ -527,6 +558,84 @@ function GM:PlayerSwitchFlashlight(pl, on)
 	
 	return false
 end
+
+PHE.WAIT_FOR_PLY 	= GetConVar("ph_waitforplayers"):GetBool()
+PHE.MIN_PLY			= GetConVar("ph_min_waitforplayers"):GetInt()
+
+-- Round Control
+cvars.AddChangeCallback("ph_min_waitforplayers", function(cvar, old, new)
+	if tonumber(new) < 1 then
+		RunConsoleCommand("ph_min_waitforplayers", "1")
+		print("[PH:E] Warning: Value must not be 0! Use ph_waitforplayers 0 to disable.")
+	end
+end)
+
+local bAlreadyStarted = false
+function GM:OnRoundEnd( num )
+	-- Check if PHE.WAIT_FOR_PLY is true
+	-- This is a fast implementation for a waiting system
+	-- Make optimisations if needed
+	if ( PHE.WAIT_FOR_PLY ) then
+		-- Take away a round number quickly before it adds another when there are not enough players
+		-- Set to false
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) < PHE.MIN_PLY ) || ( team.NumPlayers( TEAM_PROPS ) < PHE.MIN_PLY ) ) then
+			bAlreadyStarted = false
+		end
+
+		-- Set to true
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) >= PHE.MIN_PLY ) && ( team.NumPlayers( TEAM_PROPS ) >= PHE.MIN_PLY ) ) then
+			bAlreadyStarted = true
+		end
+		
+		-- Check if the round was already started before so we count it as a fully played round
+		if ( !bAlreadyStarted ) then
+			SetGlobalInt( "RoundNumber", GetGlobalInt("RoundNumber") - 1 )
+		end
+	end
+end
+
+function GM:RoundStart()
+
+	local roundNum = GetGlobalInt( "RoundNumber" );
+	local roundDuration = GAMEMODE:GetRoundTime( roundNum )
+	
+	GAMEMODE:OnRoundStart( roundNum )
+
+	timer.Create( "RoundEndTimer", roundDuration, 0, function() GAMEMODE:RoundTimerEnd() end )
+	timer.Create( "CheckRoundEnd", 1, 0, function() GAMEMODE:CheckRoundEnd() end )
+	
+	SetGlobalFloat( "RoundEndTime", CurTime() + roundDuration );
+	
+	-- Check if PHE.WAIT_FOR_PLY is true
+	-- This is a fast implementation for a waiting system
+	-- Make optimisations if needed
+	if ( PHE.WAIT_FOR_PLY ) then
+	
+		-- Pause these timers if there are not enough players on the teams in the server
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) < PHE.MIN_PLY ) || ( team.NumPlayers( TEAM_PROPS ) < PHE.MIN_PLY ) ) then
+		
+			if ( timer.Exists( "RoundEndTimer" ) && timer.Exists( "CheckRoundEnd" ) ) then
+			
+				timer.Pause( "RoundEndTimer" )
+				timer.Pause( "CheckRoundEnd" )
+			
+				SetGlobalFloat( "RoundEndTime", -1 );
+			
+				PrintMessage( HUD_PRINTTALK, "There's not enough players to start the game!" )
+				-- Reset the team score
+				team.SetScore(TEAM_PROPS, 0)
+				team.SetScore(TEAM_HUNTERS, 0)
+			end
+		
+		end
+	
+	end
+	
+	-- Send this as a global boolean
+	SetGlobalBool( "RoundWaitForPlayers", PHE.WAIT_FOR_PLY )
+	
+end
+-- End of Round Control Override
 
 -- Player pressed a key
 function PlayerPressedKey(pl, key)

@@ -5,13 +5,51 @@ function GM:ClearRoundResult() SetGlobalEntity( "RoundWinner", NULL ) SetGlobalI
 function GM:SetInRound( b ) SetGlobalBool( "InRound", b ) end
 function GM:InRound() return GetGlobalBool( "InRound", false ) end
 
+--//moved to prop hunt's init.lua
+-- fretta_waitforplayers = CreateConVar( "fretta_waitforplayers", "1", { FCVAR_ARCHIVE } )
+
 function GM:OnRoundStart( num )
 
 	UTIL_UnFreezeAllPlayers()
 
 end
 
+--local bAlreadyStarted = false
+--[[moved to prop hunt's init.lua 
 function GM:OnRoundEnd( num )
+
+	// Check if fretta_waitforplayers is true
+	// This is a fast implementation for a waiting system
+	// Make optimisations if needed
+	if ( fretta_waitforplayers:GetBool() ) then
+	
+		// Take away a round number quickly before it adds another when there are not enough players
+		// Set to false
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) < 1 ) || ( team.NumPlayers( TEAM_PROPS ) < 1 ) ) then
+		
+			bAlreadyStarted = false
+		
+		end
+
+		// Check if the round was already started before so we count it as a fully played round
+		if ( !bAlreadyStarted ) then
+		
+			SetGlobalInt( "RoundNumber", GetGlobalInt( "RoundNumber" )-1 )
+		
+		end
+
+		// Set to true
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) >= 1 ) && ( team.NumPlayers( TEAM_PROPS ) >= 1 ) ) then
+		
+			bAlreadyStarted = true
+		
+		end
+	
+	end
+
+end
+]]--
+function GM:OnRoundEnd(num)
 end
 
 function GM:OnRoundResult( result, resulttext )
@@ -114,7 +152,7 @@ function GM:PreRoundStart( iNum )
 		
 	end
 
-	timer.Simple( GAMEMODE.RoundPreStartTime, function() GAMEMODE:RoundStart() end )
+	timer.Create( "RoundStartTimer", GAMEMODE.RoundPreStartTime, 1, function() GAMEMODE:RoundStart() end )
 	SetGlobalInt( "RoundNumber", iNum )
 	SetGlobalFloat( "RoundStartTime", CurTime() + GAMEMODE.RoundPreStartTime )
 	
@@ -127,6 +165,48 @@ end
 //
 // Internal, override OnRoundStart if you want to do stuff here
 //
+--[[ moved to prop hunt's init.lua 
+function GM:RoundStart()
+
+	local roundNum = GetGlobalInt( "RoundNumber" );
+	local roundDuration = GAMEMODE:GetRoundTime( roundNum )
+	
+	GAMEMODE:OnRoundStart( roundNum )
+
+	timer.Create( "RoundEndTimer", roundDuration, 0, function() GAMEMODE:RoundTimerEnd() end )
+	timer.Create( "CheckRoundEnd", 1, 0, function() GAMEMODE:CheckRoundEnd() end )
+	
+	SetGlobalFloat( "RoundEndTime", CurTime() + roundDuration );
+	
+	// Check if fretta_waitforplayers is true
+	// This is a fast implementation for a waiting system
+	// Make optimisations if needed
+	if ( fretta_waitforplayers:GetBool() ) then
+	
+		// Pause these timers if there are not enough players on the teams in the server
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) < 1 ) || ( team.NumPlayers( TEAM_PROPS ) < 1 ) ) then
+		
+			if ( timer.Exists( "RoundEndTimer" ) && timer.Exists( "CheckRoundEnd" ) ) then
+			
+				timer.Pause( "RoundEndTimer" )
+				timer.Pause( "CheckRoundEnd" )
+			
+				SetGlobalFloat( "RoundEndTime", -1 );
+			
+				PrintMessage( HUD_PRINTTALK, "There's not enough players to start the game." )
+			
+			end
+		
+		end
+	
+	end
+	
+	// Send this as a global boolean
+	SetGlobalBool( "RoundWaitForPlayers", fretta_waitforplayers:GetBool() )
+	
+end
+]]--
+-- default fretta on round start.
 function GM:RoundStart()
 
 	local roundNum = GetGlobalInt( "RoundNumber" );
@@ -140,7 +220,6 @@ function GM:RoundStart()
 	SetGlobalFloat( "RoundEndTime", CurTime() + roundDuration );
 	
 end
-
 //
 // Decide what text should show when a team/player wins
 //

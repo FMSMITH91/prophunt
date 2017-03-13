@@ -93,7 +93,7 @@ balls.funclists = {
 	end,
 	function(pl)
 		pl:SetHealth(pl:Health() + 50)
-		pl:ChatPrint("[Lucky Ball] You got a free 50 health points!")
+		pl:ChatPrint("[Lucky Ball] You got free 50+ health points!")
 	end,
 	function(pl)
 		pl:SetHealth(pl:Health() - 20)
@@ -103,7 +103,7 @@ balls.funclists = {
 		if not pl:HasWeapon("weapon_rpg") then
 			pl:Give("weapon_rpg")
 			pl:SetAmmo(2, "RPG_Round")
-			pl:ChatPrint("[Lucky Ball] You got an RPG for free!")
+			pl:ChatPrint("[Lucky Ball] You got a free RPG!")
 		else
 			pl:ChatPrint(table.Random(balls.randomtext))
 		end
@@ -124,7 +124,7 @@ balls.funclists = {
 	function(pl)
 		if not pl:HasWeapon("weapon_bugbait") then
 			pl:Give("weapon_bugbait")
-			pl:ChatPrint("[Lucky Ball] You got Bugbait for free... which does nothing (unless you have a pet antlion).")
+			pl:ChatPrint("[Lucky Ball] You got Bugbait for free... which does nothing. (unless you have a pet antlion).")
 		else
 			pl:ChatPrint(table.Random(balls.randomtext))
 		end
