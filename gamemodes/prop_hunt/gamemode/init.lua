@@ -426,10 +426,6 @@ function GM:OnPreRoundStart(num)
 	game.CleanUpMap()
 	
 	if GetGlobalInt("RoundNumber") != 1 && (PHE.SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0)) then
-	--[[if ( GetConVar("ph_waitforplayers"):GetBool() && 
-		( team.NumPlayers( TEAM_HUNTERS ) >= GetConVar("ph_min_waitforplayers"):GetInt() ) && ( team.NumPlayers( TEAM_PROPS ) >= GetConVar("ph_min_waitforplayers"):GetInt() ) && 
-		(PHE.SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0))) then
-		]]--
 		for _, pl in pairs(player.GetAll()) do
 			if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
 				if pl:Team() == TEAM_PROPS then
@@ -558,9 +554,6 @@ function GM:PlayerSwitchFlashlight(pl, on)
 	
 	return false
 end
-
-PHE.WAIT_FOR_PLY 	= GetConVar("ph_waitforplayers"):GetBool()
-PHE.MIN_PLY			= GetConVar("ph_min_waitforplayers"):GetInt()
 
 -- Round Control
 cvars.AddChangeCallback("ph_min_waitforplayers", function(cvar, old, new)

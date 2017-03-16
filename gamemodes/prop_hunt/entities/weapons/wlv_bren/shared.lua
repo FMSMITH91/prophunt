@@ -99,7 +99,7 @@ else
 	end
 	
 	if SERVER then
-		print("[ Magic Ball :: Bren MK ] Server has no default M9K Base, Reverting to normal base.")
+		printverbose("[ Lucky Ball :: Bren MK ] Server has no default M9K Base, Reverting to normal sandbox base!")
 	end
 
 	SWEP.Category 				= "Wolvindra-Vinzuerio"

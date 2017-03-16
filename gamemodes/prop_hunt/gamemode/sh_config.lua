@@ -1,6 +1,3 @@
--- Verbose mode (print extra stuff in console) boolean (Default: false)
-PHE.PRINT_VERBOSE_ENABLED = GetConVar("ph_print_verbose"):GetBool()
-
 -- Global Var for custom taunt, delivering from taunts/prop -or- hunter_taunts.lua
 PHE.PH_TAUNT_CUSTOM = {}
 PHE.PH_TAUNT_FILE_LIST = {}
@@ -42,6 +39,12 @@ PHE.CUSTOM_TAUNT_DELAY = GetConVarNumber("ph_customtaunts_delay")
 
 -- Time (in seconds) for cvar variable update to happen (Default: 1)
 PHE.UPDATE_CVAR_TO_VARIABLE_ADD = 1
+
+-- Enable "Wait for Players" checks?
+PHE.WAIT_FOR_PLY 	= GetConVar("ph_waitforplayers"):GetBool()
+
+-- Minimum Player before we start the proper round
+PHE.MIN_PLY			= GetConVar("ph_min_waitforplayers"):GetInt()
 
 -- Banned Props models
 --[[ Add one of your owns model restriction if you have problems. 

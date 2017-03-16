@@ -25,7 +25,7 @@ function ENT:Initialize()
 	
 	local phys = self.Entity:GetPhysicsObject() 
 	
-	if (phys:IsValid()) then  		
+	if IsValid(phys) then  		
 		phys:Wake()
 		phys:SetMass(24) --since barrel
 	end
@@ -78,7 +78,17 @@ balls.randomtext = {
 	"You don't realise that (nearly) all those were actually easter eggs? :P"
 }
 
--- You may edit here!
+--[[
+Base Lucky Balls Functions. 
+Please note that you might have to create a custom serverside lua with full of function list with list.Set into "LuckyBallsAddition".
+	Example:
+	
+	list.Set("LuckyBallsAddition", "UniqueName", function(pl)
+		-- code...
+	end)
+	
+Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with printverbose!
+]]
 balls.funclists = {
 	function(pl)
 		pl:ChatPrint(table.Random(balls.randomtext))
@@ -167,6 +177,20 @@ balls.funclists = {
 	end
 }
 -- Don't Edit below unless you know what you're doing.
+
+function balls:AddMoreLuckyEvents()
+	local t = list.Get("LuckyBallsAddition")
+	if table.Count(t) > 0 then
+		for name,tab in pairs(t) do
+			printverbose("[ Lucky Ball :: Add Event ] Adding new Lucky Balls events : "..name)
+			table.insert(balls.funclists, tab)
+		end
+	else
+		printverbose("[ Lucky Ball :: Add Event ] There is no additional Lucky Balls events detected, ignoring...")
+	end
+end
+
+balls:AddMoreLuckyEvents()
 
 function balls:The_LuckyDrop(pl)
 	-- For hunter only.

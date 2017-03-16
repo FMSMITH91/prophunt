@@ -34,7 +34,7 @@ else
 end
 
 if ConVarExists("mv_maplimit") then
-	print("[MapVote] Loading ConVars...")
+	printverbose("[MapVote] Loading ConVars...")
 	MapVote.Config = {
 		MapLimit 		= GetConVar("mv_maplimit"):GetInt(),
 		TimeLimit 		= GetConVar("mv_timelimit"):GetInt(),
