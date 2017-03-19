@@ -12,6 +12,8 @@ function GM:OnRoundStart( num )
 
 	UTIL_UnFreezeAllPlayers()
 
+	hook.Call("PH_OnRoundStart", nil, num)
+	
 end
 
 --local bAlreadyStarted = false
@@ -278,6 +280,8 @@ function GM:RoundEnd()
 	SetGlobalFloat( "RoundEndTime", -1 )
 	
 	timer.Simple( GAMEMODE.RoundPostLength, function() GAMEMODE:PreRoundStart( GetGlobalInt( "RoundNumber" )+1 ) end )
+	
+	hook.Call("PH_RoundEnd", nil)
 	
 end
 
