@@ -128,12 +128,12 @@ local function MainFrame()
 end
 
 concommand.Add("ph_showtaunts", function()
-if LocalPlayer():Alive() && isforcedclose != true then
+if LocalPlayer():Alive() && isforcedclose != true && LocalPlayer():GetObserverMode() == OBS_MODE_NONE then
 	if isopened != true then
 		MainFrame()
 	end	
 else
-	chat.AddText(Color(220,40,0),"[PH: Enhanced - Taunt] Notice: ",Color(220,220,220),"You can only play custom taunts when you\'re alive!")
+	chat.AddText(Color(220,40,0),"[PH: Enhanced - Taunt] Notice: ",Color(220,220,220), "You can only play custom taunts when you\'re alive as prop/hunter!")
 end
 end, nil, "Show Prop Hunt taunt list, so you can select and play for self or play as a taunt.")
 
