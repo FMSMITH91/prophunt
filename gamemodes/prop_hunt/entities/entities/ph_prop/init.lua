@@ -23,7 +23,7 @@ function ENT:OnTakeDamage(dmg)
 	local inflictor = dmg:GetInflictor()
 
 	-- Health
-	if pl && pl:IsValid() && pl:Alive() && pl:IsPlayer() && attacker:IsPlayer() && dmg:GetDamage() > 0 then
+	if GAMEMODE:InRound() && pl && pl:IsValid() && pl:Alive() && pl:IsPlayer() && attacker:IsPlayer() && dmg:GetDamage() > 0 then
 		self.health = self.health - dmg:GetDamage()
 		pl:SetHealth(self.health)
 		

@@ -68,6 +68,7 @@ function CLASS:OnSpawn(pl)
 		timer.Simple(2, lockfunc)
 		timer.Simple(unlock_time, unlockfunc)
 	end
+
 end
 
 

@@ -2,7 +2,8 @@
 include("shared.lua")
 
 -- Called every frame?
-function ENT:Draw()
+
+function ENT:Draw(flag)
 	if CL_BETTER_PROP_MOVEMENT then
 		if (LocalPlayer():GetPlayerPropEntity() != self.Entity) then
 			self.Entity:DrawModel()

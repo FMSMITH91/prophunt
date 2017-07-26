@@ -193,6 +193,24 @@
 			"type"		"Numeric"
 			"default"	"1"
 		}
+
+		21
+		{
+			"name"		"ph_autotaunt_enabled"
+			"text"		"Enable Auto Taunting"
+			"help"		"Should the players be forced to taunt ever X seconds"
+			"type"		"CheckBox"
+			"default"	"1"
+		}
+
+		22
+		{
+			"name"		"ph_autotaunt_delay"
+			"text"		"Auto Taunt Timer"
+			"help"		"Time before auto taunt is invoked"
+			"type"		"Numeric"
+			"default"	"45"
+		}
 	}
 
 }

@@ -68,6 +68,14 @@ function printverbose(text)
 	end
 end
 
+if !ConVarExists("ph_autotaunt_delay") then
+	local ph_autotaunt_delay = CreateConVar("ph_autotaunt_delay", "45", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "The delay for the auto taunt")
+end
+
+if !ConVarExists("ph_autotaunt_enabled") then
+	local ph_autotaunt_enabled = CreateConVar("ph_autotaunt_enabled", "1",{ FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Should auto taunting be enabled")
+end
+
 -- Add the shared config file
 AddCSLuaFile("sh_config.lua")
 

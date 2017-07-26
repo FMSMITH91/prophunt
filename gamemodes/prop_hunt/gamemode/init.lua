@@ -14,6 +14,8 @@ AddCSLuaFile("cl_menu.lua")
 AddCSLuaFile("cl_targetid.lua")
 AddCSLuaFile("cl_mutewindow.lua")
 
+AddCSLuaFile("cl_autotaunt.lua")
+
 -- Include the required lua files
 include("sh_init.lua")
 include("sv_admin.lua")
@@ -198,6 +200,8 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 
 	-- Spectator can only read from themselves.
 	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
+	
+	return true
 end
 
 -- Called when an entity takes damage
@@ -206,7 +210,9 @@ function EntityTakeDamage(ent, dmginfo)
 	
 	-- Code from: https://facepunch.com/showthread.php?t=1500179 , Special thanks from AlcoholicoDrogadicto(http://steamcommunity.com/profiles/76561198082241865/) for suggesting this.
     if GAMEMODE:InRound() && ent && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && ent.ph_prop then
-        --Debug purpose.
+		-- Prevent Prop 'Friendly Fire'
+		if ( dmginfo:GetAttacker():IsPlayer() && dmginfo:GetAttacker():Team() == ent:Team() ) then printverbose("DMGINFO::ATTACKED!!-> "..tostring(dmginfo:GetAttacker())..", DMGTYPE: "..dmginfo:GetDamageType()); return end
+		--Debug purpose.
 		printverbose("!! " .. ent:Name() .. "'s PLAYER entity appears to have taken damage, we can redirect it to the prop! (Model is: " .. ent.ph_prop:GetModel() .. ")")
         ent.ph_prop:TakeDamageInfo(dmginfo)
         return
@@ -254,7 +260,10 @@ local playerModels = {
 function GM:PlayerSetModel(pl)
 	-- set antlion gib small for Prop model. 
 	-- Do not change this into others because this might purposed as a hitbox for props.
-	local player_model = "models/gibs/antlion_gib_small_3.mdl" -- todo: change into the smallest block from PHX's props.
+	
+	-- (Old) local player_model = "models/gibs/antlion_gib_small_3.mdl"
+	-- (backup) models/hunter/plates/plate025.mdl
+	local player_model = "models/hunter/plates/plate.mdl"
 
 	-- Clean Up.
 	if GetConVar("ph_use_custom_plmodel"):GetBool() then
@@ -303,15 +312,26 @@ function GM:PlayerUse(pl, ent)
 			
 			local hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
 			local hullxymin = hullxymax * -1
-			local hullz = math.Round(ent:OBBMaxs().z)
+			local hullz = math.Round(ent:OBBMaxs().z - ent:OBBMins().z)
+			local dhullz = hullz
+			if hullz > 10 && hullz <= 30 then
+				dhullz = hullz-(hullz*0.5)
+			elseif hullz > 30 && hullz <= 40 then
+				dhullz = hullz-(hullz*0.2)
+			elseif hullz > 40 && hullz <= 50 then
+				dhullz = hullz-(hullz*0.1)
+			else
+				dhullz = hullz
+			end
 			
 			pl:SetHull(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, hullz))
-			pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, hullz))
+			pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, dhullz))
 			pl:SetHealth(new_health)
 			
 			umsg.Start("SetHull", pl)
 				umsg.Long(hullxymax)
 				umsg.Long(hullz)
+				umsg.Long(dhullz)
 				umsg.Short(new_health)
 			umsg.End()
 		end
@@ -347,6 +367,7 @@ function GM:ShowSpare1(pl)
 		pl.last_taunt = rand_taunt
 		
 		pl:EmitSound(rand_taunt, 100)
+		pl:SendLua("LocalPlayer().last_taunt_time = CurTime()")
 	end	
 end
 

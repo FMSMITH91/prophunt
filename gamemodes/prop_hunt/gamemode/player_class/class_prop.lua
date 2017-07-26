@@ -11,6 +11,9 @@ CLASS.DuckSpeed				= 0.2
 CLASS.JumpPower				= 250
 CLASS.DrawTeamRing			= false
 
+-- Prevent 'mod_studio: MOVETYPE_FOLLOW with No Models error.'
+CLASS.DrawViewModel			= false
+
 
 -- Called by spawn and sets loadout
 function CLASS:Loadout(pl)
@@ -21,10 +24,14 @@ end
 -- Called when player spawns with this class
 function CLASS:OnSpawn(pl)
 	pl:SetColor( Color(255, 255, 255, 0))
+	pl:SetRenderMode( RENDERMODE_NONE )
 	pl:SetupHands()
 	pl:SetCustomCollisionCheck(true)
 	pl:SetAvoidPlayers(true)
 	pl:CrosshairDisable()
+	
+	-- Prevent 'mod_studio: MOVETYPE_FOLLOW with No Models error.'
+	pl:DrawViewModel(false)
 	
 	pl.ph_prop = ents.Create("ph_prop")
 	pl.ph_prop:SetPos(pl:GetPos())
@@ -57,16 +64,21 @@ function CLASS:OnSpawn(pl)
 			end
 		end)
 	end
-	
+
+	timer.Simple(0.1, function()
+		if pl:IsValid() then
+			umsg.Start("AutoTauntSpawn")
+			umsg.End()
+		end
+	end)
+
 	pl.ph_prop.max_health = 100
 end
 
 
 -- Hands
 function CLASS:GetHandsModel()
-
 	return
-
 end
 
 

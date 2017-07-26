@@ -97,6 +97,7 @@ local function MainFrame()
 				net.Start("CL2SV_PlayThisTaunt"); net.WriteString(tostring(getline)); net.SendToServer();
 				isplayed = true
 				timer.Simple(PHE.CUSTOM_TAUNT_DELAY, function() isplayed = false; end)
+				LocalPlayer().last_taunt_time = CurTime()
 			else
 				chat.AddText(Color(220,40,0),"[PH: Enhanced - Taunt] Warning: ",Color(220,220,220),"You have to wait "..PHE.CUSTOM_TAUNT_DELAY.." seconds to play this taunt again!")
 			end
@@ -116,6 +117,7 @@ local function MainFrame()
 			net.Start("CL2SV_PlayThisTaunt"); net.WriteString(tostring(list:GetLine(list:GetSelectedLine(id)):GetValue(1))); net.SendToServer();
 			isplayed = true
 			timer.Simple(PHE.CUSTOM_TAUNT_DELAY, function() isplayed = false; end)
+			LocalPlayer().last_taunt_time = CurTime()
 		else
 			chat.AddText(Color(220,40,0),"[PH: Enhanced - Taunt] Warning: ",Color(220,220,220),"You have to wait "..PHE.CUSTOM_TAUNT_DELAY.." seconds to play this taunt again!")
 		end
