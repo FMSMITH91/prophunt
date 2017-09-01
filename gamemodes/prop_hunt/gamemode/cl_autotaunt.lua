@@ -45,6 +45,10 @@ local function outElastic(t, b, c, d, a, p)
 end
 
 local function AutoTauntPaint()
+    local ply = LocalPlayer()
+    
+    isProp = ply:Team() == TEAM_PROPS
+    	
     if !isEnabled || !isProp || !started then return end
 
     if tweenTime < 1 then
@@ -73,6 +77,11 @@ end
 
 local function CheckAutoTaunt()
     local timeLeft = TimeLeft()
+    local ply = LocalPlayer()
+    
+    isProp = ply:Team() == TEAM_PROPS
+    
+    if !isEnabled || !isProp || !started then return end
 
     if timeLeft <= 0 then
         local rand_taunt = table.Random(PHE.PROP_TAUNTS)

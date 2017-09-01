@@ -5,9 +5,10 @@ local AdminList = {
 	"admin",
 	"Owner",
 	"Co-owner",
+	"sudo",
 	-- Misc users
 	"Developer",
-	"Moderator",
+	"moderator",
 	
 	"VIP"
 }
