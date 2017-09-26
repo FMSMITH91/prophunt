@@ -575,6 +575,7 @@ function GM:PlayerSwitchFlashlight(pl, on)
 	
 	return false
 end
+hook.Add("PlayerDeath", "DisablePlayerFlashlights", function(ply) ply:Flashlight(false) end)
 
 -- Round Control
 cvars.AddChangeCallback("ph_min_waitforplayers", function(cvar, old, new)

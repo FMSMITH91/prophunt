@@ -82,6 +82,10 @@ local function CheckAutoTaunt()
     isProp = ply:Team() == TEAM_PROPS
     
     if !isEnabled || !isProp || !started then return end
+	
+	if not ply:Alive() then
+		started = false
+	end
 
     if timeLeft <= 0 then
         local rand_taunt = table.Random(PHE.PROP_TAUNTS)
