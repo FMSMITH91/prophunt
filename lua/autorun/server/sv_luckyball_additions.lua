@@ -1,5 +1,5 @@
 -- This is a template of Lucky Balls Additions which will adds a new events for luck balls entity.
--- Note: Key name must be unique and different, this purposely use for printverbose.
+-- Note: Key name must be unique and different, this purposely use for printVerbose.
 -- Remove --[[ and ]] to make them available.
 
 --[[

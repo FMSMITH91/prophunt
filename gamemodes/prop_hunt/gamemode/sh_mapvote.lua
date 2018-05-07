@@ -27,7 +27,7 @@ local convarlist = {
 }
 
 if !ConVarExists("mv_maplimit") then
-	printverbose("[MapVote] ConVars initialized!")
+	printVerbose("[MapVote] ConVars initialized!")
 	for _,convars in pairs(convarlist) do
 		CreateConVar(convars[1], convars[2], convars[3], convars[4])
 	end

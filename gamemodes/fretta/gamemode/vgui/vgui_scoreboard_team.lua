@@ -103,6 +103,9 @@ function PANEL:AddColumn( col )
 		pnlCol.Header:SetContentAlignment( col.HeaderAlign ) 
 	end
 
+	pnlCol:GetChildren()[1]:SetVisible( false )
+	pnlCol:GetChildren()[2]:SetVisible( false )
+
 	Derma_Hook( pnlCol, 	"Paint", 				"Paint", 	"ScorePanelHeader" )
 	
 	pnlCol.cTeamColor = team.GetColor( self.iTeam )

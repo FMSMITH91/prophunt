@@ -27,7 +27,7 @@ net.Receive("SvCommandReq", function(len, ply)
 	local valbool = net.ReadString()
 	if ply:IsAdmin() or table.HasValue(admins.users, ply:GetUserGroup()) then
 		RunConsoleCommand(cmd, valbool)
-		printverbose("[ADMIN CVAR NOTIFY] Commands: "..cmd.." has been changed (Player: "..ply:Nick().." ("..ply:SteamID()..")")
+		printVerbose("[ADMIN CVAR NOTIFY] Commands: "..cmd.." has been changed (Player: "..ply:Nick().." ("..ply:SteamID()..")")
 	end
 end)
 
@@ -36,7 +36,7 @@ net.Receive("SvCommandMinPly", function(len, ply)
 	local val = net.ReadString()
 	if ply:IsAdmin() or table.HasValue(admins.users, ply:GetUserGroup()) then
 		RunConsoleCommand(cmd, val)
-		printverbose("[ADMIN CVAR SLIDER NOTIFY] Commands: "..cmd.." has been changed (Player: "..ply:Nick().." ("..ply:SteamID()..")")
+		printVerbose("[ADMIN CVAR SLIDER NOTIFY] Commands: "..cmd.." has been changed (Player: "..ply:Nick().." ("..ply:SteamID()..")")
 	end
 end)
 
@@ -45,6 +45,6 @@ net.Receive("SendTauntStateCmd", function(len, ply)
 	
 	if ply:IsAdmin() or table.HasValue(admins.users, ply:GetUserGroup()) then
 		RunConsoleCommand("ph_enable_custom_taunts", cmdval)
-		printverbose("[ADMIN CVAR TAUNT NOTIFY] Commands: "..cmdval.." has been changed (Player: "..ply:Nick().." ("..ply:SteamID()..")")
+		printVerbose("[ADMIN CVAR TAUNT NOTIFY] Commands: "..cmdval.." has been changed (Player: "..ply:Nick().." ("..ply:SteamID()..")")
 	end
 end)

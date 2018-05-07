@@ -107,7 +107,7 @@ end
 
 function GM:AddScoreboardPing( ScoreBoard )
 
-	local f = function( ply ) return ply:Ping() end
+	local f = function( ply ) return ply:ScoreboardPing() end
 	ScoreBoard:AddColumn( "Ping", 40, f, 0.1, nil, 6, 6 )
 
 end

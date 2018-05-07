@@ -49,3 +49,15 @@ function meta:RemoveClientProp()
 	umsg.Start("RemoveClientPropUMSG", self)
 	umsg.End()
 end
+
+function meta:ScoreboardPing()
+
+	if self:GetNWBool("ListenServerHost") then
+	
+		return "SV"
+	
+	end
+	
+	return self:Ping()
+	
+end

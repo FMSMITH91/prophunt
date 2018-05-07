@@ -168,7 +168,7 @@ PHE.WINNINGSOUNDS = {
 
 -- Add custom taunts, if any. See taunts/prop_taunts.lua or taunts/hunter_taunts.lua for more info.
 local function AddDemTaunt()
-	printverbose("[PH: Enhanced] Finalising custom prop taunts.")
+	printVerbose("[PH: Enhanced] Finalising custom prop taunts.")
 	if PHE.PH_TAUNT_CUSTOM.PROP != nil then
 		for k,prop in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
 			-- We do not need this?
@@ -178,10 +178,10 @@ local function AddDemTaunt()
 			end
 		end
 	else
-		printverbose("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
+		printVerbose("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
 	end
 	
-	printverbose("[PH: Enhanced] Finalising custom hunter taunts.")
+	printVerbose("[PH: Enhanced] Finalising custom hunter taunts.")
 	if PHE.PH_TAUNT_CUSTOM.HUNTER != nil then
 		for k,hunter in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
 			-- We do not need this?
@@ -191,7 +191,7 @@ local function AddDemTaunt()
 			end
 		end
 	else
-		printverbose("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
+		printVerbose("[PH: Enhanced] WARNING! Custom taunts table is EMPTY!!")
 	end
 end
 AddDemTaunt()
@@ -220,7 +220,7 @@ if SERVER then
 			local PROP_PLMODEL_BANS_READ = util.JSONToTable( file.Read( "prop_hunt-enhanced/prop_playermodel_bans.txt", "DATA" ) )
 			for k, v in pairs(PROP_PLMODEL_BANS_READ) do
 				if !table.HasValue(PHE.PROP_PLMODEL_BANS, string.lower(v)) then
-					printverbose("[PH: Enhanced] Adding custom prop model ban: "..string.lower(v))
+					printVerbose("[PH: Enhanced] Adding custom prop model ban: "..string.lower(v))
 					table.insert(PHE.PROP_PLMODEL_BANS, string.lower(v))
 				end
 			end

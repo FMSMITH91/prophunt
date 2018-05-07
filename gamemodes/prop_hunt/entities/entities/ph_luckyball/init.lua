@@ -87,7 +87,7 @@ Please note that you might have to create a custom serverside lua with full of f
 		-- code...
 	end)
 	
-Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with printverbose!
+Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with printVerbose!
 ]]
 balls.funclists = {
 	function(pl)
@@ -182,11 +182,11 @@ function balls:AddMoreLuckyEvents()
 	local t = list.Get("LuckyBallsAddition")
 	if table.Count(t) > 0 then
 		for name,tab in pairs(t) do
-			printverbose("[ Lucky Ball :: Add Event ] Adding new Lucky Balls events : "..name)
+			printVerbose("[ Lucky Ball :: Add Event ] Adding new Lucky Balls events : "..name)
 			table.insert(balls.funclists, tab)
 		end
 	else
-		printverbose("[ Lucky Ball :: Add Event ] There is no additional Lucky Balls events detected, ignoring...")
+		printVerbose("[ Lucky Ball :: Add Event ] There is no additional Lucky Balls events detected, ignoring...")
 	end
 end
 

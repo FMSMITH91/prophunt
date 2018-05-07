@@ -34,7 +34,7 @@ else
 end
 
 if ConVarExists("mv_maplimit") then
-	printverbose("[MapVote] Loading ConVars...")
+	printVerbose("[MapVote] Loading ConVars...")
 	MapVote.Config = {
 		MapLimit 		= GetConVar("mv_maplimit"):GetInt(),
 		TimeLimit 		= GetConVar("mv_timelimit"):GetInt(),
@@ -95,7 +95,7 @@ local conv = {
 
 -- Precheck when the convar is changed
 for cvar,func in pairs(conv) do
-	printverbose("[MapVote] Adding ConVar Callbacks for: "..cvar)
+	printVerbose("[MapVote] Adding ConVar Callbacks for: "..cvar)
 	cvars.AddChangeCallback(cvar, func)
 end
 

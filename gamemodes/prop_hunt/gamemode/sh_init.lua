@@ -62,7 +62,7 @@ end
 if !ConVarExists("ph_print_verbose") then
 	local ph_print_verbose = CreateConVar("ph_print_verbose", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Developer Verbose. Some printed messages will only appear if this is enabled.")
 end
-function printverbose(text)
+function printVerbose(text)
 	if GetConVar("ph_print_verbose"):GetBool() && text then
 		print(tostring(text))
 	end
