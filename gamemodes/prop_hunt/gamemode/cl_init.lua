@@ -257,11 +257,10 @@ usermessage.Hook("PlayFreezeCamSound", PlayFreezeCamSound)
 function SetHull(um)
 	hullxy = um:ReadLong()
 	hullz = um:ReadLong()
-	dhullz = um:ReadLong()
 	new_health = um:ReadLong()
 	
 	LocalPlayer():SetHull(Vector(hullxy * -1, hullxy * -1, 0), Vector(hullxy, hullxy, hullz))
-	LocalPlayer():SetHullDuck(Vector(hullxy * -1, hullxy * -1, 0), Vector(hullxy, hullxy, dhullz))
+	LocalPlayer():SetHullDuck(Vector(hullxy * -1, hullxy * -1, 0), Vector(hullxy, hullxy, hullz))
 	LocalPlayer():SetHealth(new_health)
 end
 usermessage.Hook("SetHull", SetHull)

@@ -312,26 +312,15 @@ function GM:PlayerUse(pl, ent)
 			
 			local hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
 			local hullxymin = hullxymax * -1
-			local hullz = math.Round(ent:OBBMaxs().z - ent:OBBMins().z)
-			local dhullz = hullz
-			if hullz > 10 && hullz <= 30 then
-				dhullz = hullz-(hullz*0.5)
-			elseif hullz > 30 && hullz <= 40 then
-				dhullz = hullz-(hullz*0.2)
-			elseif hullz > 40 && hullz <= 50 then
-				dhullz = hullz-(hullz*0.1)
-			else
-				dhullz = hullz
-			end
+			local hullz = math.Round(ent:OBBMaxs().z)
 			
 			pl:SetHull(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, hullz))
-			pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, dhullz))
+			pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, hullz))
 			pl:SetHealth(new_health)
 			
 			umsg.Start("SetHull", pl)
 				umsg.Long(hullxymax)
 				umsg.Long(hullz)
-				umsg.Long(dhullz)
 				umsg.Short(new_health)
 			umsg.End()
 		end

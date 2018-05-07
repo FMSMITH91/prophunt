@@ -11,8 +11,7 @@ local admins = {}
 admins.users = { 
 	"admin",
 	"superadmin",
-	"owner",
-	"sudo"
+	"owner"
 	-- add more here, example: mods, operator, etc if you want.
 }
 

@@ -24,7 +24,6 @@ end
 -- Called when player spawns with this class
 function CLASS:OnSpawn(pl)
 	pl:SetColor( Color(255, 255, 255, 0))
-	pl:SetRenderMode( RENDERMODE_NONE )
 	pl:SetupHands()
 	pl:SetCustomCollisionCheck(true)
 	pl:SetAvoidPlayers(true)
