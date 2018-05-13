@@ -7,11 +7,15 @@ function PHE_MapVote( calling_ply, votetime, should_cancel )
 			ulx.fancyLogAdmin( calling_ply, "#A called a votemap!" )
 		else
 			MapVote.Cancel()
-			ulx.fancyLogAdmin( calling_ply, "#A canceled the votemap" )
+			ulx.fancyLogAdmin( calling_ply, "#A canceled the votemap!" )
 		end
 	else
 		if SERVER then
-			print("WARNING: MapVote system is not available!")
+			if game.IsDedicated() then
+				print("[ULX MapVote] WARNING: You need at least few players to get this work!")
+			else
+				print("[ULX MapVote] ERROR: MapVote is Unavailable.")
+			end
 		end
 	end
 end

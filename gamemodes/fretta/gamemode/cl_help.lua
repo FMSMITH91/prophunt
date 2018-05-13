@@ -29,11 +29,6 @@ function GM:ShowHelp()
 		end)
 		btnadd.m_colBackground = Color(255,128,40)
 		
-		local btnadd2 = Help:AddSelectButton("Mute Players", function()
-			LocalPlayer():ConCommand("ph_mute_window")
-		end)
-		btnadd2.m_colBackground = Color(20,100,250)
-		
 		-- Add a hook if you want to make another custom buttons by calling PH_AddSplashHelpButton.
 		hook.Call("PH_AddSplashHelpButton", nil, Help)
 		

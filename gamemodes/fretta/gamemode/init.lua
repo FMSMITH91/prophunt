@@ -38,6 +38,7 @@ GM.ReconnectedPlayers = {}
 function GM:Initialize()
 
 	util.AddNetworkString("PlayableGamemodes")
+	util.AddNetworkString("fretta_teamchange")
 
 	/*
 	// Disabled - causes games to end in the middle of a round - we don't want that to happen!
@@ -406,13 +407,13 @@ function GM:OnPlayerChangedTeam( ply, oldteam, newteam )
 	
 	//PrintMessage( HUD_PRINTTALK, Format( "%s joined '%s'", ply:Nick(), team.GetName( newteam ) ) )
 	
-	// Send umsg for team change
- 
-    umsg.Start( "fretta_teamchange", rf );
-		umsg.Entity( ply );
-		umsg.Short( oldteam );
-		umsg.Short( newteam );
-    umsg.End();
+	// Send net for team change
+	
+	net.Start("fretta_teamchange")
+		net.WriteEntity(ply)
+		net.WriteInt(oldteam, 12)
+		net.WriteInt(newteam, 12)
+	net.Broadcast()
 	
 end
 

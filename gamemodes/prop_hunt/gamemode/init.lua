@@ -1,23 +1,24 @@
--- Enhanced by: Wolvindra-Vinzuerio and D4UNKN0WNM4N2010 --
--- Special thanks for Kowalski that merged into his github. You may check on his prop hunt workshop page. --
+-- Ship
+resource.AddWorkshop("417565863")
 
--- Send the required lua files to the client
+-- Send required file to clients
 AddCSLuaFile("sh_init.lua")
 AddCSLuaFile("sh_player.lua")
-
 AddCSLuaFile("taunts/hunter_taunts.lua")
 AddCSLuaFile("taunts/prop_taunts.lua")
-
 AddCSLuaFile("cl_tauntwindow.lua")
 AddCSLuaFile("cl_init.lua")
+AddCSLuaFile("cl_hud_mask.lua")
+AddCSLuaFile("cl_hud.lua")
 AddCSLuaFile("cl_menu.lua")
 AddCSLuaFile("cl_targetid.lua")
-AddCSLuaFile("cl_mutewindow.lua")
-
 AddCSLuaFile("cl_autotaunt.lua")
+AddCSLuaFile("cl_credits.lua")
 
 -- Include the required lua files
+include("sv_networkfunctions.lua")
 include("sh_init.lua")
+include("sh_config.lua")
 include("sv_admin.lua")
 include("sv_tauntwindow.lua")
 
@@ -27,16 +28,15 @@ PHE.EXPLOITABLE_DOORS = {
 	"prop_door_rotating", 
 	"func_door_rotating"
 }
-PHE.USABLE_PROP_ENTITIES = {
-	"prop_physics",
-	"prop_physics_multiplayer"
-}
 
 -- Voice Control Constant init
 PHE.VOICE_IS_END_ROUND = 0
 
 -- Update cvar to variables changes every so seconds
 PHE.UPDATE_CVAR_TO_VARIABLE = 0
+
+-- Spectator check
+PHE.SPECTATOR_CHECK = 0
 
 -- Player Join/Leave message
 gameevent.Listen( "player_connect" )
@@ -52,21 +52,6 @@ hook.Add( "player_disconnect", "AnnouncePLLeave", function( data )
 		v:PrintMessage( HUD_PRINTTALK, data.name .. " has left the server (Reason: " .. data.reason ..")" )
 	end
 end )
-
--- We're going to get the usable prop table and send it over to the client with this network string
-util.AddNetworkString("ServerUsablePropsToClient")
--- Additional network string for Custom Taunts window
-util.AddNetworkString("PH_ForceCloseTauntWindow")
-util.AddNetworkString("PH_AllowTauntWindow")
--- Some extra checks that these convars isn't updating for client.
-util.AddNetworkString("PH_BetterPropMovement")
-util.AddNetworkString("PH_CameraCollisions")
-util.AddNetworkString("PH_CustomTauntEnabled")
-util.AddNetworkString("PH_CustomTauntDelay")
-util.AddNetworkString("PH_PlayerName_AboveHead")
--- Round Winning Sound
-util.AddNetworkString("PH_RoundDraw_Snd")
-util.AddNetworkString("PH_TeamWinning_Snd")
 
 -- Force Close taunt window function, determined whenever the round ends, or team winning.
 local function ForceCloseTauntWindow(num)
@@ -129,10 +114,9 @@ end
 -- You can disable this feature by typing 'sv_alltalk 1' in console to make everyone can hear.
 
 -- Control Player Voice
-local alltalk = GetConVar("sv_alltalk")
 function GM:PlayerCanHearPlayersVoice(listen, speaker)
 	
-	local alltalk_cvar = alltalk:GetInt()
+	local alltalk_cvar = GetConVar("sv_alltalk"):GetInt()
 	if (alltalk_cvar > 0) then return true, false end
 	
 	-- prevent Loopback check.
@@ -158,6 +142,8 @@ function GM:PlayerCanHearPlayersVoice(listen, speaker)
 	
 	-- This is for ULX "Permanent Gag". Uncomment this if you have some issues.
 	-- if speaker:GetPData( "permgagged" ) == "true" then return false, false end
+	
+	-- does return true, true required here?
 end
 
 -- Control Players Chat
@@ -177,7 +163,7 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 		if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
 	end
 	
-	local alltalk_cvar = alltalk:GetInt()
+	local alltalk_cvar = GetConVar("sv_alltalk"):GetInt()
 	if (alltalk_cvar > 0) then return true end
 	
 	-- Generic Checks
@@ -211,7 +197,10 @@ function EntityTakeDamage(ent, dmginfo)
 	-- Code from: https://facepunch.com/showthread.php?t=1500179 , Special thanks from AlcoholicoDrogadicto(http://steamcommunity.com/profiles/76561198082241865/) for suggesting this.
     if GAMEMODE:InRound() && ent && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && ent.ph_prop then
 		-- Prevent Prop 'Friendly Fire'
-		if ( dmginfo:GetAttacker():IsPlayer() && dmginfo:GetAttacker():Team() == ent:Team() ) then printVerbose("DMGINFO::ATTACKED!!-> "..tostring(dmginfo:GetAttacker())..", DMGTYPE: "..dmginfo:GetDamageType()); return end
+		if ( dmginfo:GetAttacker():IsPlayer() && dmginfo:GetAttacker():Team() == ent:Team() ) 
+			then printVerbose("DMGINFO::ATTACKED!!-> "..tostring(dmginfo:GetAttacker())..", DMGTYPE: "..dmginfo:GetDamageType())
+			return 
+		end
 		--Debug purpose.
 		printVerbose("!! " .. ent:Name() .. "'s PLAYER entity appears to have taken damage, we can redirect it to the prop! (Model is: " .. ent.ph_prop:GetModel() .. ")")
         ent.ph_prop:TakeDamageInfo(dmginfo)
@@ -219,7 +208,13 @@ function EntityTakeDamage(ent, dmginfo)
     end
 	
 	if GAMEMODE:InRound() && ent && (ent:GetClass() != "ph_prop" && ent:GetClass() != "func_breakable" && ent:GetClass() != "prop_door_rotating" && ent:GetClass() != "prop_dynamic*") && !ent:IsPlayer() && att && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive() then
-		att:SetHealth(att:Health() - PHE.HUNTER_FIRE_PENALTY)
+		if att:Armor() >= 5 && GetConVar("ph_hunter_fire_penalty"):GetInt() >= 5 then
+			att:SetHealth(att:Health() - (math.Round(GetConVar("ph_hunter_fire_penalty"):GetInt()/2)))
+			att:SetArmor(att:Armor() - 15)
+			if att:Armor() < 0 then att:SetArmor(0) end
+		else
+			att:SetHealth(att:Health() - GetConVar("ph_hunter_fire_penalty"):GetInt())
+		end
 		if att:Health() <= 0 then
 			MsgAll(att:Name() .. " felt guilty for hurting so many innocent props and committed suicide\n")
 			att:Kill()
@@ -258,14 +253,10 @@ local playerModels = {
 }
 
 function GM:PlayerSetModel(pl)
-	-- set antlion gib small for Prop model. 
-	-- Do not change this into others because this might purposed as a hitbox for props.
 	
-	-- (Old) local player_model = "models/gibs/antlion_gib_small_3.mdl"
-	-- (backup) models/hunter/plates/plate025.mdl
-	local player_model = "models/hunter/plates/plate.mdl"
+	-- player actual model to prevent multi-damage hitbox.
+	local player_model = "models/props_idbs/phenhanced/box.mdl"
 
-	-- Clean Up.
 	if GetConVar("ph_use_custom_plmodel"):GetBool() then
 		-- Use a delivered player model info from cl_playermodel ConVar.
 		-- This however will use a custom player selection. It'll immediately apply once it is selected.
@@ -289,18 +280,18 @@ function GM:PlayerSetModel(pl)
 	util.PrecacheModel(player_model)
 	pl:SetModel(player_model)
 end
-	
--- Called when a player tries to use an object
-function GM:PlayerUse(pl, ent)
-	if !pl:Alive() || pl:Team() == TEAM_SPECTATOR || pl:Team() == TEAM_UNASSIGNED then return false end
-	
+
+-- The [E] behaviour is now moved in here!
+function GM:PlayerExchangeProp(pl,ent)
+
+	if !IsValid(ent) then return end
+
 	if pl:Team() == TEAM_PROPS && pl:IsOnGround() && !pl:Crouching() && table.HasValue(PHE.USABLE_PROP_ENTITIES, ent:GetClass()) && ent:GetModel() then
 		if table.HasValue(PHE.BANNED_PROP_MODELS, ent:GetModel()) then
 			pl:ChatPrint("That prop has been banned by the server.")
-		elseif ent:GetPhysicsObject():IsValid() && pl.ph_prop:GetModel() != ent:GetModel() then
+		elseif IsValid(ent:GetPhysicsObject()) && (pl.ph_prop:GetModel() != ent:GetModel() || pl.ph_prop:GetSkin() != ent:GetSkin()) then
 			local ent_health = math.Clamp(ent:GetPhysicsObject():GetVolume() / 250, 1, 200)
 			local new_health = math.Clamp((pl.ph_prop.health / pl.ph_prop.max_health) * ent_health, 1, 200)
-			local per = pl.ph_prop.health / pl.ph_prop.max_health
 			pl.ph_prop.health = new_health
 			
 			pl.ph_prop.max_health = ent_health
@@ -312,19 +303,39 @@ function GM:PlayerUse(pl, ent)
 			
 			local hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
 			local hullxymin = hullxymax * -1
-			local hullz = math.Round(ent:OBBMaxs().z)
+			local hullz = math.Round(ent:OBBMaxs().z - ent:OBBMins().z)
+			
+			local dhullz = hullz
+			if hullz > 10 && hullz <= 30 then
+				dhullz = hullz-(hullz*0.5)
+			elseif hullz > 30 && hullz <= 40 then
+				dhullz = hullz-(hullz*0.2)
+			elseif hullz > 40 && hullz <= 50 then
+				dhullz = hullz-(hullz*0.1)
+			else
+				dhullz = hullz
+			end
 			
 			pl:SetHull(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, hullz))
-			pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, hullz))
+			pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, dhullz))
 			pl:SetHealth(new_health)
 			
-			umsg.Start("SetHull", pl)
-				umsg.Long(hullxymax)
-				umsg.Long(hullz)
-				umsg.Short(new_health)
-			umsg.End()
+			net.Start("SetHull")
+				net.WriteInt(hullxymax,32)
+				net.WriteInt(hullz,32)
+				net.WriteInt(dhullz,32)
+				net.WriteInt(new_health,9)
+			net.Send(pl)
 		end
 	end
+	
+end
+
+-- Called when a player tries to use an object. By default this pressed ['E'] button. MouseClick 1 will be mentioned below at line @351
+function GM:PlayerUse(pl, ent)
+	if !pl:Alive() || pl:Team() == TEAM_SPECTATOR || pl:Team() == TEAM_UNASSIGNED then return false end
+	
+	self:PlayerExchangeProp(pl,ent)
 	
 	-- Prevent the door exploit
 	if table.HasValue(PHE.EXPLOITABLE_DOORS, ent:GetClass()) && pl.last_door_time && pl.last_door_time + 1 > CurTime() then
@@ -335,15 +346,21 @@ function GM:PlayerUse(pl, ent)
 	return true
 end
 
+net.Receive("CL2SV_ExchangeProp", function(len,ply)
+	local Prop = net.ReadEntity()
+	
+	if !ply:IsHoldingEntity() then
+		GAMEMODE:PlayerExchangeProp(ply,Prop)
+	end
+end)
+
 -- Called when player presses [F3]. Plays a taunt for their team
 function GM:ShowSpare1(pl)
-	-- if GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() then
 	if (GetConVar("ph_enable_custom_taunts"):GetInt() == 1) && GAMEMODE:InRound() then
 		pl:ConCommand("ph_showtaunts")
 	end
 	
-	--if !GetConVar("ph_enable_custom_taunts"):GetBool() && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + PHE.TAUNT_DELAY <= CurTime() && #PHE.PROP_TAUNTS > 1 && #PHE.HUNTER_TAUNTS > 1 then
-	if ((GetConVar("ph_enable_custom_taunts"):GetInt() == 0) or (GetConVar("ph_enable_custom_taunts"):GetInt() == 2)) && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + PHE.TAUNT_DELAY <= CurTime() && #PHE.PROP_TAUNTS > 1 && #PHE.HUNTER_TAUNTS > 1 then
+	if ((GetConVar("ph_enable_custom_taunts"):GetInt() == 0) or (GetConVar("ph_enable_custom_taunts"):GetInt() == 2)) && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + GetConVar("ph_normal_taunt_delay"):GetInt() <= CurTime() && (table.Count(PHE.PROP_TAUNTS) > 1 && table.Count(PHE.HUNTER_TAUNTS) > 1) then
 		repeat
 			if pl:Team() == TEAM_HUNTERS then
 				rand_taunt = table.Random(PHE.HUNTER_TAUNTS)
@@ -352,7 +369,7 @@ function GM:ShowSpare1(pl)
 			end
 		until rand_taunt != pl.last_taunt
 		
-		pl.last_taunt_time = CurTime() + PHE.TAUNT_DELAY
+		pl.last_taunt_time = CurTime() + GetConVar("ph_normal_taunt_delay"):GetInt()
 		pl.last_taunt = rand_taunt
 		
 		pl:EmitSound(rand_taunt, 100)
@@ -371,6 +388,22 @@ function PlayerDisconnected(pl)
 end
 hook.Add("PlayerDisconnected", "PH_PlayerDisconnected", PlayerDisconnected)
 
+-- Set specific variable for checking in player initial spawn, then use Player:IsHoldingEntity()
+hook.Add("PlayerInitialSpawn", "PHE.SetupInitData", function(ply)
+	ply.LastPickupEnt = NULL
+end)
+hook.Add("AllowPlayerPickup", "PHE.IsHoldingEntity", function(ply,ent)
+	ply.LastPickupEnt = ent
+	ent.LastPickupPly = ply
+end)
+
+-- Spray Controls
+hook.Add( "PlayerSpray", "PH.GeneralSprayFunc", function( ply )
+	if ( ( !ply:Alive() ) || ( ply:Team() == TEAM_SPECTATOR ) ) then
+		return true
+	end
+end )
+
 -- Called when the players spawns
 function PlayerSpawn(pl)
 	pl:SetNWBool("PlayerLockedRotation", false)
@@ -378,37 +411,46 @@ function PlayerSpawn(pl)
 	pl:SetNWEntity("PlayerKilledByPlayerEntity", nil)
 	pl:Blind(false)
 	pl:RemoveProp()
-	pl:RemoveClientProp()
-	pl:SetColor(Color(255, 255, 255, 255))
-	pl:SetRenderMode( RENDERMODE_TRANSALPHA )
+	pl:SetColor(Color(255,255,255,255))
+	pl:SetRenderMode(RENDERMODE_TRANSALPHA)
 	pl:UnLock()
 	pl:ResetHull()
 	pl.last_taunt_time = 0
 	
-	umsg.Start("ResetHull", pl)
-	umsg.End()
+	net.Start("ResetHull")
+	net.Send(pl)
 	
-	umsg.Start("DisableDynamicLight", pl)
-	umsg.End()
+	net.Start("DisableDynamicLight")
+	net.Send(pl)
 	
 	pl:SetCollisionGroup(COLLISION_GROUP_PASSABLE_DOOR)
+	pl:CollisionRulesChanged()
 	
-	-- Do something with jump power
 	if pl:Team() == TEAM_HUNTERS then
 		pl:SetJumpPower(160)
 	elseif pl:Team() == TEAM_PROPS then
-		pl:SetJumpPower(160 * 1.4)
+		pl:SetJumpPower(160 * GetConVar("ph_prop_jumppower"):GetFloat())
+	end
+
+	-- Listen server host
+	if !game.IsDedicated() then
+		pl:SetNWBool("ListenServerHost", pl:IsListenServerHost())
 	end
 end
 hook.Add("PlayerSpawn", "PH_PlayerSpawn", PlayerSpawn)
 
 
--- Called when round ends, just to make sure hunters are remain unblinded (usually for short timer/testing)
+-- Called when round ends
 function RoundEnd()
+	-- Unblind the hunters
 	for _, pl in pairs(team.GetPlayers(TEAM_HUNTERS)) do
 		pl:Blind(false)
 		pl:UnLock()
 	end
+	
+	-- Stop autotaunting
+	net.Start("AutoTauntRoundEnd")
+	net.Broadcast()
 end
 hook.Add("PH_RoundEnd", "PH.ForceHuntersUnblind", RoundEnd)
 
@@ -435,26 +477,18 @@ end
 function GM:OnPreRoundStart(num)
 	game.CleanUpMap()
 	
-	if GetGlobalInt("RoundNumber") != 1 && (PHE.SWAP_TEAMS_EVERY_ROUND == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0)) then
+	if GetGlobalInt("RoundNumber") != 1 && (GetConVar("ph_swap_teams_every_round"):GetInt() == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0)) then
 		for _, pl in pairs(player.GetAll()) do
 			if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
 				if pl:Team() == TEAM_PROPS then
 					pl:SetTeam(TEAM_HUNTERS)
 				else
 					pl:SetTeam(TEAM_PROPS)
-					if GetConVar("ph_better_prop_movement"):GetBool() then
-						pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Rotate support! You can rotate the prop around by moving your mouse.", NOTIFY_UNDO, 20 )]] )
-						pl:SendLua( [[notification.AddLegacy("Additionally you can toggle lock rotation by pressing R key!", NOTIFY_GENERIC, 20 )]] )
+					if GetConVar("ph_notice_prop_rotation"):GetBool() then
+						timer.Simple(0.5, function() pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Rotate support! You can rotate the prop around by moving your mouse.", NOTIFY_UNDO, 20 )]] ) end)
+						pl:SendLua( [[notification.AddLegacy("Additionally you can toggle lock rotation by pressing R key!", NOTIFY_GENERIC, 18 )]] )
 						pl:SendLua( [[surface.PlaySound("garrysmod/content_downloaded.wav")]] )
-					else
-						pl:SendLua( [[notification.AddLegacy("You are in Prop Team with Classic mode!", NOTIFY_GENERIC, 20 )]] )
-						pl:SendLua( [[surface.PlaySound("ambient/water/drip3.wav")]] )
 					end
-					
-					-- Send some net stuff
-					net.Start("ServerUsablePropsToClient")
-						net.WriteTable(PHE.USABLE_PROP_ENTITIES)
-					net.Send(pl)
 					local propscore = team.GetScore( TEAM_PROPS )
 					local huntscore = team.GetScore( TEAM_HUNTERS )
 	
@@ -466,7 +500,23 @@ function GM:OnPreRoundStart(num)
 			end
 		end
 		
-		hook.Call("PH_OnPreRoundStart", nil, PHE.SWAP_TEAMS_EVERY_ROUND)
+		-- Props will gain a Bonus Armor points Hunter teams has more than 5 players in it. The more player, the more armor they get.
+		timer.Simple(1, function()
+			local NumHunter = table.Count(team.GetPlayers(TEAM_HUNTERS))
+			if NumHunter >= 5 && NumHunter <= 10 then
+				print("STATE >= 5 and <= 10")
+				for _,prop in pairs(team.GetPlayers(TEAM_PROPS)) do
+					if IsValid(prop) then prop:SetArmor(math.random(1,3) * 15) end
+				end
+			elseif NumHunter > 10 then
+				print("STATE > 10")
+				for _,prop in pairs(team.GetPlayers(TEAM_PROPS)) do
+					if IsValid(prop) then prop:SetArmor(math.random(3,7) * 15) end
+				end
+			end
+		end)
+		
+		hook.Call("PH_OnPreRoundStart", nil, GetConVar("ph_swap_teams_every_round"):GetInt())
 	end
 	
 	UTIL_StripAllPlayers()
@@ -476,54 +526,15 @@ end
 
 
 -- Called every server tick.
-function GM:Think()
-	-- Prop Rotation
-	for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
-		if GetConVar("ph_better_prop_movement"):GetBool() then
-			if pl && pl:IsValid() && pl:Alive() && pl.ph_prop && pl.ph_prop:IsValid() then
-				if pl.ph_prop:GetModel() == "models/player/kleiner.mdl" then
-					pl.ph_prop:SetPos(pl:GetPos())
-				else
-					pl.ph_prop:SetPos(pl:GetPos() - Vector(0, 0, pl.ph_prop:OBBMins().z))
-				end
-				if !(pl:GetPlayerLockedRot()) then
-					pl.ph_prop:SetAngles(pl:GetAngles())
-				end
+function GM:Think()	
+	-- Prop spectating is a bit messy so let us clean it up a bit
+	if PHE.SPECTATOR_CHECK < CurTime() then
+		for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
+			if IsValid(pl) && !pl:Alive() && pl:GetObserverMode() == OBS_MODE_IN_EYE then
+				hook.Call("ChangeObserverMode", GAMEMODE, pl, OBS_MODE_ROAMING)
 			end
 		end
-	end
-	
-	--MsgAll("ROUND IS NOW: "..GetGlobalInt("RoundNumber").."\n")
-	
-	-- Extra check here for changes cvars
-	if PHE.UPDATE_CVAR_TO_VARIABLE < CurTime() then
-		-- Update better prop movement variable
-		net.Start("PH_BetterPropMovement")
-			net.WriteBool(GetConVar("ph_better_prop_movement"):GetBool())
-		net.Broadcast()
-		
-		-- Update camera collisions variable
-		net.Start("PH_CameraCollisions")
-			net.WriteBool(GetConVar("ph_prop_camera_collisions"):GetBool())
-		net.Broadcast()
-		
-		-- Update camera collisions variable
-		net.Start("PH_CustomTauntEnabled")
-			net.WriteInt(GetConVarNumber("ph_enable_custom_taunts"), 8)
-		net.Broadcast()
-		
-		-- Update custom taunt delay variable
-		net.Start("PH_CustomTauntDelay")
-			net.WriteInt(GetConVarNumber("ph_customtaunts_delay"), 8) -- 8 bits so we don't send too much information here
-		net.Broadcast()
-		
-		-- Update plhalos enabled variable
-		net.Start("PH_PlayerName_AboveHead")
-			net.WriteBool(GetConVar("ph_enable_plnames"):GetBool())
-		net.Broadcast()
-		
-		-- Make sure to update every so seconds and not constantly
-		PHE.UPDATE_CVAR_TO_VARIABLE = CurTime() + PHE.UPDATE_CVAR_TO_VARIABLE_ADD
+		PHE.SPECTATOR_CHECK = CurTime() + PHE.SPECTATOR_CHECK_ADD
 	end
 end
 
@@ -558,12 +569,13 @@ function GM:PlayerSwitchFlashlight(pl, on)
 	end
 	
 	if pl:Alive() && pl:Team() == TEAM_PROPS then
-		umsg.Start("PlayerSwitchDynamicLight", pl)
-		umsg.End()
+		net.Start("PlayerSwitchDynamicLight")
+		net.Send(pl)
 	end
 	
 	return false
 end
+
 hook.Add("PlayerDeath", "DisablePlayerFlashlights", function(ply) ply:Flashlight(false) end)
 
 -- Round Control
@@ -576,18 +588,18 @@ end)
 
 local bAlreadyStarted = false
 function GM:OnRoundEnd( num )
-	-- Check if PHE.WAIT_FOR_PLY is true
+	-- Check if GetConVar("ph_waitforplayers"):GetBool() is true
 	-- This is a fast implementation for a waiting system
 	-- Make optimisations if needed
-	if ( PHE.WAIT_FOR_PLY ) then
+	if ( GetConVar("ph_waitforplayers"):GetBool() ) then
 		-- Take away a round number quickly before it adds another when there are not enough players
 		-- Set to false
-		if ( ( team.NumPlayers( TEAM_HUNTERS ) < PHE.MIN_PLY ) || ( team.NumPlayers( TEAM_PROPS ) < PHE.MIN_PLY ) ) then
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) < GetConVar("ph_min_waitforplayers"):GetInt() ) || ( team.NumPlayers( TEAM_PROPS ) < GetConVar("ph_min_waitforplayers"):GetInt() ) ) then
 			bAlreadyStarted = false
 		end
 
 		-- Set to true
-		if ( ( team.NumPlayers( TEAM_HUNTERS ) >= PHE.MIN_PLY ) && ( team.NumPlayers( TEAM_PROPS ) >= PHE.MIN_PLY ) ) then
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) >= GetConVar("ph_min_waitforplayers"):GetInt() ) && ( team.NumPlayers( TEAM_PROPS ) >= GetConVar("ph_min_waitforplayers"):GetInt() ) ) then
 			bAlreadyStarted = true
 		end
 		
@@ -613,13 +625,13 @@ function GM:RoundStart()
 	
 	SetGlobalFloat( "RoundEndTime", CurTime() + roundDuration );
 	
-	-- Check if PHE.WAIT_FOR_PLY is true
+	-- Check if GetConVar("ph_waitforplayers"):GetBool() is true
 	-- This is a fast implementation for a waiting system
 	-- Make optimisations if needed
-	if ( PHE.WAIT_FOR_PLY ) then
+	if ( GetConVar("ph_waitforplayers"):GetBool() ) then
 	
 		-- Pause these timers if there are not enough players on the teams in the server
-		if ( ( team.NumPlayers( TEAM_HUNTERS ) < PHE.MIN_PLY ) || ( team.NumPlayers( TEAM_PROPS ) < PHE.MIN_PLY ) ) then
+		if ( ( team.NumPlayers( TEAM_HUNTERS ) < GetConVar("ph_min_waitforplayers"):GetInt() ) || ( team.NumPlayers( TEAM_PROPS ) < GetConVar("ph_min_waitforplayers"):GetInt() ) ) then
 		
 			if ( timer.Exists( "RoundEndTimer" ) && timer.Exists( "CheckRoundEnd" ) ) then
 			
@@ -639,7 +651,7 @@ function GM:RoundStart()
 	end
 	
 	-- Send this as a global boolean
-	SetGlobalBool( "RoundWaitForPlayers", PHE.WAIT_FOR_PLY )
+	SetGlobalBool( "RoundWaitForPlayers", GetConVar("ph_waitforplayers"):GetBool() )
 	
 	hook.Call("PH_RoundStart", nil)
 	
@@ -648,14 +660,20 @@ end
 
 -- Player pressed a key
 function PlayerPressedKey(pl, key)
-	if GetConVar("ph_better_prop_movement"):GetBool() && pl && pl:IsValid() && pl:Alive() && pl:Team() == TEAM_PROPS && pl.ph_prop && pl.ph_prop:IsValid() then
+	if pl && pl:IsValid() && pl:Alive() && pl:Team() == TEAM_PROPS then
 		if ( key == IN_RELOAD ) then
 			if pl:GetPlayerLockedRot() then
 				pl:SetNWBool("PlayerLockedRotation", false)
 				pl:PrintMessage(HUD_PRINTCENTER, "Prop Rotation Lock: Disabled")
+				net.Start("PHE.rotateState")
+				net.WriteInt(0, 2)
+				net.Send(pl)
 			else
 				pl:SetNWBool("PlayerLockedRotation", true)
 				pl:PrintMessage(HUD_PRINTCENTER, "Prop Rotation Lock: Enabled")
+				net.Start("PHE.rotateState")
+				net.WriteInt(1, 2)
+				net.Send(pl)
 			end
 		end
 	end

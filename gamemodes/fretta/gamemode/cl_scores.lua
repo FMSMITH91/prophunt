@@ -33,6 +33,9 @@ function GM:AddScoreboardAvatar( ScoreBoard )
 		local av = vgui.Create( "AvatarImage", ScoreBoard )
 			av:SetSize( 32, 32 )
 			av:SetPlayer( ply )
+			av.Click = function()
+				print( "LOL" )
+			end
 			return av
 	end
 	
@@ -78,10 +81,9 @@ function GM:AddScoreboardVoice( ScoreBoard )
 	ScoreBoard:AddColumn( "Mute", 40, f, 0.5, nil, 6, 6 )
  
 end
- 
- 
+
 function GM:AddScoreboardSpacer( ScoreBoard, iSize )
-	ScoreBoard:AddColumn( "", 16 ) // Gap
+	ScoreBoard:AddColumn( "", 16 )
 end
 
 function GM:AddScoreboardName( ScoreBoard )
@@ -172,5 +174,5 @@ function GM:CreateScoreboard( ScoreBoard )
 		
 	// Here we sort by these columns (and descending), in this order. You can define up to 4
 	ScoreBoard:SetSortColumns( { 5, true, 6, false, 4, false } )
-
+	
 end

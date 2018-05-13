@@ -1,65 +1,53 @@
--- Include these
 include("sh_init.lua")
-
+include("sh_config.lua")
+CL_GLOBAL_LIGHT_STATE = 0
+include("cl_hud_mask.lua")
+include("cl_hud.lua")
 include("cl_menu.lua")
 include("cl_tauntwindow.lua")
-include("cl_mutewindow.lua")
 include("cl_targetid.lua")
-
 include("cl_autotaunt.lua")
+
+include("cl_credits.lua")
 
 overlaydraw = 0
 
--- Convars are bad at networking sometimes
-CL_BETTER_PROP_MOVEMENT = true
-CL_CAMERA_COLLISIONS = false
+-- Called immediately after starting the gamemode 
+function Initialize()
+	hullz 	= 80
+	client_prop_light = false
+	blind = false
+	
+	CreateClientConVar("ph_cl_halos", "1", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
+	CreateClientConVar("ph_cl_pltext", "1", true, false, "Options for Text above players. 0 = Disable. 1 = Enable.")
+	CreateClientConVar("ph_cl_endround_sound", "1", true, false, "Play a sound when round ends? 0 to disable.")
+	CreateClientConVar("ph_cl_autoclose_taunt", "1", true, false, "Auto close the taunt window (When Double Clicking on them)?")
+	CreateClientConVar("ph_cl_spec_hunter_line", "1", true, false, "Draw a line on hunters so we can see their aim in spectator mode.")
+	CreateClientConVar("cl_enable_luckyballs_icon", "1", true,false, "Enable 'Lucky ball' icon to be displayed once they spawned")
+	CreateClientConVar("ph_hud_use_new", "1", true, false, "Use new PH: Enhanced HUD")
+	CreateClientConVar("ph_show_team_topbar", "1", true, false, "Show total alive team players bar on the top left (Experimental)")
+	
+	CL_GLIMPCAM 	= 0
+	MAT_LASERDOT 	= Material("sprites/glow04_noz")
+	
+	surface.CreateFont( "MyFont",
+	{
+		font	= "Arial",
+		size	= 14,
+		weight	= 1200,
+		antialias = true,
+		underline = false
+	})
 
--- Glimpse of thirdperson (Timed)
-CL_THIRDPERSON_TIMED = 0
-
--- Serverside control of plhalos
-CL_PLNAMES_SERVERENABLED = 0
-
--- Add some network stuff here (Warning: Dirty/Unoptimised code)
-function PH_BetterPropMovement(len)
-	CL_BETTER_PROP_MOVEMENT = net.ReadBool()
+	surface.CreateFont("TrebuchetBig", {
+		font = "Impact",
+		size = 40
+	})
 end
-net.Receive("PH_BetterPropMovement", PH_BetterPropMovement)
-
-function PH_CameraCollisions(len)
-	CL_CAMERA_COLLISIONS = net.ReadBool()
-end
-net.Receive("PH_CameraCollisions", PH_CameraCollisions)
-
-function PH_CustomTauntEnabled(len)
-	PHE.CUSTOM_TAUNT_ENABLED = net.ReadInt(8)
-end
-net.Receive("PH_CustomTauntEnabled", PH_CustomTauntEnabled)
-
-function PH_CustomTauntDelay(len)
-	PHE.CUSTOM_TAUNT_DELAY = net.ReadInt(8)
-end
-net.Receive("PH_CustomTauntDelay", PH_CustomTauntDelay)
-
-function PH_PlayerName_AboveHead(len)
-	CL_PLNAMES_SERVERENABLED = net.ReadBool()
-end
-net.Receive("PH_PlayerName_AboveHead", PH_PlayerName_AboveHead)
-
--- Receive the Winning Notification
-net.Receive("PH_RoundDraw_Snd", function(len)
-	if GetConVar("ph_cl_endround_sound"):GetBool() then
-		surface.PlaySound(table.Random(PHE.WINNINGSOUNDS["Draw"]))
-	end
-end)
-net.Receive("PH_TeamWinning_Snd", function(len)
-	local snd = net.ReadString()
-	if GetConVar("ph_cl_endround_sound"):GetBool() then
-		surface.PlaySound(snd)
-	end
-end)
+hook.Add("Initialize", "PH_Initialize", Initialize)
 
 -- Decides where  the player view should be (forces third person for props)
+local CurEnt
 function GM:CalcView(pl, origin, angles, fov)
 	local view = {} 
 	
@@ -77,39 +65,44 @@ function GM:CalcView(pl, origin, angles, fov)
  	
  	-- Give the active weapon a go at changing the viewmodel position 
 	if pl:Team() == TEAM_PROPS && pl:Alive() then
-		if CL_CAMERA_COLLISIONS then
+		if GetConVar("ph_prop_camera_collisions"):GetBool() then
 			local trace = {}
+
+			local filterent = ents.FindByClass("ph_prop")
+			table.insert(filterent, pl)
 			
-			-- Fix camera collision bugs for smaller prop size.
-			if hullz <= 32 then
-				hullz = 36
+			CurEnt = LocalPlayer():GetPlayerPropEntity()
+			
+			if IsValid(CurEnt) && math.Round(CurEnt:OBBMaxs().z) <= 20 then			
+				trace.start = origin + Vector(0, 0, -20)
+				trace.endpos = origin + Vector(0, 0, -20) + (angles:Forward() * -80)
+			else
+				trace.start = origin + Vector(0, 0, hullz - 60)
+				trace.endpos = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
 			end
 			
-			trace.start = origin + Vector(0, 0, hullz - 60)
-			trace.endpos = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
-			trace.filter = client_prop_model && ents.FindByClass("ph_prop")
-			local tr = util.TraceLine(trace)
+			trace.filter = filterent
 			
+			local tr = util.TraceLine(trace)
 			view.origin = tr.HitPos
 		else
 			view.origin = origin + Vector(0, 0, hullz - 60) + (angles:Forward() * -80)
 		end
 	elseif pl:Team() == TEAM_HUNTERS && pl:Alive() then
-		-- hunter here
 	 	local wep = pl:GetActiveWeapon() 
 	 	if wep && wep != NULL then 
 	 		local func = wep.GetViewModelPosition 
 	 		if func then 
-	 			view.vm_origin, view.vm_angles = func(wep, origin*1, angles*1) -- Note: *1 to copy the object so the child function can't edit it. 
+	 			view.vm_origin, view.vm_angles = func(wep, origin*1, angles*1)
 	 		end
 	 		 
 	 		local func = wep.CalcView 
 	 		if func then 
-	 			view.origin, view.angles, view.fov = func(wep, pl, origin*1, angles*1, fov) -- Note: *1 to copy the object so the child function can't edit it. 
+	 			view.origin, view.angles, view.fov = func(wep, pl, origin*1, angles*1, fov)
 	 		end 
 	 	end
 		-- hunter glimpse of thirdperson
-		if CL_THIRDPERSON_TIMED > CurTime() then
+		if CL_GLIMPCAM > CurTime() then
 			local trace = {}
 			
 			trace.start = origin
@@ -127,23 +120,23 @@ function GM:CalcView(pl, origin, angles, fov)
  	return view 
 end
 
-
+local mat = Material("prophunt_enhanced/sprites/luckyball")
 -- Draw round timeleft and hunter release timeleft
 function HUDPaint()
 local ply = LocalPlayer()
-	-- Draw text players.
-	if CL_PLNAMES_SERVERENABLED && GetConVar("ph_cl_pltext"):GetBool() then
+	-- Draw player texts
+	if GetConVar("ph_enable_plnames"):GetBool() && GetConVar("ph_cl_pltext"):GetBool() && LocalPlayer():Team() != TEAM_SPECTATOR then
 		for _, pl in pairs(player.GetAll()) do
-			if pl != LocalPlayer() && (pl && pl:IsValid() && pl:Alive() && pl:Team() == LocalPlayer():Team() && !pl:IsLineOfSightClear(LocalPlayer())) then
-				if  (GetConVarNumber("ph_cl_pltext") > 0) then
-					draw.DrawText(pl:Name(), "TargetID", (pl:EyePos() + Vector(0, 0, 32)):ToScreen().x, (pl:EyePos() + Vector(0, 0, 32)):ToScreen().y, team.GetColor(pl:Team()), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-				end
+			if pl != LocalPlayer() && (pl && pl:IsValid() && pl:Alive() && pl:Team() == LocalPlayer():Team()) then
+				local addvector = Vector(0, 0, math.Clamp(pl:EyePos():Distance(LocalPlayer():EyePos())*0.04, 16, 64))
+				-- todo: text will disappear in a specified distance.
+				draw.DrawText(pl:Name().." ("..pl:Health().."%)", "TargetIDSmall", (pl:EyePos() + addvector):ToScreen().x, (pl:EyePos() + addvector):ToScreen().y, team.GetColor(pl:Team()), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			end
 		end
 	end
 	
+	-- Hunter Blindlock Time
 	if GetGlobalBool("InRound", false) then
-		-- local blindlock_time_left = (HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 		local blindlock_time_left = (GetConVarNumber("ph_hunter_blindlock_time") - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 		
 		if blindlock_time_left < 1 && blindlock_time_left > -6 then
@@ -169,7 +162,38 @@ local ply = LocalPlayer()
 		end
 	end
 	
-	-- Draw some nice text
+	-- Draw Lucky Balls Icon
+	if GetConVar("cl_enable_luckyballs_icon"):GetBool() then
+		local offset = Vector( 0, 0, 45 )
+		local ang = LocalPlayer():EyeAngles()
+		cam.Start3D()
+			for _,ent in pairs(ents.FindByClass('ph_luckyball')) do
+				local pos = ent:GetPos() + offset + ang:Up()
+				
+				ang:RotateAroundAxis( ang:Forward(), 90 )
+				ang:RotateAroundAxis( ang:Right(), 90 )
+				
+				if LocalPlayer():Alive() && LocalPlayer():IsLineOfSightClear(ent) then
+					
+					local PlayerEntPos = math.floor(LocalPlayer():GetPos():Distance(ent:GetPos()))
+					local w,h = 16,16
+					
+					if PlayerEntPos <= 100 then
+						w = 16
+						h = 16
+					else
+						w = 16 * (PlayerEntPos*0.01)
+						h = 16 * (PlayerEntPos*0.01)
+					end
+					
+					render.SetMaterial(mat)
+					render.DrawSprite(pos,w,h,color_white)
+				end
+			end
+		cam.End3D()
+	end
+	
+	-- The 'You were Killed By' text, or the Freeze Cam text.
 	if LocalPlayer():GetNWBool("InFreezeCam", false) then
 		local w1, h1 = surface.GetTextSize("You were killed by "..LocalPlayer():GetNWEntity("PlayerKilledByPlayerEntity", nil):Name() );
 		local textx = ScrW()/2
@@ -188,135 +212,25 @@ end
 
 hook.Add( "HUDPaintBackground", "RenderBlindOverlay", DrawMaterial )
 
--- Called immediately after starting the gamemode 
-function Initialize()
-	hullz = 80
-	client_prop_light = false
-	
-	CreateClientConVar("ph_cl_halos", "0", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
-	--CreateClientConVar("ph_cl_plhalos", "8", true, false, "Toggle Enable/Disable Halo effects on players & disable automatically if over this limit.")
-	CreateClientConVar("ph_cl_pltext", "1", true, false, "Options for Text above players. 0 = Disable. 1 = Enable.")
-	CreateClientConVar("ph_cl_endround_sound", "1", true, false, "Play a sound when round ends? 0 to disable.")
-	CreateClientConVar("ph_cl_autoclose_taunt", "1", true, false, "Auto close the taunt window (When Double Clicking on them)?")
-	
-	-- Just like the server constant
-	USABLE_PROP_ENTITIES_CL = {
-		"prop_physics",
-		"prop_physics_multiplayer"
-	}
-	
-	-- surface.CreateFont("Arial", 14, 1200, true, false, "ph_arial")
-	surface.CreateFont( "MyFont",
-	{
-		font	= "Arial",
-		size	= 14,
-		weight	= 1200,
-		antialias = true,
-		underline = false
-	})
-
-	surface.CreateFont("TrebuchetBig", {
-		font = "Impact",
-		size = 40
-	})
-end
-hook.Add("Initialize", "PH_Initialize", Initialize)
-
-
--- Resets the player hull
-function ResetHull(um)
-	if LocalPlayer() && LocalPlayer():IsValid() then
-		LocalPlayer():ResetHull()
-		hullz = 80
-	end
-end
-usermessage.Hook("ResetHull", ResetHull)
-
-
--- Sets the local blind variable to be used in CalcView
-function SetBlind(um)
-	blind = um:ReadBool()
-end
-usermessage.Hook("SetBlind", SetBlind)
-
--- here you can add more than 2 additional freeze cam sounds. Every list ends with commas.
-PHE.FreezeCamSnd = {
-	"misc/freeze_cam.wav",
-	"misc/freeze_cam_sad1.wav"
-}
-
--- Plays the Freeze Cam sound
-function PlayFreezeCamSound(um)
-	-- surface.PlaySound("misc/freeze_cam.wav") // if you want single Freeze Cam Sound instead 2, uncomment this, and comment below.
-	surface.PlaySound(table.Random(PHE.FreezeCamSnd))
-end
-usermessage.Hook("PlayFreezeCamSound", PlayFreezeCamSound)
-
-
--- Sets the player hull
-function SetHull(um)
-	hullxy = um:ReadLong()
-	hullz = um:ReadLong()
-	new_health = um:ReadLong()
-	
-	LocalPlayer():SetHull(Vector(hullxy * -1, hullxy * -1, 0), Vector(hullxy, hullxy, hullz))
-	LocalPlayer():SetHullDuck(Vector(hullxy * -1, hullxy * -1, 0), Vector(hullxy, hullxy, hullz))
-	LocalPlayer():SetHealth(new_health)
-end
-usermessage.Hook("SetHull", SetHull)
-
-
--- Player has a client-side prop model
-function ClientPropSpawn(um)
-	client_prop_model = ents.CreateClientProp("models/player/kleiner.mdl")
-end
-usermessage.Hook("ClientPropSpawn", ClientPropSpawn)
-
-
--- Remove the client prop model
-function RemoveClientPropUMSG(um)
-	if client_prop_model && client_prop_model:IsValid() then
-		client_prop_model:Remove()
-		client_prop_model = nil
-	end
-end
-usermessage.Hook("RemoveClientPropUMSG", RemoveClientPropUMSG)
-
-
--- Called every client frame.
-function GM:Think()
-	for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
-		if CL_BETTER_PROP_MOVEMENT then
-			if LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():GetPlayerPropEntity() && LocalPlayer():GetPlayerPropEntity():IsValid() && client_prop_model && client_prop_model:IsValid() then
-				if client_prop_model:GetModel() == "models/player/kleiner.mdl" then
-					client_prop_model:SetPos(LocalPlayer():GetPos())
-				else
-					client_prop_model:SetPos(LocalPlayer():GetPos() - Vector(0, 0, LocalPlayer():GetPlayerPropEntity():OBBMins().z))
-				end
-				client_prop_model:SetModel(LocalPlayer():GetPlayerPropEntity():GetModel())
-				client_prop_model:SetAngles(LocalPlayer():GetPlayerPropEntity():GetAngles())
-				client_prop_model:SetSkin(LocalPlayer():GetPlayerPropEntity():GetSkin())
-			end
-		end
-	end
-	
-	if client_prop_light && LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():Team() == TEAM_PROPS then
-		local prop_light = DynamicLight(LocalPlayer():EntIndex())
-		if prop_light then
-			prop_light.pos = LocalPlayer():GetPos()
-			prop_light.r = 255
-			prop_light.g = 255
-			prop_light.b = 255
-			prop_light.brightness = 0.15
-			prop_light.decay = 1
-			prop_light.size = 128
-			prop_light.dietime = CurTime() + 0.1
+-- After the player has been drawn
+function PH_PostPlayerDraw(pl)
+	-- Draw a line on hunters
+	if GetConVar("ph_cl_spec_hunter_line"):GetBool() && (!LocalPlayer():Alive() || LocalPlayer():Team() == TEAM_SPECTATOR) then
+		if IsValid(pl) && pl:Alive() && pl:Team() == TEAM_HUNTERS then
+			render.DrawLine(pl:GetShootPos(), pl:GetEyeTrace().HitPos, team.GetColor(pl:Team()), true)
+			render.SetMaterial(MAT_LASERDOT)
+			render.DrawSprite(pl:GetEyeTrace().HitPos, 8, 8, team.GetColor(pl:Team()))
 		end
 	end
 end
+hook.Add("PostPlayerDraw", "PH_PostPlayerDraw", PH_PostPlayerDraw)
+
+hook.Add("PrePlayerDraw", "PHE.HidePlayer", function(ply)
+	if ply:Team() == TEAM_PROPS then return true end
+end)
 
 -- Draws halos on team members
-function TeamDrawHalos()
+function PHEDrawPropselectHalos()
 
 	if GetConVar("ph_cl_halos"):GetBool() then
 		-- Something to tell if the prop is selectable
@@ -330,10 +244,10 @@ function TeamDrawHalos()
 				trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60)
 				trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 100
 			end
-			trace.filter = client_prop_model && ents.FindByClass("ph_prop")
+			trace.filter = ents.FindByClass("ph_prop")
 			
 			local trace2 = util.TraceLine(trace) 
-			if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(USABLE_PROP_ENTITIES_CL, trace2.Entity:GetClass()) then
+			if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(PHE.USABLE_PROP_ENTITIES, trace2.Entity:GetClass()) then
 				local ent_table = {}
 				table.insert(ent_table, trace2.Entity)
 				halo.Add(ent_table, Color(20, 250, 0), 1.2, 1.2, 1, true, true)
@@ -342,37 +256,133 @@ function TeamDrawHalos()
 		
 	end
 end
-hook.Add("PreDrawHalos", "TeamDrawHalos", TeamDrawHalos)
+hook.Add("PreDrawHalos", "PHEDrawPropselectHalos", PHEDrawPropselectHalos)
 
+-- the 'Accurate' prop disguise and Play random taunt.
+hook.Add("KeyPress", "tracetest.GetPropInfo", function(pl,key)
+	if ((pl:Team() == TEAM_PROPS && pl:Alive()) && key == IN_ATTACK) then	
+		local trace = {}
+		if hullz < 25 then
+			trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 30)
+			trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 30) + LocalPlayer():EyeAngles():Forward() * 100 -- 100 Hammer units.
+		else
+			trace.start = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60)
+			trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, hullz - 60) + LocalPlayer():EyeAngles():Forward() * 100
+		end
+		trace.filter = ents.FindByClass("ph_prop")
+		
+		local trace2 = util.TraceLine(trace) 
+		if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(PHE.USABLE_PROP_ENTITIES, trace2.Entity:GetClass()) then
+			net.Start("CL2SV_ExchangeProp")
+			net.WriteEntity(trace2.Entity)
+			net.SendToServer()
+		end
+	end
+	
+	if ((pl:Team() == TEAM_PROPS && pl:Alive()) && key == IN_ATTACK2) then
+		LocalPlayer():ConCommand("gm_showspare1")
+	end
+end)
+
+-- Called every client frame
+function GM:Think()
+	-- Prop light
+	if client_prop_light && LocalPlayer() && LocalPlayer():IsValid() && LocalPlayer():Alive() && LocalPlayer():Team() == TEAM_PROPS then
+		local prop_light = DynamicLight(LocalPlayer():EntIndex())
+		if prop_light then
+			prop_light.pos = LocalPlayer():GetPos()
+			prop_light.r = 255
+			prop_light.g = 255
+			prop_light.b = 255
+			prop_light.brightness = 0.25
+			prop_light.decay = 1
+			prop_light.size = 180
+			prop_light.dietime = CurTime() + 0.1
+		end
+	end	
+end
+
+-- ///////////////////\\\\\\\\\\\\\\\\\ --
+-- 			Net Receives Hooks 			--
+-- ///////////////////\\\\\\\\\\\\\\\\\ --
+
+-- Receive the Winning Notification
+net.Receive("PH_RoundDraw_Snd", function(len)
+	if GetConVar("ph_cl_endround_sound"):GetBool() then
+		surface.PlaySound(table.Random(PHE.WINNINGSOUNDS["Draw"]))
+	end
+end)
+net.Receive("PH_TeamWinning_Snd", function(len)
+	local snd = net.ReadString()
+	if GetConVar("ph_cl_endround_sound"):GetBool() then
+		surface.PlaySound(snd)
+	end
+end)
+
+-- Resets the player hull
+net.Receive("ResetHull", function()
+	if LocalPlayer() && LocalPlayer():IsValid() then
+		LocalPlayer():ResetHull()
+		hullz = 80
+	end
+end)
+
+-- Sets the local blind variable to be used in CalcView
+net.Receive("SetBlind", function()
+	blind = net.ReadBool()
+end)
+
+--[[ Here you can add more than 2 additional freeze cam sounds. 
+You can add more sounds by using table.insert(PHE.FreezeCamSnd, <path file>) repeatedly outside of this code scope.
+Example:
+	table.insert(PHE.FreezeCamSnd, "vo/k_lab/kl_fiddlesticks.wav")
+	table.insert(PHE.FreezeCamSnd, "vo/k_lab/kl_ohdear.wav")
+	...more ]]
+	
+-- If you wish to use a single sound instead, use ph_fc_use_single_sound 1 & ph_fc_cue_path "<path/sound/file.wav>" convar to override.
+
+PHE.FreezeCamSnd = {
+	-- do not manually add sounds in here, which this may break the sound list. Use table.insert instead!
+	"misc/freeze_cam.wav",
+	"misc/freeze_cam_sad1.wav"
+}
+-- Plays the Freeze Cam sound
+net.Receive("PlayFreezeCamSound", function()
+	if GetConVar("ph_fc_use_single_sound"):GetBool() then
+		surface.PlaySound(GetConVar("ph_fc_cue_path"):GetString())
+	else
+		surface.PlaySound(table.Random(PHE.FreezeCamSnd))
+	end
+end)
+
+-- Sets the player hull
+net.Receive("SetHull", function()
+	local hullxy = net.ReadInt(32)
+	local hullz = net.ReadInt(32)
+	local hulldz = net.ReadInt(32)
+	local new_health = net.ReadInt(9)
+	
+	LocalPlayer():SetHull(Vector(hullxy * -1, hullxy * -1, 0), Vector(hullxy, hullxy, hullz))
+	LocalPlayer():SetHullDuck(Vector(hullxy * -1, hullxy * -1, 0), Vector(hullxy, hullxy, hulldz))
+	LocalPlayer():SetHealth(new_health)
+end)
 
 -- Replaces the flashlight with a client-side dynamic light for props
-function PlayerSwitchDynamicLight(um)
+net.Receive("PlayerSwitchDynamicLight", function() 
 	if client_prop_light then
 		client_prop_light = false
-		if IsMounted("cstrike") then
-			surface.PlaySound("items/nvg_off.wav")
-		end
+		surface.PlaySound("prop_idbs/light_off1.wav")
+		CL_GLOBAL_LIGHT_STATE = 0
 	else
 		client_prop_light = true
-		if IsMounted("cstrike") then
-			surface.PlaySound("items/nvg_on.wav")
-		end
+		surface.PlaySound("prop_idbs/light_on.wav")
+		CL_GLOBAL_LIGHT_STATE = 1
 	end
-end
-usermessage.Hook("PlayerSwitchDynamicLight", PlayerSwitchDynamicLight)
-
-
--- Receive a list of usable prop entities
-function ServerUsablePropsToClient(len)
-	USABLE_PROP_ENTITIES_CL = net.ReadTable()
-end
-net.Receive("ServerUsablePropsToClient", ServerUsablePropsToClient)
-
+end)
 
 -- Turns the dynamic light OFF
-function DisableDynamicLight(um)
+net.Receive("DisableDynamicLight", function()
 	if client_prop_light then
 		client_prop_light = false
 	end
-end
-usermessage.Hook("DisableDynamicLight", DisableDynamicLight)
+end)

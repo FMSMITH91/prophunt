@@ -14,7 +14,7 @@ CLASS.DrawTeamRing			= false
 
 -- Called by spawn and sets loadout
 function CLASS:Loadout(pl)
-    pl:GiveAmmo(64, "Buckshot")
+    pl:GiveAmmo(32, "Buckshot")
     pl:GiveAmmo(255, "SMG1")
     pl:GiveAmmo(12, "357")
     pl:GiveAmmo(12, "XBowBolt")
@@ -38,11 +38,11 @@ function CLASS:OnSpawn(pl)
 	if !pl:IsValid() then return end
 
 	pl:SetupHands()
-	pl:SetCustomCollisionCheck(false)
+	pl:SetCustomCollisionCheck(true)
 	pl:SetAvoidPlayers(false)
 	pl:CrosshairEnable()
 
-	local unlock_time = math.Clamp(PHE.HUNTER_BLINDLOCK_TIME - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, PHE.HUNTER_BLINDLOCK_TIME)
+	local unlock_time = math.Clamp(GetConVar("ph_hunter_blindlock_time"):GetInt() - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, GetConVar("ph_hunter_blindlock_time"):GetInt())
 	
 	local unblindfunc = function()
 		if pl:IsValid() then
@@ -68,21 +68,15 @@ function CLASS:OnSpawn(pl)
 		timer.Simple(2, lockfunc)
 		timer.Simple(unlock_time, unlockfunc)
 	end
-
-    timer.Simple(0.1, function()
-		if pl:IsValid() then
-			umsg.Start("AutoTauntSpawn")
-			umsg.End()
-		end
-	end)
+	
 end
 
 
 -- Hands
 function CLASS:GetHandsModel()
-
-	return { model = "models/weapons/c_arms_combine.mdl", skin = 1, body = "0100000" }
-
+	if !GetConVar("ph_use_custom_plmodel"):GetBool() then
+		return { model = "models/weapons/c_arms_combine.mdl", skin = 1, body = "0100000" }
+	end
 end
 
 

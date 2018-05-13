@@ -10,18 +10,21 @@ function PH_Create_PlayerClip(min, max)
 	
 	pc:SetPos(pc.pos)
 	pc:Spawn()
-	
-	local function RemoveClipBrush()
-		pc:Remove()
-		print("Removing Anti Exploit Brush...")
-	end
-	hook.Add("PreCleanupMap", "PH_RemoveClip", RemoveClipBrush)
 end
 
+local function RemoveClipBrush()
+	for _,pc in pairs(ents.FindByClass("brush_playerclip")) do
+		if !IsValid(pc) then return end
+		printVerbose("[PH_Kleiner_v2.Config] Removing Anti Exploit Brush -> #"..pc:EntIndex())
+		pc:Remove()
+	end
+end
+hook.Add("PreCleanupMap", "PH_RemoveClip", RemoveClipBrush)
 
-local function CreatePlayerClip()
-	if game.GetMap() == "ph_kliener_v2" then
-		print("Creating Anti Exploit walls...")
+
+local function PH_Create_PlayerClip()
+	if game.GetMap() == "ph_kliener_v2" && engine.ActiveGamemode() == "prop_hunt" then
+		printVerbose("Creating Anti Exploit walls...")
 		PH_Create_PlayerClip(Vector(1040, -273, 1000), Vector(-1159, -156, 1500))
 		PH_Create_PlayerClip(Vector(-1020, 639, -50), Vector(-1306, 669, 850))
 		PH_Create_PlayerClip(Vector(-1299, 659, -50), Vector(-1312, -1440, 1510))
@@ -44,4 +47,4 @@ local function CreatePlayerClip()
 		ShadowControl:Activate()
 	end
 end
-hook.Add("PostCleanupMap", "PH_AddClipBrush", CreatePlayerClip)
+hook.Add("PostCleanupMap", "PH_AddClipBrush", PH_Create_PlayerClip)

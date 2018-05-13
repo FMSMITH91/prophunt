@@ -23,9 +23,9 @@ end
 
 -- Called when player spawns with this class
 function CLASS:OnSpawn(pl)
-	pl:SetColor( Color(255, 255, 255, 0))
-	pl:SetupHands()
+	pl:SetColor(Color(0,0,0,0))
 	pl:SetCustomCollisionCheck(true)
+	pl:SetupHands()
 	pl:SetAvoidPlayers(true)
 	pl:CrosshairDisable()
 	
@@ -34,8 +34,9 @@ function CLASS:OnSpawn(pl)
 	
 	pl.ph_prop = ents.Create("ph_prop")
 	pl.ph_prop:SetPos(pl:GetPos())
-	pl.ph_prop:SetAngles(pl:GetAngles())
+	pl.ph_prop:SetAngles(pl:GetAngles())	
 	pl.ph_prop:Spawn()
+	
 	if GetConVar("ph_use_custom_plmodel_for_prop"):GetBool() then
 		if table.HasValue(PHE.PROP_PLMODEL_BANS, string.lower(player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel")))) then
 			pl.ph_prop:SetModel("models/player/kleiner.mdl")
@@ -48,29 +49,17 @@ function CLASS:OnSpawn(pl)
 		end
 	end
 	pl.ph_prop:SetSolid(SOLID_BBOX)
-	if !GetConVar("ph_better_prop_movement"):GetBool() then
-		pl.ph_prop:SetParent(pl)
-	end
 	pl.ph_prop:SetOwner(pl)
 	pl:SetNWEntity("PlayerPropEntity", pl.ph_prop)
 	
-	if GetConVar("ph_better_prop_movement"):GetBool() then
-		-- Give it a delay
-		timer.Simple(0.1, function()
-			if pl:IsValid() then
-				umsg.Start("ClientPropSpawn", pl)
-				umsg.End()
-			end
-		end)
-	end
-
-	timer.Simple(0.1, function()
-		if pl:IsValid() then
-			umsg.Start("AutoTauntSpawn")
-			umsg.End()
+	-- Delay start the AutoTaunt stuff
+	timer.Simple(0.5, function()
+		if IsValid(pl) then
+			net.Start("AutoTauntSpawn")
+			net.Send(pl)
 		end
 	end)
-
+	
 	pl.ph_prop.max_health = 100
 end
 
@@ -84,7 +73,10 @@ end
 -- Called when a player dies with this class
 function CLASS:OnDeath(pl, attacker, dmginfo)
 	pl:RemoveProp()
-	pl:RemoveClientProp()
+	-- reset the Prop Rotating State.
+	net.Start("PHE.rotateState")
+	net.WriteInt(0, 2)
+	net.Send(pl)
 end
 
 

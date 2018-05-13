@@ -124,10 +124,10 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 
 	local RdmDeathString = {
 		"suicided!",
-		"died mysteriously!",
+		"died mysteriously.",
 		"died from magic.",
 		"no-scoped themself.",
-		"rage-quited.",
+		"has just ragequit.",
 		"is drunk.",
 		"died... better luck next time!",
 		"slapped themself.",

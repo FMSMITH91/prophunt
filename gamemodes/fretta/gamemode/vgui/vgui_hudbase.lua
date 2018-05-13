@@ -1,6 +1,6 @@
 local PANEL = {}
 
-surface.CreateLegacyFont( "Trebuchet MS", 32, 800, true, false, "FHUDElement" )
+surface.CreateLegacyFont( "Roboto", 32, 800, true, false, "FHUDElement" )
 
 AccessorFunc( PANEL, "m_bPartOfBar", 	"PartOfBar" )
 

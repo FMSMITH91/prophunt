@@ -8,13 +8,13 @@ function meta:Blind(bool)
 	if !self:IsValid() then return end
 	
 	if SERVER then
-		umsg.Start("SetBlind", self)
+		net.Start("SetBlind")
 		if bool then
-			umsg.Bool(true)
+			net.WriteBool(true)
 		else
-			umsg.Bool(false)
+			net.WriteBool(false)
 		end
-		umsg.End()
+		net.Send(self)
 	elseif CLIENT then
 		blind = bool
 	end
@@ -43,21 +43,34 @@ function meta:RemoveProp()
 	end
 end
 
-function meta:RemoveClientProp()
-	if CLIENT || !self:IsValid() then return end
-	
-	umsg.Start("RemoveClientPropUMSG", self)
-	umsg.End()
+
+-- Returns ping for the scoreboard
+function meta:ScoreboardPing()
+	-- If this is not a dedicated server and player is the host
+	if self:GetNWBool("ListenServerHost") then
+		return "SV"
+	elseif self:IsBot() then
+		return "BOT" -- otherwise this will act very strange.
+	end
+	-- Return normal ping value otherwise
+	return self:Ping()
 end
 
-function meta:ScoreboardPing()
-
-	if self:GetNWBool("ListenServerHost") then
-	
-		return "SV"
-	
+if SERVER then
+	function meta:IsHoldingEntity()
+		if !self.LastPickupEnt then
+			return false 
+		end
+		if !IsValid(self.LastPickupEnt) then
+			return false 
+		end
+		
+		local ent = self.LastPickupEnt
+		
+		if ent.LastPickupPly != self then
+			return false 
+		end
+		
+		return self.LastPickupEnt:IsPlayerHolding()
 	end
-	
-	return self:Ping()
-	
 end

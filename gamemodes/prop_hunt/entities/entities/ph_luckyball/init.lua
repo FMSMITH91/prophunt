@@ -22,6 +22,7 @@ function ENT:Initialize()
 	self.Entity:SetUseType(SIMPLE_USE)
 	
 	self.Uses = 0
+	self.FoundUser = false
 	
 	local phys = self.Entity:GetPhysicsObject() 
 	
@@ -54,13 +55,13 @@ balls.randomtext = {
 	"He once used this \'gamemode\', then never again.",
 	"The blueberry wolfy tried to swim in lava when mining a diamond.",
 	"Uncharted: The Game within The Game.",
-	"Look, Ma! I said look! Top of the world... again!",
+	"Look, ma! I said look! I'm on top of the world... again!",
 	"He always, stays patiently over 400 years to make a changes.",
 	"John Freeman whose Gordon Freeman\'s Brother!",
 	"John Freeman looked underground and found WEPONS!",
 	"When you go to space, there is a hiding crystal inside a \'box\'.",
 	"It\'s so fancy! even people didn\'t find 5 buttons and 2 Doritos!",
-	"WHERE\'S THE BLACKSMITH!!", -- Whoops, these fell here (Remove them if not necessary)
+	"WHERE\'S THE BLACKSMITH!?", -- Whoops, these fell here (Remove them if not necessary)
 	"What a shame.",
 	"Knowing these lucky balls will give you something good fills you with determination.", -- Oh God XD
 	"PILLS HERE!",
@@ -74,6 +75,11 @@ balls.randomtext = {
 	"sudo apt-get moo",
 	"\"Have you mooed today?\"",
 	"Someone could do well on the stage, we just need to find him.",
+	"You can \"Unite\" a \"Tower\" of people if you do it right.",
+	"Klace is a pink husky.", -- lel
+	"Major reference. Minor details.", -- This is 100% a reference! Think!
+	"*Notices* What's this? OwO",
+	"Lucky Ball: I luv u~! <3", -- LOL
 	"So much to do, so little time.", -- That was the rest of those fallen text additions
 	"You don't realise that (nearly) all those were actually easter eggs? :P"
 }
@@ -96,6 +102,7 @@ balls.funclists = {
 	function(pl)
 		if not pl:HasWeapon("wlv_bren") then
 			pl:Give("wlv_bren")
+			pl:SelectWeapon("wlv_bren")
 			pl:ChatPrint("[Lucky Ball] You got a special weapon!")
 		else
 			pl:ChatPrint(table.Random(balls.randomtext))
@@ -110,8 +117,26 @@ balls.funclists = {
 		pl:ChatPrint("[Lucky Ball] Aww... your health reduced by -20 HP, better luck next time!")
 	end,
 	function(pl)
+		pl:Give("item_battery")
+		pl:ChatPrint("[Lucky Ball] You obtained a free battery suit!")
+	end,
+	function(pl)
+		local rand
+		rand = math.random(15,100)
+		pl:SetArmor(pl:Armor() + rand)
+		pl:ChatPrint("[Lucky Ball] You gained armor points bonus : "..tostring(rand).."!")
+	end,
+	function(pl)
+		local ammo = {'Pistol', 'SMG1', '357', 'Buckshot'}
+		local rand
+		rand = math.random(1,45)
+		pl:GiveAmmo(rand, table.Random(ammo))
+		pl:ChatPrint("[Lucky Ball] You got a random ammo!")
+	end,
+	function(pl)
 		if not pl:HasWeapon("weapon_rpg") then
 			pl:Give("weapon_rpg")
+			pl:SelectWeapon("weapon_rpg")
 			pl:SetAmmo(2, "RPG_Round")
 			pl:ChatPrint("[Lucky Ball] You got a free RPG!")
 		else
@@ -121,13 +146,16 @@ balls.funclists = {
 	function(pl)
 		if not pl:HasWeapon("weapon_frag") then
 			pl:Give("weapon_frag")
+			pl:SelectWeapon("weapon_frag")
 			pl:ChatPrint("[Lucky Ball] You got a Frag Grenade for free!")
 		end
 	end,
 	function(pl)
 		for _, plph in pairs(player.GetAll()) do
 			if plph:SteamID() == "STEAM_0:0:63261691" then
-				pl:ChatPrint("The blueberry wolf is actually => "..plph:Nick())
+				pl:ChatPrint("[Lucky Ball] The blueberry wolf is actually => "..plph:Nick())
+			else
+				pl:ChatPrint(table.Random(balls.randomtext))
 			end
 		end
 	end,
@@ -143,18 +171,20 @@ balls.funclists = {
 		 if not (pl:GetModel() == "models/player.mdl") then
 			 pl:ChatPrint("[Lucky Ball] I saw it once. The player.mdl will get its revenge one day. -D4")
 			 pl:SetModel("models/player.mdl")
-			 pl:SendLua("CL_THIRDPERSON_TIMED = CurTime() + 3")
+			 pl:SendLua("CL_GLIMPCAM = CurTime() + 3")
 		 else
 			 pl:ChatPrint(table.Random(balls.randomtext))
 		 end
 	 end,
 	 function(pl)  -- This is a fun little reference to staging
 		 for _, plph in pairs(player.GetAll()) do
-			 if plph:SteamID() == "STEAM_0:0:49332102" && plph:Team() == TEAM_HUNTERS then
-				 pl:ChatPrint("You put "..plph:Name().." on the stage.")
-				 plph:SendLua("CL_THIRDPERSON_TIMED = CurTime() + 10")
+			 if plph:SteamID() == "STEAM_0:0:49332102" && plph:Alive() && plph:Team() == TEAM_HUNTERS then
+				 pl:ChatPrint("[Lucky Ball] You put "..plph:Name().." on the stage.")
+				 plph:SendLua("CL_GLIMPCAM = CurTime() + 10")
 				 plph:SendLua("RunConsoleCommand(\"act\", \"dance\")")
-				 plph:EmitSound("taunts/props/32.mp3", 100)
+				 plph:EmitSound("taunts/props/hardbass.wav", 100)
+			 else
+				pl:ChatPrint(table.Random(balls.randomtext))
 			 end
 		 end
 	 end,
@@ -168,10 +198,10 @@ balls.funclists = {
 		pl:ChatPrint("[Lucky Ball] You got a SUICIDE BOMB!")
 		
 		if balls.bombswitch == 0 then
-			pl:EmitSound("taunts/props_extra/dx_thebomb2.wav")
+			pl:EmitSound("taunts/ph_enhanced/dx_thebomb2.wav")
 			balls.bombswitch = 1
 		elseif balls.bombswitch == 1 then
-			pl:EmitSound("taunts/props_extra/dx_thebomb.wav")
+			pl:EmitSound("taunts/ph_enhanced/dx_thebomb.wav")
 			balls.bombswitch = 0
 		end
 	end

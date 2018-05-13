@@ -1,20 +1,16 @@
-
 -- Send required files to client
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
-
 -- Include needed files
 include("shared.lua")
 
-
--- Called when the entity initializes
 function ENT:Initialize()
 	self:SetModel("models/player/kleiner.mdl")
-	self.health = 100
 	self.Entity:SetMoveType(MOVETYPE_NONE)
-end 
-
+	self.Entity:SetLagCompensated(true)
+	self.health = 100
+end
 
 -- Called when we take damge
 function ENT:OnTakeDamage(dmg)
@@ -23,12 +19,18 @@ function ENT:OnTakeDamage(dmg)
 	local inflictor = dmg:GetInflictor()
 
 	-- Health
-	if GAMEMODE:InRound() && pl && pl:IsValid() && pl:Alive() && pl:IsPlayer() && attacker:IsPlayer() && dmg:GetDamage() > 0 then
-		self.health = self.health - dmg:GetDamage()
+	if GAMEMODE:InRound() && IsValid(pl) && pl:Alive() && pl:IsPlayer() && attacker:IsPlayer() && dmg:GetDamage() > 0 then
+		if pl:Armor() >= 10 then
+			self.health = self.health - (math.Round(dmg:GetDamage()/2))
+			pl:SetArmor(pl:Armor() - 30)
+		else
+			self.health = self.health - dmg:GetDamage()
+		end
 		pl:SetHealth(self.health)
 		
 		if self.health <= 0 then
 			pl:KillSilent()
+			pl:SetArmor(0)
 			
 			if inflictor && inflictor == attacker && inflictor:IsPlayer() then
 				inflictor = inflictor:GetActiveWeapon()
@@ -45,18 +47,16 @@ function ENT:OnTakeDamage(dmg)
 
 	
 			MsgAll(attacker:Name() .. " found and killed " .. pl:Name() .. "\n") 
-	
-	
-			-- D4UNKN0WNM4N2010: Alright, I made my own code for this. The current one looked too messy, sorry. -- it's fine btw
+
 			if GetConVar("ph_freezecam"):GetBool() then
 				if pl:GetNWBool("InFreezeCam", false) then
-					pl:PrintMessage(HUD_PRINTCONSOLE, "Something went wrong with the Freeze Camera, it's still enabled!")
+					pl:PrintMessage(HUD_PRINTCONSOLE, "!! WARNING: Something went wrong with the Freeze Camera, but it's still enabled!")
 				else
 					timer.Simple(0.5, function()
 						if !pl:GetNWBool("InFreezeCam", false) then
 							-- Play the good old Freeze Cam sound
-							umsg.Start("PlayFreezeCamSound", pl)
-							umsg.End()
+							net.Start("PlayFreezeCamSound")
+							net.Send(pl)
 						
 							pl:SetNWEntity("PlayerKilledByPlayerEntity", attacker)
 							pl:SetNWBool("InFreezeCam", true)
@@ -75,15 +75,12 @@ function ENT:OnTakeDamage(dmg)
 				end
 			end
 			
-			
 			attacker:AddFrags(1)
 			pl:AddDeaths(1)
 			attacker:SetHealth(math.Clamp(attacker:Health() + GetConVarNumber("ph_hunter_kill_bonus"), 1, 100))
 			
 			hook.Call("PH_OnPropKilled", nil, pl, attacker)
-			
 			pl:RemoveProp()
-			pl:RemoveClientProp()
 		end
 	end
 end

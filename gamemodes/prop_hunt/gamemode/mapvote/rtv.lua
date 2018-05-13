@@ -1,11 +1,9 @@
 RTV = RTV or {}
 
 RTV.ChatCommands = {
-	
 	"!rtv",
 	"/rtv",
 	"rtv"
-
 }
 
 RTV.TotalVotes = 0
