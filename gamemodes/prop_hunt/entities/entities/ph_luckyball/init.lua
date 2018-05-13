@@ -154,8 +154,6 @@ balls.funclists = {
 		for _, plph in pairs(player.GetAll()) do
 			if plph:SteamID() == "STEAM_0:0:63261691" then
 				pl:ChatPrint("[Lucky Ball] The blueberry wolf is actually => "..plph:Nick())
-			else
-				pl:ChatPrint(table.Random(balls.randomtext))
 			end
 		end
 	end,
@@ -183,8 +181,6 @@ balls.funclists = {
 				 plph:SendLua("CL_GLIMPCAM = CurTime() + 10")
 				 plph:SendLua("RunConsoleCommand(\"act\", \"dance\")")
 				 plph:EmitSound("taunts/props/hardbass.wav", 100)
-			 else
-				pl:ChatPrint(table.Random(balls.randomtext))
 			 end
 		 end
 	 end,
