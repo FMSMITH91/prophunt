@@ -486,6 +486,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 		Ph:CreateVGUIType("ph_cl_endround_sound", "check", "CLIENT", gridpl, "Play End round sound cue")
 		Ph:CreateVGUIType("ph_cl_autoclose_taunt", "check", "CLIENT", gridpl, "Option for Auto closing for Taunt window when double-clicking them")
 		Ph:CreateVGUIType("ph_cl_spec_hunter_line", "check", "CLIENT", gridpl, "Draw a line on hunters so we can see their aim in spectator mode.")
+		Ph:CreateVGUIType("hudspacer","spacer",nil,gridpl,"" )
 		Ph:CreateVGUIType("cl_enable_luckyballs_icon", "check", "CLIENT", gridpl, "Enable 'Lucky ball' icon to be displayed once they're spawned")
 		Ph:CreateVGUIType("hudspacer","spacer",nil,gridpl,"" )
 		Ph:CreateVGUIType("", "label", false, gridpl, "HUD Settings")
@@ -582,6 +583,8 @@ function ph_BaseMainWindow(ply, cmd, args)
 			end}
 			}
 		}, grid ,"")
+		Ph:CreateVGUIType("devspacer","spacer",nil,grid,"" )
+		Ph:CreateVGUIType("mv_use_ulx_votemaps","check","SERVER",grid,"Use map listing from ULX Mapvote? 1 = use from ULX mapvote list (which you can whitelist them), 0 = use default maps/*.bsp directory listing.")
 		Ph:CreateVGUIType("", "label", false, grid, "MapVote Options - To cancel, simply type !unmap_vote in the chat or type 'unmap_vote' in console.")
 		Ph:CreateVGUIType("", "btn", {max = 2, textdata = {
 			[1] = {"Start MapVote", function(self) 

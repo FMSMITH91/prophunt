@@ -1,6 +1,7 @@
 -- Global Var for custom taunt, delivering from taunts/prop -or- hunter_taunts.lua
 PHE.PH_TAUNT_CUSTOM = {}
 PHE.PH_TAUNT_FILE_LIST = {}
+
 include("taunts/hunter_taunts.lua")
 include("taunts/prop_taunts.lua")
 
@@ -59,13 +60,11 @@ PHE.HUNTER_TAUNTS = {
 	["DX: Im gonna Whoop your Ass"]	=	"taunts/ph_enhanced/dx_imgonnawoopyourass.wav",
 	["DX: Dont worry we are cops"]	=	"taunts/ph_enhanced/dx_dontworrywurcops.wav",
 	["DX: Heheh"]					=	"taunts/ph_enhanced/dx_hehe.wav",
-	
-	-- Normal old taunts from HL2.
-	["Enough of Mambo Jumbo"]	=	"vo/npc/male01/vanswer13.wav",
-	["HACKS"]					=	"vo/npc/male01/thehacks01.wav",
-	["Over Here"]				=	"vo/npc/male01/overhere01.wav",
-	["Over There"]				=	"vo/npc/male01/overthere01.wav",
-	["Over There!!"]			=	"vo/npc/male01/overthere02.wav"
+	["Enough of Mambo Jumbo"]		=	"vo/npc/male01/vanswer13.wav",
+	["HACKS"]						=	"vo/npc/male01/thehacks01.wav",
+	["Over Here"]					=	"vo/npc/male01/overhere01.wav",
+	["Over There"]					=	"vo/npc/male01/overthere01.wav",
+	["Over There!!"]				=	"vo/npc/male01/overthere02.wav"
 }
 
 --[[ // DO NOT MODIFY! use from taunts/props_taunts.lua or hunters_taunts.lua instead! \\ ]]--
@@ -94,7 +93,7 @@ PHE.PROP_TAUNTS = {
 	["Poloski Beats"]						=	"taunts/props/tri_poloski2.wav",
 	["Nein Nein Nein"]						=	"taunts/props/nein.wav",
 	["Ill be back"]							=	"taunts/props/ill_be_back.wav",
-	["I am Corn Holio"]						=	"taunts/props/i_am_cornholio.wav", -- todo: Does it sounds correct?
+	["I am Corn Holio"]						=	"taunts/props/i_am_cornholio.wav",
 	["I Am the one and only"]				=	"taunts/props/i_am_the_one_and_only.wav",
 	["LEROY JENKINS"]						=	"taunts/props/leroy_jenkins.wav",
 	["Oh yeah he will pay"]					=	"taunts/props/oh_yea_he_will_pay.wav",
@@ -196,11 +195,15 @@ PHE.WINNINGSOUNDS = {
 
 -- Add custom taunts, if any. See taunts/prop_taunts.lua or taunts/hunter_taunts.lua for more info.
 local function AddDemTaunt()
-	printVerbose("[PH:E Taunts] Finalising custom prop taunts.")
-	if PHE.PH_TAUNT_CUSTOM.PROP != nil then
+
+	PHE.PH_TAUNT_CUSTOM.HUNTER 	= INITHunterTaunts()
+	PHE.PH_TAUNT_CUSTOM.PROP	= INITPropTaunts()
+	
+	printVerbose("[PH:E Taunts] Adding FastDL for Custom Prop Taunts...")
+	if table.Count(PHE.PH_TAUNT_CUSTOM.PROP) > 0 then
 		for name,tprop in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
-			--PHE.PROP_TAUNTS[name] = tprop
 			if (SERVER) then
+				printVerbose("[PH:E Taunts] --> Adding taunt: "..name.." : "..tprop)
 				resource.AddSingleFile("sound/"..tprop)
 			end
 		end
@@ -208,11 +211,11 @@ local function AddDemTaunt()
 		printVerbose("[PH:E Taunts] WARNING! Custom taunts table is EMPTY!!")
 	end
 	
-	printVerbose("[PH:E Taunts] Finalising custom hunter taunts.")
-	if PHE.PH_TAUNT_CUSTOM.HUNTER != nil then
+	printVerbose("[PH:E Taunts] Adding FastDL for Custom Hunter Taunts...")
+	if table.Count(PHE.PH_TAUNT_CUSTOM.HUNTER) > 0 then
 		for name,thunter in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
-			--PHE.HUNTER_TAUNTS[name] = thunter
 			if (SERVER) then
+				printVerbose("[PH:E Taunts] --> Adding taunt: "..name.." : "..thunter)
 				resource.AddSingleFile("sound/"..thunter)
 			end
 		end
@@ -221,12 +224,97 @@ local function AddDemTaunt()
 	end
 	
 	-- sort them
-	table.sort(PHE.PROP_TAUNTS)
-	table.sort(PHE.HUNTER_TAUNTS)
-	table.sort(PHE.PH_TAUNT_CUSTOM.PROP)
-	table.sort(PHE.PH_TAUNT_CUSTOM.HUNTER)
+	printVerbose("[PH:E Taunts] Sorting Taunts...")
+	timer.Simple(1, function()
+		table.sort(PHE.PROP_TAUNTS)
+		table.sort(PHE.HUNTER_TAUNTS)
+		
+		table.sort(PHE.PH_TAUNT_CUSTOM.PROP)
+		table.sort(PHE.PH_TAUNT_CUSTOM.HUNTER)
+	end)
 end
 hook.Add("Initialize", "PHE.AddTauntTables", AddDemTaunt)
+
+function PHE:GetAllTeamTaunt(teamid)
+	if teamid == TEAM_PROPS then
+		local taunt = table.Copy(PHE.PROP_TAUNTS)
+		for name,tprop in pairs(INITPropTaunts()) do
+			taunt[name] = tprop
+		end
+		
+		return taunt
+	end
+	
+	if teamid == TEAM_HUNTERS then
+		local taunt = table.Copy(PHE.HUNTER_TAUNTS)
+		for name,thunter in pairs(INITHunterTaunts()) do
+			taunt[name] = thunter
+		end
+		
+		return taunt
+	end
+	
+	return false
+end
+
+function PHE:GetTeamTaunt(teamid,bCustom)
+	if teamid == TEAM_PROPS then
+		if bCustom then 
+			return PHE.PH_TAUNT_CUSTOM.PROP
+		else
+			return PHE.PROP_TAUNTS
+		end
+	end
+	
+	if teamid == TEAM_HUNTERS then
+		if bCustom then 
+			return PHE.PH_TAUNT_CUSTOM.HUNTER 
+		else
+			return PHE.HUNTER_TAUNTS
+		end
+	end
+	
+	return false
+end
+
+function PHE:RefreshTauntList()
+	local proptaunt 	= {
+		normal	= table.Copy(PHE.PROP_TAUNTS),
+		custom	= table.Copy(PHE.PH_TAUNT_CUSTOM.PROP)
+	}
+	table.Empty(PHE.PROP_TAUNTS)
+	table.Empty(PHE.PH_TAUNT_CUSTOM.PROP)
+	
+	local huntertaunt	= {
+		normal	= table.Copy(PHE.HUNTER_TAUNTS),
+		custom	= table.Copy(PHE.PH_TAUNT_CUSTOM.HUNTER)
+	}
+	table.Empty(PHE.HUNTER_TAUNTS)
+	table.Empty(PHE.PH_TAUNT_CUSTOM.HUNTER)
+	
+	-- Sort Prop Taunts
+	for name,taunt in pairs(proptaunt.normal) do
+		PHE.PROP_TAUNTS[name] = taunt
+	end	
+	for name,taunt in pairs(proptaunt.custom) do
+		PHE.PH_TAUNT_CUSTOM.PROP[name] = taunt
+	end
+	table.sort(PHE.PROP_TAUNTS)
+	table.sort(PHE.PH_TAUNT_CUSTOM.PROP)
+	
+	-- Sort Hunter Taunts
+	for name,taunt in pairs(huntertaunt.normal) do
+		PHE.HUNTER_TAUNTS[name] = taunt
+	end
+	for name,taunt in pairs(huntertaunt.custom) do
+		PHE.PH_TAUNT_CUSTOM.HUNTER[name] = taunt
+	end
+	table.sort(PHE.HUNTER_TAUNTS)
+	table.sort(PHE.PH_TAUNT_CUSTOM.HUNTER)
+end
+hook.Add("PostCleanupMap","PHE.RefreshTaunts",function()
+	PHE:RefreshTauntList()
+end)
 
 -- Add the custom player model bans for props
 if SERVER then

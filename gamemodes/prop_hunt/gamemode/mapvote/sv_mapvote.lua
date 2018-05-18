@@ -109,9 +109,11 @@ function CoolDownDoStuff()
 end
 
 function MapVote.GetFromULX()
-	if table.Count(ulx) > 0 then
+	if type(ulx.votemaps) != nil then
 		return ulx.votemaps
 	end
+	
+	return false
 end
 
 function MapVote.Start(length, current, limit, prefix)
@@ -143,7 +145,7 @@ function MapVote.Start(length, current, limit, prefix)
     
 	local maps
 	
-	if GetConVar("mv_use_ulx_votemaps"):GetBool() then
+	if GetConVar("mv_use_ulx_votemaps"):GetBool() && ulxmap ~= false then
 		maps = ulxmap
 	else
 		maps = file.Find("maps/*.bsp", "GAME")

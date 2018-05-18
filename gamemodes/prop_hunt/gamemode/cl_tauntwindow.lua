@@ -71,17 +71,11 @@ local function MainFrame()
 	
 	-- Determine if prop or hunter taunt list to be used	
 	if (LocalPlayer():Team() == TEAM_HUNTERS) then
-		TEAM_TAUNTS = PHE.HUNTER_TAUNTS
-		WHOLE_TEAM_TAUNTS = table.Copy(PHE.HUNTER_TAUNTS)
-		for thn,tht in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
-			WHOLE_TEAM_TAUNTS[thn] = tht
-		end
+		TEAM_TAUNTS = PHE:GetTeamTaunt(TEAM_HUNTERS,false)
+		WHOLE_TEAM_TAUNTS = PHE:GetAllTeamTaunt(TEAM_HUNTERS)
 	else
-		TEAM_TAUNTS = PHE.PROP_TAUNTS
-		WHOLE_TEAM_TAUNTS = table.Copy(PHE.PROP_TAUNTS)
-		for tn,tt in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
-			WHOLE_TEAM_TAUNTS[tn] = tt
-		end
+		TEAM_TAUNTS = PHE:GetTeamTaunt(TEAM_PROPS,false)
+		WHOLE_TEAM_TAUNTS = PHE:GetAllTeamTaunt(TEAM_PROPS)
 	end
 	
 	for name,_ in pairs(TEAM_TAUNTS) do
@@ -90,7 +84,6 @@ local function MainFrame()
 	
 	local comb = vgui.Create("DComboBox", frame)
 	
-	--comb:SetPos(10,28)
 	comb:Dock(TOP)
 	comb:SetSize(0, 20)
 	comb:SetValue("Original Taunts")
@@ -147,16 +140,12 @@ local function MainFrame()
 			list:Clear()
 			hastaunt = false
 			if LocalPlayer():Team() == TEAM_PROPS then
-				if PHE.PH_TAUNT_CUSTOM.PROP then
-					for name,val in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
-						list:AddLine(name)
-					end
+				for name,val in pairs(PHE:GetTeamTaunt(TEAM_PROPS,true)) do
+					list:AddLine(name)
 				end
 			else
-				if PHE.PH_TAUNT_CUSTOM.HUNTER then
-					for name,val in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
-						list:AddLine(name)
-					end
+				for name,val in pairs(PHE:GetTeamTaunt(TEAM_HUNTERS,true)) do
+					list:AddLine(name)
 				end
 			end
 			pnl:SortAndStyle(list)

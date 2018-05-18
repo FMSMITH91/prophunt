@@ -72,15 +72,10 @@ local function RemoveTimer()
 	end
 end
 
-local WHOLE_TAUNTS = {}
-WHOLE_TAUNTS = table.Copy(PHE.PROP_TAUNTS)
-for tName,tPath in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
-	WHOLE_TAUNTS[tName] = tPath
-end
-
 local function CheckAutoTaunt()
 	local timeLeft = TimeLeft()
 	local ply = LocalPlayer()
+	local WHOLE_TAUNTS = PHE:GetAllTeamTaunt(TEAM_PROPS)
 
 	-- Stop everything under these conditions
 	if !ply:Alive() || ply:Team() != TEAM_PROPS then

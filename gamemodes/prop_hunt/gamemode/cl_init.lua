@@ -120,7 +120,8 @@ function GM:CalcView(pl, origin, angles, fov)
  	return view 
 end
 
-local mat = Material("prophunt_enhanced/sprites/luckyball")
+local mat = "prophunt_enhanced/sprites/luckyball"
+local pointer = "prophunt_enhanced/sprites/luckyball_pointer"
 -- Draw round timeleft and hunter release timeleft
 function HUDPaint()
 local ply = LocalPlayer()
@@ -166,31 +167,34 @@ local ply = LocalPlayer()
 	if GetConVar("cl_enable_luckyballs_icon"):GetBool() then
 		local offset = Vector( 0, 0, 45 )
 		local ang = LocalPlayer():EyeAngles()
-		cam.Start3D()
-			for _,ent in pairs(ents.FindByClass('ph_luckyball')) do
-				local pos = ent:GetPos() + offset + ang:Up()
-				
-				ang:RotateAroundAxis( ang:Forward(), 90 )
-				ang:RotateAroundAxis( ang:Right(), 90 )
-				
-				if LocalPlayer():Alive() && LocalPlayer():IsLineOfSightClear(ent) then
-					
-					local PlayerEntPos = math.floor(LocalPlayer():GetPos():Distance(ent:GetPos()))
-					local w,h = 16,16
-					
-					if PlayerEntPos <= 100 then
-						w = 16
-						h = 16
-					else
-						w = 16 * (PlayerEntPos*0.01)
-						h = 16 * (PlayerEntPos*0.01)
-					end
-					
-					render.SetMaterial(mat)
-					render.DrawSprite(pos,w,h,color_white)
+		
+		local w = ScrW()
+		local h = ScrH()
+		local cX = w/2
+		local cY = h/2
+		
+		for _,ent in pairs(ents.FindByClass('ph_luckyball')) do
+			local pos = ent:GetPos() + offset
+			local poscr = pos:ToScreen()
+			
+			if (LocalPlayer():Team() == TEAM_HUNTERS && LocalPlayer():IsLineOfSightClear(ent)) then
+			
+				if ((poscr.x > 32 && poscr.x < (w-43)) && (poscr.y > 32 && poscr.y < (h-38))) then
+					surface.SetDrawColor(255,255,255,255)
+					surface.SetTexture(surface.GetTextureID(mat))
+					surface.DrawTexturedRect( poscr.x-32, poscr.y, 64, 64 )
+				else
+					local r = math.Round(cX/2)
+					local rad = math.atan2(poscr.y-cY, poscr.x-cX)
+					local deg = 0 - math.Round(math.deg(rad))
+					surface.SetDrawColor(255,255,255,255)
+					surface.SetTexture(surface.GetTextureID(pointer))
+					surface.DrawTexturedRectRotated(math.cos(rad)*r+cX, math.sin(rad)*r+cY,64,64,deg+90)
 				end
+				
 			end
-		cam.End3D()
+		end
+		
 	end
 	
 	-- The 'You were Killed By' text, or the Freeze Cam text.

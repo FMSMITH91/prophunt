@@ -39,7 +39,7 @@ hook.Add("PH_CustomTabMenu", "PHE.About", function(tab, pVgui)
 	-- > pVgui = Ph:CreateVGUIType, with no return. Seems works?
 	pVgui("","label","PHE.TitleFont",grid, label.title .. " [BETA]" )
 	pVgui("","label",false,grid, "Version: "..label.version.." | Revision: "..label.rev)
-	pVgui("","label","PHE.PFont",grid, "Special Thanks for the support, suggestion & contributing:\n"..label.credits )
+	pVgui("","label","Trebuchet24",grid, "Special Thanks for the support, suggestion & contributing:\n"..label.credits )
 	
 	pVgui("spacer1","spacer",nil,grid,"" )
 	

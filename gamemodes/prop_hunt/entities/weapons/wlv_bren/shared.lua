@@ -8,7 +8,13 @@
 -- --> M9K
 -- --> Sandbox/default
 
-if GetConVar("DebugM9K") != nil then -- check if M9K is Exists on server. otherwise will use from Default base instead.
+local function CheckConVar(cvar)
+	if cvar != nil then return true end
+	if IsValid(cvar) then return true end
+	return false
+end
+
+if CheckConVar(GetConVar("DebugM9K")) then -- check if M9K is Exists on server. otherwise will use from Default base instead.
 
 	SWEP.Gun = ("wlv_bren")
 	if (GetConVar(SWEP.Gun.."_allowed")) != nil then
@@ -26,7 +32,7 @@ if GetConVar("DebugM9K") != nil then -- check if M9K is Exists on server. otherw
 	
 	SWEP.Category				= "Wolvin\'s PH Bonus Weapon"
 	SWEP.Author					= "Wolvindra-Vinzuerio"
-	SWEP.Contact				= "wolvindra@gmail.com"
+	SWEP.Contact				= "wolvindra.vinzuerio@gmail.com"
 	SWEP.Purpose				= "Just aim and shot at those innocent props lol."
 	SWEP.Instructions			= "Step 1: Acquire This Gun.\nStep 2: Shoot.\nStep 3: Profit."	--> Brain 404: Not Found.
 	SWEP.MuzzleAttachment		= "1"
@@ -48,10 +54,16 @@ if GetConVar("DebugM9K") != nil then -- check if M9K is Exists on server. otherw
 	if GetConVar("ph_mkbren_use_new_mdl"):GetBool() then
 		SWEP.ViewModel				= Model("models/weapons/c_mach_brenmk3.mdl")
 		SWEP.WorldModel				= Model("models/weapons/w_mach_brenmk3.mdl")
+		-- this one is used for M9K. TFA may ignore this.
+		SWEP.ShowWorldModel			= false
+		
 		SWEP.UseHands				= true
 	else
 		SWEP.ViewModel				= Model("models/weapons/v_mkbren.mdl")
 		SWEP.WorldModel				= Model("models/weapons/w_mkbren.mdl")
+		-- this one is used for M9K. TFA may ignore this.
+		SWEP.ShowWorldModel			= true
+		
 		SWEP.UseHands				= false
 	end
 	
@@ -175,7 +187,7 @@ else
 
 	if GetConVar("ph_mkbren_use_new_mdl"):GetBool() then
 		SWEP.ViewModel				= Model("models/weapons/c_mach_brenmk3.mdl")
-		SWEP.WorldModel				= Model("models/weapons/w_mkbren.mdl") -- The newest model just make it stay on crotch. So let's fallback to old model instead.
+		SWEP.WorldModel				= Model("models/weapons/w_mkbren.mdl")
 		SWEP.UseHands				= true
 	else
 		SWEP.ViewModel				= Model("models/weapons/v_mkbren.mdl")

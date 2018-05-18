@@ -301,6 +301,24 @@ function GM:PlayerExchangeProp(pl,ent)
 			pl.ph_prop:SetPos(pl:GetPos() - Vector(0, 0, ent:OBBMins().z))
 			pl.ph_prop:SetAngles(pl:GetAngles())
 			
+			--[[ Todo: This feature will be available on Revision C.
+			local hullxymax
+			local hullxymin
+			local hullz
+			
+			-- todo: make it so that it has a NWBool that this entity has custom hull set!
+			if ent:GetNWBool("hasCustomHull",false) then
+			
+			else
+				hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
+				hullxymin = hullxymax * -1
+				hullz = math.Round(ent:OBBMaxs().z - ent:OBBMins().z)
+			
+			 ...
+			end
+			]]--
+			
+			---- >8 -----
 			local hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
 			local hullxymin = hullxymax * -1
 			local hullz = math.Round(ent:OBBMaxs().z - ent:OBBMins().z)
@@ -361,11 +379,17 @@ function GM:ShowSpare1(pl)
 	end
 	
 	if ((GetConVar("ph_enable_custom_taunts"):GetInt() == 0) or (GetConVar("ph_enable_custom_taunts"):GetInt() == 2)) && GAMEMODE:InRound() && pl:Alive() && (pl:Team() == TEAM_HUNTERS || pl:Team() == TEAM_PROPS) && pl.last_taunt_time + GetConVar("ph_normal_taunt_delay"):GetInt() <= CurTime() && (table.Count(PHE.PROP_TAUNTS) > 1 && table.Count(PHE.HUNTER_TAUNTS) > 1) then
+		local curTeamTaunt = {
+			hunter 	= PHE:GetAllTeamTaunt(TEAM_HUNTERS),
+			prop 	= PHE:GetAllTeamTaunt(TEAM_PROPS)
+		}
+		
+		-- play the taunts based on listed curCustTaunt available.
 		repeat
 			if pl:Team() == TEAM_HUNTERS then
-				rand_taunt = table.Random(PHE.HUNTER_TAUNTS)
+				rand_taunt = table.Random(curTeamTaunt.hunter)
 			else
-				rand_taunt = table.Random(PHE.PROP_TAUNTS)
+				rand_taunt = table.Random(curTeamTaunt.prop)
 			end
 		until rand_taunt != pl.last_taunt
 		
