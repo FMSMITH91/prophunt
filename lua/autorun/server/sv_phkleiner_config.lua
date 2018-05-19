@@ -12,6 +12,7 @@ function PH_Create_PlayerClip(min, max)
 	pc:Spawn()
 end
 
+
 local function RemoveClipBrush()
 	for _,pc in pairs(ents.FindByClass("brush_playerclip")) do
 		if !IsValid(pc) then return end
@@ -21,8 +22,7 @@ local function RemoveClipBrush()
 end
 hook.Add("PreCleanupMap", "PH_RemoveClip", RemoveClipBrush)
 
-
-local function PH_Create_PlayerClip()
+local function PostCreatePlayerClip()
 	if game.GetMap() == "ph_kliener_v2" && engine.ActiveGamemode() == "prop_hunt" then
 		printVerbose("Creating Anti Exploit walls...")
 		PH_Create_PlayerClip(Vector(1040, -273, 1000), Vector(-1159, -156, 1500))
@@ -30,9 +30,9 @@ local function PH_Create_PlayerClip()
 		PH_Create_PlayerClip(Vector(-1299, 659, -50), Vector(-1312, -1440, 1510))
 		PH_Create_PlayerClip(Vector(-1302, -1434, -371), Vector(1042, -3500, 1500))
 		PH_Create_PlayerClip(Vector(1049, -1432, -50), Vector(1058, -217, 1400))
-		
+
 		-- Force all players become Kleiner on respawn!
-		timer.Simple(1, function()
+		timer.Simple(5, function()
 			for k,v in pairs(ents.FindByClass("ph_prop")) do
 				v:SetModel("models/player/kleiner.mdl")
 				v:DrawShadow(false)
@@ -47,4 +47,4 @@ local function PH_Create_PlayerClip()
 		ShadowControl:Activate()
 	end
 end
-hook.Add("PostCleanupMap", "PH_AddClipBrush", PH_Create_PlayerClip)
+hook.Add("PostCleanupMap", "PH_AddClipBrush", PostCreatePlayerClip)
