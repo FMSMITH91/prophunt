@@ -263,7 +263,7 @@ function SKIN:PaintScorePanel( panel )
 	//render.UpdateScreenEffectTexture()
 	//surface.DrawTexturedRect( x*-1, y*-1, ScrW(), ScrH() )
 		
-	draw.RoundedBox( 8, 0, 8, panel:GetWide(), panel:GetTall()-8, Color( 200, 200, 200, 150 ) )
+	draw.RoundedBox( 8, 0, 8, panel:GetWide(), panel:GetTall()-8, Color( 40, 40, 40, 150 ) )
 	
 end
 
@@ -275,8 +275,8 @@ function SKIN:LayoutTeamScoreboardHeader( panel )
 
 	panel.TeamName:StretchToParent( 0, 0, 0, 0 )
 	panel.TeamName:SetTextInset( 8, 0 )
-	panel.TeamName:SetColor( Color( 0, 0, 0, 220 ) )
-	panel.TeamName:SetFontInternal( "FRETTA_MEDIUM" )
+	panel.TeamName:SetColor( Color( 0,0,0 ) )
+	panel.TeamName:SetFontInternal( "FRETTA_SMALL" )
 	
 	panel.TeamScore:StretchToParent( 0, 0, 0, 0 )
 	panel.TeamScore:SetContentAlignment( 6 )
@@ -312,9 +312,8 @@ end
 
 function SKIN:SchemeScorePanelHeaderLabel( panel )
 
-	panel:SetTextColor( Color( 70, 70, 70, 255 ) )
-	panel:SetFontInternal( "HudSelectionText" )
-		
+	panel:SetTextColor( Color( 180, 180, 180, 255 ) )
+	panel:SetFontInternal( "Default" ) -- HudSelectionText
 end
 
 function SKIN:SchemeSpectatorInfo( panel )
@@ -329,7 +328,7 @@ end
 ---------------------------------------------------------*/
 function SKIN:PaintScoreHeader( panel )
 
-	draw.RoundedBox( 8, 0, 0, panel:GetWide(), panel:GetTall()*2, Color( 50, 90, 160 ) )
+	draw.RoundedBox( 8, 0, 0, panel:GetWide(), panel:GetTall()*2, Color( 60,60,60,255 ) )
 		
 end
 
@@ -344,7 +343,6 @@ function SKIN:LayoutScoreHeader( panel )
 	panel.GamemodeName:CenterHorizontal()
 	
 	panel:SetTall( panel.GamemodeName.y + panel.GamemodeName:GetTall() + 4 ) 
-		
 end
 
 function SKIN:SchemeScoreHeader( panel )

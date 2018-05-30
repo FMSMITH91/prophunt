@@ -109,11 +109,14 @@ function CoolDownDoStuff()
 end
 
 function MapVote.GetFromULX()
-	if type(ulx.votemaps) != nil then
+	if (ulx == nil) then
+		print("[!PH: Enhanced] Warning: ULX is not installed!")
+		return false
+	end
+
+	if (ulx.votemaps) then
 		return ulx.votemaps
 	end
-	
-	return false
 end
 
 function MapVote.Start(length, current, limit, prefix)
@@ -125,7 +128,7 @@ function MapVote.Start(length, current, limit, prefix)
 
     local is_expression = false
 	local ulxmap = MapVote.GetFromULX()
-
+	
     if not prefix then
         local info = file.Read(GAMEMODE.Folder.."/"..GAMEMODE.FolderName..".txt", "GAME")
 
@@ -143,10 +146,12 @@ function MapVote.Start(length, current, limit, prefix)
         end
     end
     
-	local maps
+	local maps = {}
 	
 	if GetConVar("mv_use_ulx_votemaps"):GetBool() && ulxmap ~= false then
-		maps = ulxmap
+		for _,map in pairs(ulxmap) do
+			table.insert(maps, map..".bsp")
+		end
 	else
 		maps = file.Find("maps/*.bsp", "GAME")
 	end

@@ -41,6 +41,9 @@ function CLASS:OnSpawn(pl)
 	pl:SetCustomCollisionCheck(true)
 	pl:SetAvoidPlayers(false)
 	pl:CrosshairEnable()
+	
+	pl:SetViewOffset(Vector(0,0,64))
+	pl:SetViewOffsetDucked(Vector(0,0,28))
 
 	local unlock_time = math.Clamp(GetConVar("ph_hunter_blindlock_time"):GetInt() - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, GetConVar("ph_hunter_blindlock_time"):GetInt())
 	
@@ -84,6 +87,21 @@ end
 function CLASS:OnDeath(pl, attacker, dmginfo)
 	pl:CreateRagdoll()
 	pl:UnLock()
+	
+	-- Always Reset the ViewOffset
+	pl:SetViewOffset(Vector(0,0,64))
+	pl:SetViewOffsetDucked(Vector(0,0,28))
+	
+	-- Spawn Devil Ball
+	local pos = pl:GetPos()
+	if GetConVar("ph_enable_devil_balls"):GetBool() then
+		if math.random() < 0.7 then --70% chance.
+			local dropent = ents.Create("ph_devilball")
+			dropent:SetPos(Vector(pos.x, pos.y, pos.z + 16)) -- to make sure the Devil Ball didn't fall underground.
+			dropent:SetAngles(Angle(0,0,0))
+			dropent:Spawn()
+		end
+	end
 end
 
 

@@ -22,7 +22,6 @@ function ENT:Initialize()
 	self.Entity:SetUseType(SIMPLE_USE)
 	
 	self.Uses = 0
-	self.FoundUser = false
 	
 	local phys = self.Entity:GetPhysicsObject() 
 	
@@ -47,12 +46,13 @@ balls.randomtext = {
 	"Trolling is \'A\' Art",
 	"Unicorn produce rainbows you know... with 20% cooler.",
 	"You know what's better than Lamborghini? K.N.O.W.L.E.D.G.E",
-	"0813-6928",
+	"0 8 1 3 - 6 9 2 8",
 	"SHUT UP NURSE!!",
+	"Do you know the wei?",
 	"A fish with a cone hat.",
 	"A blueberry wolfy hangs around.",
-	"He keep laughing whenever he saw a moving prop/hunter or found an excelent hiding spot.", -- Naners/Gassy.
-	"He once used this \'gamemode\', then never again.",
+	"He keep laughing whenever he saw a moving prop/hunter or found an excelent hiding spot.",
+	"\'He once used this gamemode, then never again. Or Perhaps someone broke it, lmao.\'",
 	"The blueberry wolfy tried to swim in lava when mining a diamond.",
 	"Uncharted: The Game within The Game.",
 	"Look, ma! I said look! I'm on top of the world... again!",
@@ -60,27 +60,31 @@ balls.randomtext = {
 	"John Freeman whose Gordon Freeman\'s Brother!",
 	"John Freeman looked underground and found WEPONS!",
 	"When you go to space, there is a hiding crystal inside a \'box\'.",
-	"It\'s so fancy! even people didn\'t find 5 buttons and 2 Doritos!",
-	"WHERE\'S THE BLACKSMITH!?", -- Whoops, these fell here (Remove them if not necessary)
+	"It\'s so fancy! Even people in \'that\' house didn\'t notice that there are 5 buttons and some doritos!",
+	"WHERE\'S THE BLACKSMITH!?",
 	"What a shame.",
-	"Knowing these lucky balls will give you something good fills you with determination.", -- Oh God XD
+	"I never asked for this.",
+	"Knowing these lucky balls will give you something good fills you with determination.",
 	"PILLS HERE!",
 	":3",
+	"You know, that time when GMod was used to be made for good animation video, YTPs, fads, etc...",
 	"Here's some text to occupy you.",
 	"Have you seen the NannerMan?",
+	"Although there are alot of missing textures, Just remember: \'Mitchell\' is useless guy and it\'s game too.", -- Pfftt, ok I'm done with HDTF.
 	"I once saw a man with green septic eyes.",
 	"I once saw a man with a pink mustache.",
 	"There was Obsidian and it had a Conflict.",
 	"We all just need a bit of Synergy in our lives.",
+	"The Presense is Watching you", -- todo is this correct for Terraria Eye of Chtulu Boss?
 	"sudo apt-get moo",
 	"\"Have you mooed today?\"",
 	"Someone could do well on the stage, we just need to find him.",
 	"You can \"Unite\" a \"Tower\" of people if you do it right.",
-	"Klace is a pink husky.", -- lel
+	"Klace is a pink husky. So Pinky~",
 	"Major reference. Minor details.", -- This is 100% a reference! Think!
 	"*Notices* What's this? OwO",
 	"Lucky Ball: I luv u~! <3", -- LOL
-	"So much to do, so little time.", -- That was the rest of those fallen text additions
+	"So much to do, so little time.", -- That was the rest of those fallen text additions - Nice!
 	"You don't realise that (nearly) all those were actually easter eggs? :P"
 }
 
@@ -89,7 +93,7 @@ Base Lucky Balls Functions.
 Please note that you might have to create a custom serverside lua with full of function list with list.Set into "LuckyBallsAddition".
 	Example:
 	
-	list.Set("LuckyBallsAddition", "UniqueName", function(pl)
+	list.Set("LuckyBallsAddition", "UniqueName", function(pl,ball)
 		-- code...
 	end)
 	
@@ -103,18 +107,20 @@ balls.funclists = {
 		if not pl:HasWeapon("wlv_bren") then
 			pl:Give("wlv_bren")
 			pl:SelectWeapon("wlv_bren")
-			pl:ChatPrint("[Lucky Ball] You got a special weapon!")
+			pl:ChatPrint("[Lucky Ball] You got a *special* weapon!")
 		else
 			pl:ChatPrint(table.Random(balls.randomtext))
 		end
 	end,
 	function(pl)
-		pl:SetHealth(pl:Health() + 50)
-		pl:ChatPrint("[Lucky Ball] You got free 50+ health points!")
+		local rand = math.random(10,75)
+		pl:SetHealth(pl:Health() + rand)
+		pl:ChatPrint("[Lucky Ball] You got free +"..rand.." HP!")
 	end,
 	function(pl)
-		pl:SetHealth(pl:Health() - 20)
-		pl:ChatPrint("[Lucky Ball] Aww... your health reduced by -20 HP, better luck next time!")
+		local rand = math.random(1,20)
+		pl:SetHealth(pl:Health() - rand)
+		pl:ChatPrint("[Lucky Ball] Aww Snap! Your health reduced by -"..rand.." HP, better luck next time!")
 	end,
 	function(pl)
 		pl:Give("item_battery")
@@ -129,7 +135,7 @@ balls.funclists = {
 	function(pl)
 		local ammo = {'Pistol', 'SMG1', '357', 'Buckshot'}
 		local rand
-		rand = math.random(1,45)
+		rand = math.random(8,45)
 		pl:GiveAmmo(rand, table.Random(ammo))
 		pl:ChatPrint("[Lucky Ball] You got a random ammo!")
 	end,
@@ -175,14 +181,14 @@ balls.funclists = {
 		 end
 	 end,
 	 function(pl)  -- This is a fun little reference to staging
-		 for _, plph in pairs(player.GetAll()) do
-			 if plph:SteamID() == "STEAM_0:0:49332102" && plph:Alive() && plph:Team() == TEAM_HUNTERS then
-				 pl:ChatPrint("[Lucky Ball] You put "..plph:Name().." on the stage.")
-				 plph:SendLua("CL_GLIMPCAM = CurTime() + 10")
-				 plph:SendLua("RunConsoleCommand(\"act\", \"dance\")")
-				 plph:EmitSound("taunts/props/hardbass.wav", 100)
-			 end
-		 end
+		for _, plph in pairs(player.GetAll()) do
+			if plph:SteamID() == "STEAM_0:0:49332102" && plph:Alive() && plph:Team() == TEAM_HUNTERS then
+				pl:ChatPrint("[Lucky Ball] You put "..plph:Name().." on the stage.")
+				plph:SendLua("CL_GLIMPCAM = CurTime() + 10")
+				plph:SendLua("RunConsoleCommand(\"act\", \"dance\")")
+				plph:EmitSound("taunts/props/hardbass.wav", 100)
+			end
+		end
 	 end,
 	function(pl)
 		local suicidebomb = ents.Create("combine_mine")
@@ -226,11 +232,10 @@ function balls:The_LuckyDrop(pl)
 		
 		hook.Call("PH_OnLuckyBallPickup", nil, pl)
 	end
-	-- Other than that, It will return empty and do nothing.
 end
 
 function ENT:Use(activator)
-	if activator:IsPlayer() && activator:Alive() && activator:Team() == TEAM_HUNTERS then
+	if GAMEMODE:InRound() && activator:IsPlayer() && activator:Alive() && activator:Team() == TEAM_HUNTERS then
 		if self.Uses == 0 then
 			balls:The_LuckyDrop(activator)
 			
@@ -238,10 +243,6 @@ function ENT:Use(activator)
 			self.Uses = 1
 			self.Entity:Remove()
 		else
-			self.Entity:Remove()
-		end
-	else
-		if activator == NULL or activator == nil then
 			self.Entity:Remove()
 		end
 	end

@@ -29,7 +29,8 @@ if SERVER then
 end
 
 -- Lucky Ball ConVars
-local ph_enable_lucky_balls = CreateConVar("ph_enable_lucky_balls", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_NOTIFY }, "If you hate lucky balls, we're sorry. :(")
+local ph_enable_lucky_balls = CreateConVar("ph_enable_lucky_balls", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_NOTIFY }, "Spawn Lucky balls on breakable props?")
+local ph_enable_devil_balls = CreateConVar("ph_enable_devil_balls", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_NOTIFY }, "Spawn Devil balls when hunter dies?")
 
 -- PlayerID on Team Specific
 local ph_enable_plnames = CreateConVar("ph_enable_plnames", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Serverside control for if a clients see client\'s team player names through walls.")
@@ -63,3 +64,10 @@ local ph_autotaunt_enabled = CreateConVar("ph_autotaunt_enabled", "1",{ FCVAR_SE
 
 -- Use newer model for Bren MK
 local ph_mkbren_use_new_mdl = CreateConVar("ph_mkbren_use_new_mdl", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Use new model for Bren MK II Bonus Weapon (Require Map Restart!!)")
+
+-- OBB Model Data Modifier, specified on map.
+local ph_sv_enable_obb_modifier = CreateConVar("ph_sv_enable_obb_modifier", "1",{ FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Developer: Enable OBB Model Data Modifier")
+local ph_reload_obb_setting_everyround = CreateConVar("ph_reload_obb_setting_everyround", "1",{ FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Developer: Reload OBB Model Data Modifier Every round Restarts")
+
+-- Enable Custom Taunt Scanner Directory
+local ph_enable_taunt_scandir = CreateConVar("ph_enable_taunt_scandir","1",{ FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Enable Custom Taunt Auto-Scanning Directory. (This will add taunts such as Taunt #N => 'taunts/path.wav' automatically)")

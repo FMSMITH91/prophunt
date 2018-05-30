@@ -1,6 +1,4 @@
 hook.Add("PH_CustomTabMenu", "PHE.About", function(tab, pVgui)
-	-- Help Wanted: Returned argument of Ph:CreateBasicLayout()->this Hook cannot captured properly in this scope. Any Idea?
-	-- Todo: this 3 variable function below should be a function argument callback instead recopying over. (tab, layout, pVgui)
 	
 	surface.CreateFont("PHE.TitleFont", 
 	{
@@ -26,7 +24,7 @@ hook.Add("PH_CustomTabMenu", "PHE.About", function(tab, pVgui)
 	
 	local label = {
 		title 	= "Prop Hunt: Enhanced",
-		author	= "Enhanced by: Wolvindra-Vinzuerio, D4UNKN0WNM4N, Original: AMT, Modified: Kowalski",
+		author	= "Enhanced by: Wolvindra-Vinzuerio, D4UNKN0WNM4N. Original: AMT.",
 		version = GAMEMODE._VERSION,
 		rev 	= GAMEMODE.REVISION,
 		credits	= "Yam, Godfather, adk, Lucas2107, Jonpopnycorn, Thundernerd",
@@ -34,25 +32,32 @@ hook.Add("PH_CustomTabMenu", "PHE.About", function(tab, pVgui)
 		lhome	= "https://project.wolvindra.net/phe/",
 		ldonate = GAMEMODE.DONATEURL,
 		lwiki	= "https://project.wolvindra.net/phe/?go=phe_faq",
+		lklog	= "https://project.wolvindra.net/phe/?go=changelog",
+		lplugins = "https://project.wolvindra.net/phe/?go=plugins"
 	}
 	
-	-- > pVgui = Ph:CreateVGUIType, with no return. Seems works?
 	pVgui("","label","PHE.TitleFont",grid, label.title .. " [BETA]" )
-	pVgui("","label",false,grid, "Version: "..label.version.." | Revision: "..label.rev)
-	pVgui("","label","Trebuchet24",grid, "Special Thanks for the support, suggestion & contributing:\n"..label.credits )
-	
-	pVgui("spacer1","spacer",nil,grid,"" )
-	
-	pVgui("","label",false,grid, "Helpful External Links:" )
-	pVgui("","btn",{max = 4,textdata = {
-		[1] = {"Donate PH:E Project", 	  function() gui.OpenURL(label.ldonate); tab:GetParent():Close() end},
-		[2] = {"PH:E Official Homepage", 	  function() gui.OpenURL(label.lhome); tab:GetParent():Close() end},
-		[3] = {"Project GitHub", 	  function() gui.OpenURL(label.lgit); tab:GetParent():Close() end},
-		[4] = {"PH:E Help & Wiki", function() gui.OpenURL(label.lwiki); tab:GetParent():Close() end}
+	pVgui("","label","Trebuchet24",grid, "Current Version: "..label.version.." | Current Revision: "..label.rev)
+	pVgui("","label",false,grid, "Changelog & Updates" )
+	pVgui("","btn",{max = 2,textdata = {
+		[1] = {"See Changelog", 	  function() gui.OpenURL(label.lklog); tab:GetParent():Close() end},
+		[2] = {"Check for Updates", 
+			function()
+				LocalPlayer():ConCommand("ph_check_update")
+				Derma_Message("Check on your console by pressing [~] or F10 key!","Checking Updates","OK, Got it!")
+			end},
 	}},grid,"")
-	
-	pVgui("spacer2","spacer",nil,grid,"" )
-	pVgui("","label",false,grid, "Try out the new Prop Hunt: Enhanced Plugins + Addons:\n(Coming Soon!)" )
+	pVgui("spacer1","spacer",nil,grid,"" )
+	pVgui("","label",false,grid, "Helpful External Links & Credits" )
+	pVgui("","btn",{max = 4,textdata = {
+		[1] = {"DONATE to PH:E Project", 	  function() gui.OpenURL(label.ldonate) end},
+		[2] = {"PH:E Official Homepage", 	  function() gui.OpenURL(label.lhome) end},
+		[3] = {"GitHub Repository", 	  	  function() gui.OpenURL(label.lgit) end},
+		[4] = {"PH:E Help & Wiki", 			  function() gui.OpenURL(label.lwiki) end},
+		[4] = {"PH:E Addons/Plugins", 		  function() gui.OpenURL(label.lplugins) end}
+	}},grid,"")
+	pVgui("spacer1","spacer",nil,grid,"" )
+	pVgui("","label","Trebuchet24",grid, "Special Thanks for the support, suggestion & contributing:\n"..label.credits )
 	
 	tab:AddSheet("About & Credits",panel,"icon16/information.png")
 

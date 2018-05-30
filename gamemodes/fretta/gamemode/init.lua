@@ -4,6 +4,9 @@
 	The entire server side bit of Fretta starts here.
 */
 
+util.AddNetworkString("PlayableGamemodes")
+util.AddNetworkString("fretta_teamchange")
+
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "shared.lua" )
 AddCSLuaFile( 'skin.lua' )
@@ -36,9 +39,6 @@ include( "utility.lua" )
 GM.ReconnectedPlayers = {}
 
 function GM:Initialize()
-
-	util.AddNetworkString("PlayableGamemodes")
-	util.AddNetworkString("fretta_teamchange")
 
 	/*
 	// Disabled - causes games to end in the middle of a round - we don't want that to happen!

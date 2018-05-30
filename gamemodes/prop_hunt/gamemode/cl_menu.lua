@@ -305,8 +305,8 @@ function ph_BaseMainWindow(ply, cmd, args)
 		end
 		bnext.DoClick = function(pnl)
 			helpImage.Count = helpImage.Count + 1
-			if helpImage.Count >= 5 then
-				helpImage.Count = 5
+			if helpImage.Count >= 6 then
+				helpImage.Count = 6
 			end
 			helpImage:SetImage("vgui/phhelp"..helpImage.Count..".vmt")
 		end
@@ -486,11 +486,13 @@ function ph_BaseMainWindow(ply, cmd, args)
 		Ph:CreateVGUIType("ph_cl_endround_sound", "check", "CLIENT", gridpl, "Play End round sound cue")
 		Ph:CreateVGUIType("ph_cl_autoclose_taunt", "check", "CLIENT", gridpl, "Option for Auto closing for Taunt window when double-clicking them")
 		Ph:CreateVGUIType("ph_cl_spec_hunter_line", "check", "CLIENT", gridpl, "Draw a line on hunters so we can see their aim in spectator mode.")
-		Ph:CreateVGUIType("hudspacer","spacer",nil,gridpl,"" )
-		Ph:CreateVGUIType("cl_enable_luckyballs_icon", "check", "CLIENT", gridpl, "Enable 'Lucky ball' icon to be displayed once they're spawned")
+		Ph:CreateVGUIType("cl_enable_luckyballs_icon", "check", "CLIENT", gridpl, "Enable 'Lucky ball' icon to be displayed once they are spawned")
+		Ph:CreateVGUIType("cl_enable_devilballs_icon", "check", "CLIENT", gridpl, "Enable 'Devil ball' icon to be displayed once they are spawned")
 		Ph:CreateVGUIType("hudspacer","spacer",nil,gridpl,"" )
 		Ph:CreateVGUIType("", "label", false, gridpl, "HUD Settings")
 		Ph:CreateVGUIType("ph_hud_use_new", "check", "CLIENT", gridpl, "Use New PH: Enhanced HUD")
+		Ph:CreateVGUIType("ph_show_tutor_control", "check", "CLIENT", gridpl, "Show Tutorial Pop-up (Shown only 2x on each prop spawns)")
+		Ph:CreateVGUIType("ph_show_custom_crosshair", "check", "CLIENT", gridpl, "Enable Custom Crosshair")
 		Ph:CreateVGUIType("ph_show_team_topbar", "check", "CLIENT", gridpl, "Show total alive team players bar on the top left (At least 4 Players will be shown)")
 		
 	tab:AddSheet("Player", panel, "icon16/user_orange.png")
@@ -527,6 +529,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 		Ph:CreateVGUIType("ph_normal_taunt_delay", "slider", {min = 2, max = 120, init = GetConVar("ph_normal_taunt_delay"):GetInt(), dec = 0, kind = "SERVER"}, grid, "Normal Taunts Delay (Seconds)")
 		Ph:CreateVGUIType("ph_autotaunt_enabled", "check", "SERVER", grid, "Enable Auto Taunt Features")
 		Ph:CreateVGUIType("ph_autotaunt_delay", "slider", {min = 30, max = 180, init = GetConVar("ph_autotaunt_delay"):GetInt(), dec = 0, kind = "SERVER"}, grid, "Auto Taunts Delay (Seconds)")
+		Ph:CreateVGUIType("ph_enable_taunt_scandir", "check", "SERVER", grid, "Enable Custom Auto-Taunt Scanner directory")
 		Ph:CreateVGUIType("devspacer","spacer",nil,grid,"" )
 		Ph:CreateVGUIType("ph_notice_prop_rotation", "check", "SERVER", grid, "Display 'Prop Rotation' notification on every Prop Spawns")
 		Ph:CreateVGUIType("ph_prop_camera_collisions", "check", "SERVER", grid, "Enable Prop Camera collision to the wall")
@@ -539,7 +542,8 @@ function ph_BaseMainWindow(ply, cmd, args)
 		Ph:CreateVGUIType("ph_hunter_blindlock_time", "slider", {min = 15, max = 60, init = GetConVar("ph_hunter_blindlock_time"):GetInt(), dec = 0, kind = "SERVER"}, grid, "Hunter blindlock time (Seconds)") 
 		Ph:CreateVGUIType("ph_round_time", "slider", 			{min = 120, max = 600, init = GetConVar("ph_round_time"):GetInt(), dec = 0, kind = "SERVER"}, grid, "Game round time (Seconds)") 
 		Ph:CreateVGUIType("ph_rounds_per_map", "slider", 		{min = 5, max = 30, init = GetConVar("ph_rounds_per_map"):GetInt(), dec = 0, kind = "SERVER"}, grid, "Total game Rounds per Map") 
-		Ph:CreateVGUIType("ph_enable_lucky_balls", "check", "SERVER", grid, "Allow Lucky Balls Features to be spawned on random breakable props")
+		Ph:CreateVGUIType("ph_enable_lucky_balls", "check", "SERVER", grid, "Allow Lucky Balls Features to be spawned on breakable props (Chance is 8%)")
+		Ph:CreateVGUIType("ph_enable_devil_balls", "check", "SERVER", grid, "Allow Devil Balls Features to be spawned when hunter dies (Chance is 70%)")
 		Ph:CreateVGUIType("ph_waitforplayers", "check", "SERVER", grid, "Wait for Players to begin the gameplay")
 		Ph:CreateVGUIType("ph_min_waitforplayers", "slider", { min = 1, max = game.MaxPlayers(), init = GetConVar("ph_min_waitforplayers"):GetInt(), dec = 0, kind = "SERVER" }, grid, "Mininum Players to Wait before the game starts (default: 1)")
 		Ph:CreateVGUIType("", "label", false, grid, "Enable Custom Taunt. Mode: 0 = Random, 1 = Custom, 2 Both mode)")
@@ -584,21 +588,6 @@ function ph_BaseMainWindow(ply, cmd, args)
 			}
 		}, grid ,"")
 		Ph:CreateVGUIType("devspacer","spacer",nil,grid,"" )
-		Ph:CreateVGUIType("mv_use_ulx_votemaps","check","SERVER",grid,"Use map listing from ULX Mapvote? 1 = use from ULX mapvote list (which you can whitelist them), 0 = use default maps/*.bsp directory listing.")
-		Ph:CreateVGUIType("", "label", false, grid, "MapVote Options - To cancel, simply type !unmap_vote in the chat or type 'unmap_vote' in console.")
-		Ph:CreateVGUIType("", "btn", {max = 2, textdata = {
-			[1] = {"Start MapVote", function(self) 
-				LocalPlayer():ConCommand("map_vote")
-				frm:Close()
-			end
-			},
-			[2] = {"Stop MapVote", function(self)
-				LocalPlayer():ConCommand("unmap_vote")
-				frm:Close()
-			end}
-			}
-		},grid,"")
-		Ph:CreateVGUIType("devspacer","spacer",nil,grid,"" )
 		Ph:CreateVGUIType("", "label", false, grid, "Developer Options/Experimentals Features")
 		Ph:CreateVGUIType("ph_mkbren_use_new_mdl","check","SERVER",grid, "Developer: Use new model for Bren MK II Bonus Weapon (Require Map Restart!)")
 		Ph:CreateVGUIType("ph_print_verbose", "check", "SERVER", grid, "Developer: Enable verbose information of PH:E events in the console")
@@ -606,8 +595,40 @@ function ph_BaseMainWindow(ply, cmd, args)
 		Ph:CreateVGUIType("ph_fc_use_single_sound", "check", "SERVER", grid, "Use single Freezecam sound instead of sound list (Use 'ph_fc_cue_path' to determine Freezecam sound path)")
 		Ph:CreateVGUIType("ph_use_playermodeltype", "check", "SERVER", grid, "Use Legacy Model List : 0 = All Playermodels (AddValidModel), 1 = Use Legacy: list.Get('PlayerOptionsModel')")
 		Ph:CreateVGUIType("ph_prop_jumppower", "slider", {min = 1, max = 3, init = GetConVar("ph_prop_jumppower"):GetFloat(), dec = 2, float = true, kind = "SERVER"}, grid, "Additional Jump Power multiplier for Props")
+		Ph:CreateVGUIType("ph_sv_enable_obb_modifier","check","SERVER",grid, "Developer: Enable Customized Prop Entity OBB Model Data Modifier")
+		Ph:CreateVGUIType("ph_reload_obb_setting_everyround","check","SERVER",grid, "Developer: Reload Customized Prop Entity OBB Model Data Modifier every round restarts")
 		
 	tab:AddSheet("Admins", panel, "icon16/user_gray.png")
+	end
+	
+	function Ph:MapVoteMenu()
+		local panel,grid = Ph:CreateBasicLayout(Color(40,40,40,180),tab)
+		
+		Ph:CreateVGUIType("", "label", false, grid, "MapVote Settings")
+		Ph:CreateVGUIType("mv_allowcurmap","check","SERVER",grid,"Allow Current map to be Voted")
+		Ph:CreateVGUIType("mv_cooldown","check","SERVER",grid,"Enable map Cooldown for voting")
+		Ph:CreateVGUIType("mv_use_ulx_votemaps","check","SERVER",grid,"Use map listing from ULX Mapvote? 1 = use from ULX mapvote list (which you can whitelist them), 0 = use default maps/*.bsp directory listing.")
+		Ph:CreateVGUIType("mv_maplimit", "slider", 	{min = 2, max = 80, init = GetConVar("mv_maplimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, "Number of Maps to be shown in MapVote.")
+		Ph:CreateVGUIType("mv_timelimit", "slider", {min = 15, max = 90, init = GetConVar("mv_timelimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, "Time in Seconds for default mapvote when voting.")
+		Ph:CreateVGUIType("mv_mapbeforerevote", "slider", 	{min = 1, max = 10, init = GetConVar("mv_mapbeforerevote"):GetInt(), dec = 0, kind = "SERVER"}, grid, "How many times cooldown map to be appear again?")
+		Ph:CreateVGUIType("mv_rtvcount", "slider", 	{min = 2, max = game.MaxPlayers(), init = GetConVar("mv_rtvcount"):GetInt(), dec = 0, kind = "SERVER"}, grid, "How many players required to use RTV (Rock the Vote)")
+		Ph:CreateVGUIType("s1","spacer",nil,grid,"" )
+		Ph:CreateVGUIType("", "label", false, grid, "To Setup which map should be listed, use (for example) [ mv_mapprefix 'ph_,cs_,de_' ] in the console.")
+		Ph:CreateVGUIType("", "label", false, grid, "If you are unable to do a MapVote, you NEED to install ULX Admin Mod!")
+		Ph:CreateVGUIType("s2","spacer",nil,grid,"" )
+		Ph:CreateVGUIType("", "label", false, grid, "MapVote Action (To cancel, simply type !unmap_vote in the chat or type 'unmap_vote' in console)")
+		Ph:CreateVGUIType("", "btn", {max = 2, textdata = {
+			[1] = {"Start MapVote", function(self) 
+				LocalPlayer():ConCommand("map_vote")
+			end
+			},
+			[2] = {"Stop MapVote", function(self)
+				LocalPlayer():ConCommand("unmap_vote")
+			end}
+			}
+		},grid,"")
+	
+	tab:AddSheet("MapVote", panel, "icon16/map.png")
 	end
 	
 	-- if Current User is Admin then check their user as security measure in the server.
@@ -619,6 +640,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 	-- if Current User Passes the admin check, shows the admin tab.
 	net.Receive("CheckAdminResult", function(len, pln)
 		Ph:ShowAdminMenu()
+		Ph:MapVoteMenu()
 	end)
 end
 concommand.Add("ph_enhanced_show_help", ph_BaseMainWindow, nil, "Show Prop Hunt: Enhanced Main and Help menus." )

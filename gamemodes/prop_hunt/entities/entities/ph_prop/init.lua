@@ -12,6 +12,11 @@ function ENT:Initialize()
 	self.health = 100
 end
 
+-- Transmit update
+function ENT:UpdateTransmitState()
+	return TRANSMIT_ALWAYS
+end
+
 -- Called when we take damge
 function ENT:OnTakeDamage(dmg)
 	local pl = self:GetOwner()
@@ -22,7 +27,7 @@ function ENT:OnTakeDamage(dmg)
 	if GAMEMODE:InRound() && IsValid(pl) && pl:Alive() && pl:IsPlayer() && attacker:IsPlayer() && dmg:GetDamage() > 0 then
 		if pl:Armor() >= 10 then
 			self.health = self.health - (math.Round(dmg:GetDamage()/2))
-			pl:SetArmor(pl:Armor() - 30)
+			pl:SetArmor(pl:Armor() - 20)
 		else
 			self.health = self.health - dmg:GetDamage()
 		end

@@ -4,8 +4,6 @@ resource.AddWorkshop("417565863")
 -- Send required file to clients
 AddCSLuaFile("sh_init.lua")
 AddCSLuaFile("sh_player.lua")
-AddCSLuaFile("taunts/hunter_taunts.lua")
-AddCSLuaFile("taunts/prop_taunts.lua")
 AddCSLuaFile("cl_tauntwindow.lua")
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("cl_hud_mask.lua")
@@ -21,6 +19,8 @@ include("sh_init.lua")
 include("sh_config.lua")
 include("sv_admin.lua")
 include("sv_tauntwindow.lua")
+
+include("sv_bbox_addition.lua")
 
 -- Server only constants
 PHE.EXPLOITABLE_DOORS = {
@@ -281,14 +281,14 @@ function GM:PlayerSetModel(pl)
 	pl:SetModel(player_model)
 end
 
--- The [E] behaviour is now moved in here!
+-- The [E] & Mouse Click 1 behaviour is now moved in here!
 function GM:PlayerExchangeProp(pl,ent)
 
 	if !IsValid(ent) then return end
 
 	if pl:Team() == TEAM_PROPS && pl:IsOnGround() && !pl:Crouching() && table.HasValue(PHE.USABLE_PROP_ENTITIES, ent:GetClass()) && ent:GetModel() then
 		if table.HasValue(PHE.BANNED_PROP_MODELS, ent:GetModel()) then
-			pl:ChatPrint("That prop has been banned by the server.")
+			pl:ChatPrint("[PH: Enhanced] Notice: That prop has been banned from the server.")
 		elseif IsValid(ent:GetPhysicsObject()) && (pl.ph_prop:GetModel() != ent:GetModel() || pl.ph_prop:GetSkin() != ent:GetSkin()) then
 			local ent_health = math.Clamp(ent:GetPhysicsObject():GetVolume() / 250, 1, 200)
 			local new_health = math.Clamp((pl.ph_prop.health / pl.ph_prop.max_health) * ent_health, 1, 200)
@@ -301,50 +301,74 @@ function GM:PlayerExchangeProp(pl,ent)
 			pl.ph_prop:SetPos(pl:GetPos() - Vector(0, 0, ent:OBBMins().z))
 			pl.ph_prop:SetAngles(pl:GetAngles())
 			
-			--[[ Todo: This feature will be available on Revision C.
-			local hullxymax
-			local hullxymin
-			local hullz
-			
-			-- todo: make it so that it has a NWBool that this entity has custom hull set!
-			if ent:GetNWBool("hasCustomHull",false) then
-			
-			else
-				hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
-				hullxymin = hullxymax * -1
-				hullz = math.Round(ent:OBBMaxs().z - ent:OBBMins().z)
-			
-			 ...
-			end
-			]]--
-			
-			---- >8 -----
-			local hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
-			local hullxymin = hullxymax * -1
-			local hullz = math.Round(ent:OBBMaxs().z - ent:OBBMins().z)
-			
-			local dhullz = hullz
-			if hullz > 10 && hullz <= 30 then
-				dhullz = hullz-(hullz*0.5)
-			elseif hullz > 30 && hullz <= 40 then
-				dhullz = hullz-(hullz*0.2)
-			elseif hullz > 40 && hullz <= 50 then
-				dhullz = hullz-(hullz*0.1)
-			else
-				dhullz = hullz
-			end
-			
-			pl:SetHull(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, hullz))
-			pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, dhullz))
 			pl:SetHealth(new_health)
 			
-			net.Start("SetHull")
-				net.WriteInt(hullxymax,32)
-				net.WriteInt(hullz,32)
-				net.WriteInt(dhullz,32)
-				net.WriteInt(new_health,9)
-			net.Send(pl)
+			if GetConVar("ph_sv_enable_obb_modifier"):GetBool() && ent:GetNWBool("hasCustomHull",false) then
+				local hmin	= ent.m_Hull[1]
+				local hmax 	= ent.m_Hull[2]
+				local dmin	= ent.m_dHull[1]
+				local dmax	= ent.m_dHull[2]
+				
+				if hmax.z < 24 || dmax.z < 24 then
+					pl:SetViewOffset(Vector(0,0,24))
+					pl:SetViewOffsetDucked(Vector(0,0,24))
+				elseif hmax.z > 84 || dmax.z > 84 then --what the heck Duck Size is 84? BigMomma.mdl?
+					pl:SetViewOffset(Vector(0,0,84))
+					pl:SetViewOffsetDucked(Vector(0,0,84))
+				else
+					pl:SetViewOffset(Vector(0,0,hmax.z))
+					pl:SetViewOffsetDucked(Vector(0,0,dmax.z))
+				end
+				
+				pl:SetHull(hmin,hmax)
+				pl:SetHullDuck(dmin,dmax)
+				
+				net.Start("SetHull")
+					net.WriteInt(math.Round(math.Max(hmax.x,hmax.y)),32)
+					net.WriteInt(hmax.z,32)
+					net.WriteInt(dmax.z,32)
+					net.WriteInt(new_health,9)
+				net.Send(pl)
+			else
+				local hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
+				local hullxymin = hullxymax * -1
+				local hullz = math.Round(ent:OBBMaxs().z - ent:OBBMins().z)
+				
+				local dhullz = hullz
+				if hullz > 10 && hullz <= 30 then
+					dhullz = hullz-(hullz*0.5)
+				elseif hullz > 30 && hullz <= 40 then
+					dhullz = hullz-(hullz*0.2)
+				elseif hullz > 40 && hullz <= 50 then
+					dhullz = hullz-(hullz*0.1)
+				else
+					dhullz = hullz
+				end
+			
+				if hullz < 24 then
+					pl:SetViewOffset(Vector(0,0,24))
+					pl:SetViewOffsetDucked(Vector(0,0,24))
+				elseif hullz > 84 then
+					pl:SetViewOffset(Vector(0,0,84))
+					pl:SetViewOffsetDucked(Vector(0,0,84))
+				else
+					pl:SetViewOffset(Vector(0,0,hullz))
+					pl:SetViewOffsetDucked(Vector(0,0,dhullz))
+				end
+			
+				pl:SetHull(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, hullz))
+				pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, dhullz))
+			
+				net.Start("SetHull")
+					net.WriteInt(hullxymax,32)
+					net.WriteInt(hullz,32)
+					net.WriteInt(dhullz,32)
+					net.WriteInt(new_health,9)
+				net.Send(pl)
+			end
 		end
+		
+		hook.Call("PH_OnChangeProp", nil, pl, ent)
 	end
 	
 end
@@ -513,27 +537,25 @@ function GM:OnPreRoundStart(num)
 						pl:SendLua( [[notification.AddLegacy("Additionally you can toggle lock rotation by pressing R key!", NOTIFY_GENERIC, 18 )]] )
 						pl:SendLua( [[surface.PlaySound("garrysmod/content_downloaded.wav")]] )
 					end
-					local propscore = team.GetScore( TEAM_PROPS )
-					local huntscore = team.GetScore( TEAM_HUNTERS )
-	
-					team.SetScore( TEAM_PROPS, huntscore )
-					team.SetScore( TEAM_HUNTERS, propscore )
 				end
+			local propscore = team.GetScore( TEAM_PROPS )
+			local huntscore = team.GetScore( TEAM_HUNTERS )
+	
+			team.SetScore( TEAM_PROPS, huntscore )
+			team.SetScore( TEAM_HUNTERS, propscore )
 			
 			pl:ChatPrint("Teams have been swapped!")
 			end
 		end
 		
-		-- Props will gain a Bonus Armor points Hunter teams has more than 5 players in it. The more player, the more armor they get.
+		-- Props will gain a Bonus Armor points Hunter teams has more than 4 players in it. The more player, the more armor they get.
 		timer.Simple(1, function()
 			local NumHunter = table.Count(team.GetPlayers(TEAM_HUNTERS))
-			if NumHunter >= 5 && NumHunter <= 10 then
-				print("STATE >= 5 and <= 10")
+			if NumHunter >= 4 && NumHunter <= 8 then
 				for _,prop in pairs(team.GetPlayers(TEAM_PROPS)) do
 					if IsValid(prop) then prop:SetArmor(math.random(1,3) * 15) end
 				end
-			elseif NumHunter > 10 then
-				print("STATE > 10")
+			elseif NumHunter > 8 then
 				for _,prop in pairs(team.GetPlayers(TEAM_PROPS)) do
 					if IsValid(prop) then prop:SetArmor(math.random(3,7) * 15) end
 				end

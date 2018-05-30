@@ -14,6 +14,8 @@ local h = 30
 local previousTime
 local tweenTime = 0
 
+local WHOLE_TAUNTS = {}
+
 local function TimeLeft()
 	local ply = LocalPlayer()
 	local lastTauntTime = ply.last_taunt_time
@@ -62,7 +64,7 @@ local function AutoTauntPaint()
 
 	draw.RoundedBox(5, x, y, w, h, Color(0, 0, 0, 200))
 	draw.RoundedBox(5, x + 5, y + 5, (w - 10) * percentage, h - 10, Color(200, 0, 0, 200))
-	draw.DrawText(txt, "MyFont", x + 70, ScrH() - 57, Color(255, 255, 255, 255), TEXT_ALIGN_CENTER)
+	draw.DrawText(txt, "HunterBlindLockFont", x + 70, ScrH() - 57, Color(255, 255, 255, 255), TEXT_ALIGN_CENTER)
 end
 hook.Add("HUDPaint", "PH_AutoTauntPaint", AutoTauntPaint)
 
@@ -75,7 +77,6 @@ end
 local function CheckAutoTaunt()
 	local timeLeft = TimeLeft()
 	local ply = LocalPlayer()
-	local WHOLE_TAUNTS = PHE:GetAllTeamTaunt(TEAM_PROPS)
 
 	-- Stop everything under these conditions
 	if !ply:Alive() || ply:Team() != TEAM_PROPS then
@@ -126,6 +127,8 @@ local function CheckPlayer()
 end
 
 local function AutoTauntSpawn()
+	WHOLE_TAUNTS = table.Copy(PHE:GetAllTeamTaunt(TEAM_PROPS))
+
 	xStart = ScrW() + 200
 	xEnd = ScrW() - 195
 	y = ScrH() - 65

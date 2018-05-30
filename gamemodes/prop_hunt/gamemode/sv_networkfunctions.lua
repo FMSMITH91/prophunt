@@ -5,7 +5,7 @@ util.AddNetworkString("SetHull")
 util.AddNetworkString("PlayFreezeCamSound")
 util.AddNetworkString("PlayerSwitchDynamicLight")
 util.AddNetworkString("DisableDynamicLight")
-util.AddNetworkString("RemoveHUDAvatar")
+util.AddNetworkString("PH_ShowTutor")
 
 util.AddNetworkString("CheckAdminFirst")
 util.AddNetworkString("CheckAdminResult")

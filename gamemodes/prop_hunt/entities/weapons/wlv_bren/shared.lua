@@ -9,12 +9,13 @@
 -- --> Sandbox/default
 
 local function CheckConVar(cvar)
+	if cvar == nil then return false end
 	if cvar != nil then return true end
 	if IsValid(cvar) then return true end
 	return false
 end
 
-if CheckConVar(GetConVar("DebugM9K")) then -- check if M9K is Exists on server. otherwise will use from Default base instead.
+if CheckConVar(GetConVar("DebugM9K")) or (CheckConVar(GetConVar("sv_tfa_conv_m9konvert")) && GetConVar("sv_tfa_conv_m9konvert"):GetBool()) then -- check if M9K or TFA is Exists on server. otherwise will use from Default base instead.
 
 	SWEP.Gun = ("wlv_bren")
 	if (GetConVar(SWEP.Gun.."_allowed")) != nil then
