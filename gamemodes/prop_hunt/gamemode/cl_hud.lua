@@ -75,16 +75,15 @@ local matw = Material("vgui/phehud/res_wep")
 
 local ava
 	if (IsValid(ava)) then ava:Remove() ava = nil end
-local pos = { x = 0, y = math.Round(ScrH()/1.2) }
-local posw = { x = ScrW() - 480, y = math.Round(ScrH()/1.2) } -- Weapon
-local posind = { x = ScrW() - 384, y = math.Round(ScrH()/1.4) }
+local pos = { x = 0, y = ScrH()-130 }
+local posw = { x = ScrW() - 480, y = ScrH()-130 }
 local hp
 local armor
 local hpcolor
 
 local bar = {
 	hp = { h = 5, col = Color(250,40,10,240) },
-	am = { h = 3, col = Color(80,190,255,220) }
+	am = { h = 5, col = Color(80,190,255,220) }
 }
 
 local Rstate = 0
@@ -112,7 +111,7 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 		-- Begin Player Info
 		if not IsValid(ava) then
 			ava = vgui.Create("AvatarMask")
-			ava:SetPos(1 * 16, pos.y * 1.03)
+			ava:SetPos(16, pos.y+18)
 			ava:SetSize(86,86)
 			ava:SetPlayer(LocalPlayer(),128)
 			ava:SetVisible(true)
@@ -127,7 +126,7 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 		surface.SetMaterial( mat[curteam] )
 		surface.DrawTexturedRect( pos.x, pos.y, 480, 120 )
 		
-		draw.DrawText( "HEALTH", "Trebuchet24", pos.x + (8*22), pos.y * 1.0225, color_white, TEXT_ALIGN_LEFT )
+		draw.DrawText( "HEALTH", "Trebuchet24", pos.x + 175, pos.y + 14, color_white, TEXT_ALIGN_LEFT )
 		
 		if hp < 0 then hp = 0 end
 		if armor < 0 then armor = 0 end
@@ -143,13 +142,13 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 		if armor > 100 then armx = 100 else armx = armor end
 		
 		surface.SetDrawColor(bar.hp.col)
-		surface.DrawRect(pos.x + (8*22), pos.y + (2*28.5), 1*(hpx*2.9), bar.hp.h)
+		surface.DrawRect(pos.x + 175, pos.y + 57, 1*(hpx*2.9), bar.hp.h)
 		
 		surface.SetDrawColor(bar.am.col)
-		surface.DrawRect(pos.x + (8*22), pos.y + (2*32), 1*(armx*2.9), bar.am.h)
+		surface.DrawRect(pos.x + 175, pos.y + 62, 1*(armx*2.9), bar.am.h)
 		
-		draw.DrawText( hp, "PHE.HealthFont", pos.x + (8*44), pos.y * 0.995, hpcolor, TEXT_ALIGN_RIGHT )
-		draw.DrawText( " / "..armor, "PHE.ArmorFont", pos.x + (8*44), pos.y * 1.0225, Color( 255,255,255,255 ), TEXT_ALIGN_LEFT )
+		draw.DrawText( hp, "PHE.HealthFont", pos.x + 350, pos.y - 4, hpcolor, TEXT_ALIGN_RIGHT )
+		draw.DrawText( " / "..armor, "PHE.ArmorFont", pos.x + 350, pos.y + 14, Color( 255,255,255,255 ), TEXT_ALIGN_LEFT )
 		
 		if LocalPlayer():Team() == TEAM_HUNTERS then
 			surface.SetDrawColor(disabledcolor)
@@ -157,7 +156,7 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 			surface.SetDrawColor( indic.rotate[Rstate] )
 		end
 		surface.SetMaterial( indic.rotate.mat )
-		surface.DrawTexturedRect( pos.x + (8*21), pos.y + (2*37), 32, 32 )
+		surface.DrawTexturedRect( pos.x + (168), pos.y + 74, 32, 32 )
 		
 		if LocalPlayer():Team() == TEAM_HUNTERS then
 			surface.SetDrawColor(disabledcolor)
@@ -165,7 +164,7 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 			surface.SetDrawColor( indic.light[CL_GLOBAL_LIGHT_STATE] )
 		end
 		surface.SetMaterial( indic.light.mat )
-		surface.DrawTexturedRect( pos.x + (8*27), pos.y + (2*37), 32, 32 )
+		surface.DrawTexturedRect( pos.x + (216), pos.y + 74, 32, 32 )
 		
 		if LocalPlayer():Team() == TEAM_HUNTERS then
 			surface.SetDrawColor(disabledcolor)
@@ -173,7 +172,7 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 			surface.SetDrawColor( indic.halo[tonumber(GetConVar("ph_cl_halos"):GetInt())])
 		end
 		surface.SetMaterial( indic.halo.mat )
-		surface.DrawTexturedRect( pos.x + (8*33), pos.y + (2*37), 32, 32 )
+		surface.DrawTexturedRect( pos.x + (264), pos.y + 74, 32, 32 )
 		
 		if LocalPlayer():Armor() < 10 then
 			surface.SetDrawColor( indic.armor[0] )
@@ -181,7 +180,7 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 			surface.SetDrawColor( indic.armor[1] )
 		end
 		surface.SetMaterial( indic.armor.mat )
-		surface.DrawTexturedRect (pos.x + (8*39), pos.y + (2*37), 32, 32 )
+		surface.DrawTexturedRect (pos.x + (312), pos.y + (2*37), 32, 32 )
 	end
 	
 	-- Weapon HUD
@@ -199,7 +198,7 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 		local name
 		local percent
 		
-		draw.DrawText( "AMMO", "Trebuchet24", posw.x + (8*32), posw.y * 1.0225, color_white, TEXT_ALIGN_LEFT )
+		draw.DrawText( "AMMO", "Trebuchet24", posw.x + (256), posw.y + 14, color_white, TEXT_ALIGN_LEFT )
 		
 		if IsValid(curWep) then
 			clip 	= curWep:Clip1()
@@ -217,14 +216,13 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 				percent = math.Round(clip / maxclip * 300)
 			end
 			
-			draw.NoTexture()
 			surface.SetDrawColor(255,200,15,255)
-			surface.DrawRect(posw.x + 8, posw.y * 1.0995, percent, 6)
+			surface.DrawRect(posw.x + 8, posw.y + 58, percent, 8)
 		
-			draw.DrawText( clip, "PHE.HealthFont", posw.x + (8*17), posw.y * 0.995, color_white, TEXT_ALIGN_RIGHT )
-			draw.DrawText( " / "..mag, "PHE.ArmorFont", posw.x + (8*17), posw.y * 1.0225, color_white, TEXT_ALIGN_LEFT )
-			draw.DrawText( mag2, "PHE.AmmoFont", ScrW()/1.05, posw.y * 1.02, 		color_white, TEXT_ALIGN_CENTER )
-			draw.DrawText( name, "PHE.TopBarFont", posw.x + (8*17.5), posw.y * 1.1325, 	color_white, TEXT_ALIGN_LEFT )
+			draw.DrawText( clip, "PHE.HealthFont", posw.x + 136, posw.y -4, color_white, TEXT_ALIGN_RIGHT )
+			draw.DrawText( " / "..mag, "PHE.ArmorFont", posw.x + 136, posw.y + 14, color_white, TEXT_ALIGN_LEFT )
+			draw.DrawText( mag2, "PHE.AmmoFont", ScrW()-58, posw.y + 14, 		color_white, TEXT_ALIGN_CENTER )
+			draw.DrawText( name, "PHE.TopBarFont", posw.x + 136, posw.y + 80, 	color_white, TEXT_ALIGN_LEFT )
 			
 		end
 	end
@@ -257,11 +255,11 @@ hook.Add("HUDPaint", "PHE.MainHUD", function()
 			
 			-- Draw Props
 			draw.DrawText( "Props", "PHE.TopBarFont", 4, hudtopbar.y + 2, Color(255,255,255,255), TEXT_ALIGN_LEFT )
-			draw.DrawText( tostring(PopulateAliveTeam(TEAM_PROPS)), "PHE.TopBarFontTeam", 4*24, hudtopbar.y - 8, Color(255,255,255,255), TEXT_ALIGN_LEFT )
+			draw.DrawText( tostring(PopulateAliveTeam(TEAM_PROPS)), "PHE.TopBarFontTeam", 96, hudtopbar.y - 8, Color(255,255,255,255), TEXT_ALIGN_LEFT )
 			
 			-- Draw Hunters
-			draw.DrawText( "Hunter", "PHE.TopBarFont", (4 * 74), hudtopbar.y + 22, Color(255,255,255,255), TEXT_ALIGN_LEFT )
-			draw.DrawText( tostring(PopulateAliveTeam(TEAM_HUNTERS)), "PHE.TopBarFontTeam", 4*55, hudtopbar.y - 8, Color(255,255,255,255), TEXT_ALIGN_LEFT )			
+			draw.DrawText( "Hunter", "PHE.TopBarFont", 300, hudtopbar.y + 22, Color(255,255,255,255), TEXT_ALIGN_LEFT )
+			draw.DrawText( tostring(PopulateAliveTeam(TEAM_HUNTERS)), "PHE.TopBarFontTeam", 220, hudtopbar.y - 8, Color(255,255,255,255), TEXT_ALIGN_LEFT )
 		end
 	end
 end)

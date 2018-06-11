@@ -392,28 +392,29 @@ end
 
 local tutormat = "vgui/hud_control_help.png"
 local curshow = 0
-local maxshow = 2
 net.Receive("PH_ShowTutor", function()
 	if GetConVar("ph_show_tutor_control"):GetBool() && LocalPlayer():Alive() then
 	
-		if curshow > maxshow then return end
+		if curshow <= 2 then
 	
-		local xNotify = vgui.Create( "DNotify" )
-		xNotify:SetPos( ScrW() - 300 , 60 )
-		xNotify:SetSize( 256, 256 )
-		xNotify:SetLife(12)
-		
-		local bg = vgui.Create( "DPanel", xNotify )
-		bg:Dock( FILL )
-		bg:SetBackgroundColor( Color( 16, 16, 16, 180 ) )
-		
-		local image = vgui.Create( "DImage", bg )
-		image:SetImage(tutormat)
-		image:Dock(FILL)
-		
-		xNotify:AddItem(bg)
-		
-		curshow = curshow + 1
+			local xNotify = vgui.Create( "DNotify" )
+			xNotify:SetPos( ScrW() - 300 , 60 )
+			xNotify:SetSize( 256, 256 )
+			xNotify:SetLife(12)
+			
+			local bg = vgui.Create( "DPanel", xNotify )
+			bg:Dock( FILL )
+			bg:SetBackgroundColor( Color( 16, 16, 16, 180 ) )
+			
+			local image = vgui.Create( "DImage", bg )
+			image:SetImage(tutormat)
+			image:Dock(FILL)
+			
+			xNotify:AddItem(bg)
+			
+			curshow = curshow + 1
+			
+		end
 	end
 end)
 

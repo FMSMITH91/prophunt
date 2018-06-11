@@ -249,8 +249,10 @@ end
 function PHE:GetAllTeamTaunt(teamid)
 	if teamid == TEAM_PROPS then
 		local taunt = table.Copy(PHE.PROP_TAUNTS)
-		for name,tprop in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
-			taunt[name] = tprop
+		if table.Count(PHE.PH_TAUNT_CUSTOM.PROP) > 0 then
+			for name,tprop in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
+				taunt[name] = tprop
+			end
 		end
 		
 		return taunt
@@ -258,8 +260,10 @@ function PHE:GetAllTeamTaunt(teamid)
 	
 	if teamid == TEAM_HUNTERS then
 		local taunt = table.Copy(PHE.HUNTER_TAUNTS)
-		for name,thunter in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
-			taunt[name] = thunter
+		if table.Count(PHE.PH_TAUNT_CUSTOM.HUNTER) > 0 then
+			for name,thunter in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
+				taunt[name] = thunter
+			end
 		end
 		
 		return taunt
@@ -270,8 +274,12 @@ end
 
 function PHE:GetTeamTaunt(teamid,bCustom)
 	if teamid == TEAM_PROPS then
-		if bCustom then 
-			return PHE.PH_TAUNT_CUSTOM.PROP
+		if bCustom then
+			if table.Count(PHE.PH_TAUNT_CUSTOM.PROP) > 0 then
+				return PHE.PH_TAUNT_CUSTOM.PROP
+			else
+				return false
+			end
 		else
 			return PHE.PROP_TAUNTS
 		end
@@ -279,7 +287,11 @@ function PHE:GetTeamTaunt(teamid,bCustom)
 	
 	if teamid == TEAM_HUNTERS then
 		if bCustom then 
-			return PHE.PH_TAUNT_CUSTOM.HUNTER 
+			if table.Count(PHE.PH_TAUNT_CUSTOM.HUNTER) > 0 then
+				return PHE.PH_TAUNT_CUSTOM.HUNTER
+			else
+				return false
+			end
 		else
 			return PHE.HUNTER_TAUNTS
 		end

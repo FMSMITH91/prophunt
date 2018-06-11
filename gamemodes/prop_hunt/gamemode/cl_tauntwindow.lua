@@ -140,12 +140,20 @@ local function MainFrame()
 			list:Clear()
 			hastaunt = false
 			if LocalPlayer():Team() == TEAM_PROPS then
-				for name,val in pairs(PHE:GetTeamTaunt(TEAM_PROPS,true)) do
-					list:AddLine(name)
+				if PHE:GetTeamTaunt(TEAM_PROPS,true) != false then
+					for name,val in pairs(PHE:GetTeamTaunt(TEAM_PROPS,true)) do
+						list:AddLine(name)
+					end
+				else
+					list:AddLine("<< WARNING: NO TAUNTS DETECTED! >>")
 				end
 			else
-				for name,val in pairs(PHE:GetTeamTaunt(TEAM_HUNTERS,true)) do
-					list:AddLine(name)
+				if PHE:GetTeamTaunt(TEAM_PROPS,true) != false then
+					for name,val in pairs(PHE:GetTeamTaunt(TEAM_HUNTERS,true)) do
+						list:AddLine(name)
+					end
+				else
+					list:AddLine("<< WARNING: NO TAUNTS DETECTED! >>")
 				end
 			end
 			pnl:SortAndStyle(list)
