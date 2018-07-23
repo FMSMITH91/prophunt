@@ -36,11 +36,7 @@ PHE.SVAdmins = {
 }
 
 -- Banned Props models
-PHE.BANNED_PROP_MODELS = {
-	"models/props/cs_assault/dollar.mdl",
-	"models/props/cs_assault/money.mdl",
-	"models/props/cs_office/snowman_arm.mdl"
-}
+PHE.BANNED_PROP_MODELS = {}
 
 --[[ // DO NOT MODIFY! use from taunts/prop_taunts.lua or hunter_taunts.lua instead! \\ ]]--
 PHE.HUNTER_TAUNTS = {
@@ -209,28 +205,27 @@ local function AddDemTaunt()
 	PHE.PH_TAUNT_CUSTOM.HUNTER 	= INITHunterTaunts()
 	PHE.PH_TAUNT_CUSTOM.PROP	= INITPropTaunts()
 	
-	printVerbose("[PH:E Taunts] Adding FastDL for Custom Prop Taunts...")
-	if table.Count(PHE.PH_TAUNT_CUSTOM.PROP) > 0 then
-		for name,tprop in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
-			if (SERVER) then
-				printVerbose("[PH:E Taunts] --> Adding taunt: "..name.." : "..tprop)
-				resource.AddSingleFile("sound/"..tprop)
+	-- Send Files to the clients.
+	if (SERVER) then
+		printVerbose("[PH:E Taunts] Adding FastDL for Custom Prop Taunts...")
+		if table.Count(PHE.PH_TAUNT_CUSTOM.PROP) > 0 then
+			for name,tprop in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
+					printVerbose("[PH:E Taunts] --> Adding taunt: "..name.." : "..tprop)
+					resource.AddSingleFile("sound/"..tprop)
 			end
+		else
+			printVerbose("[PH:E Taunts] WARNING! Custom taunts table is EMPTY!")
 		end
-	else
-		printVerbose("[PH:E Taunts] WARNING! Custom taunts table is EMPTY!")
-	end
-	
-	printVerbose("[PH:E Taunts] Adding FastDL for Custom Hunter Taunts...")
-	if table.Count(PHE.PH_TAUNT_CUSTOM.HUNTER) > 0 then
-		for name,thunter in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
-			if (SERVER) then
+		
+		printVerbose("[PH:E Taunts] Adding FastDL for Custom Hunter Taunts...")
+		if table.Count(PHE.PH_TAUNT_CUSTOM.HUNTER) > 0 then
+			for name,thunter in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
 				printVerbose("[PH:E Taunts] --> Adding taunt: "..name.." : "..thunter)
 				resource.AddSingleFile("sound/"..thunter)
 			end
+		else
+			printVerbose("[PH:E Taunts] WARNING! Custom taunts table is EMPTY!")
 		end
-	else
-		printVerbose("[PH:E Taunts] WARNING! Custom taunts table is EMPTY!")
 	end
 end
 hook.Add("Initialize", "PHE.AddTauntTables", AddDemTaunt)
@@ -359,10 +354,12 @@ if SERVER then
 
 		-- Create actual config
 		if ( !file.Exists( dir.."/bans.txt", "DATA" ) ) then
-			file.Write( dir.."/bans.txt", util.TableToJSON(PHE.PROP_PLMODEL_BANS, true) )
+			file.Write( dir.."/bans.txt", util.TableToJSON({"models/player.mdl"}, true) )
 		end
 
-		-- Check and make sure the file still exists in case something caused it to not be created
+		--[[
+		
+		////// Old Code. Use this for debug purpose / other method (this won't let clear the existing table.)
 		if ( file.Exists( dir.."/bans.txt", "DATA" ) ) then
 		
 			local PROP_PLMODEL_BANS_READ = util.JSONToTable( file.Read( dir.."/bans.txt", "DATA" ) )
@@ -376,6 +373,23 @@ if SERVER then
 			
 			printVerbose("[PH: Enhanced] Cannot read "..dir.."/bans.txt: Error - did not exist. Did you just delete it or what?")
 			
+		end]]
+		
+		if ( file.Exists( dir.."/bans.txt", "DATA" ) ) then
+		
+			local PROP_PLMODEL_BANS_READ = util.JSONToTable( file.Read( dir.."/bans.txt", "DATA" ) )
+			
+			-- empty the table instead
+			table.Empty(PHE.PROP_PLMODEL_BANS)
+			
+			for _, v in pairs(PROP_PLMODEL_BANS_READ) do
+				printVerbose("[PH:E PlayerModels] Adding custom prop player model ban --> "..string.lower(v))
+				table.insert(PHE.PROP_PLMODEL_BANS, string.lower(v))
+			end
+		else
+			
+			printVerbose("[PH: Enhanced] Cannot read "..dir.."/bans.txt: Error - did not exist. Did you just delete it or what?")
+			
 		end
 
 	end
@@ -384,14 +398,23 @@ if SERVER then
 	local function AddBannedPropModels()
 		local dir = "phe-config/prop_model_bans"
 		
+		local mdlpermabans = {
+			"models/props/cs_assault/dollar.mdl",
+			"models/props/cs_assault/money.mdl",
+			"models/props/cs_office/snowman_arm.mdl"
+		}
+		
 		if ( !file.Exists(dir, "DATA") ) then
 			file.CreateDir(dir)
 		end
 		
 		if ( !file.Exists(dir.."/model_bans.txt","DATA") ) then
-			file.Write( dir.."/model_bans.txt", util.TableToJSON({"models/props/cs_militia/reload_bullet_tray.mdl"} ,true) )
+			file.Write( dir.."/model_bans.txt", mdlpermabans ,true )
 		end
 		
+		--[[
+		
+		////// Old Code. Use this for debug purpose / other method (this won't let clear the existing table.)
 		if ( file.Exists ( dir.."/model_bans.txt","DATA" ) ) then
 			local PROP_MODEL_BANS_READ = util.JSONToTable(file.Read(dir.."/model_bans.txt"))
 			for k,v in pairs(PROP_MODEL_BANS_READ) do
@@ -399,6 +422,19 @@ if SERVER then
 					printVerbose("[PH:E Model Bans] Adding entry of restricted model to be used --> "..string.lower(v))
 					table.insert(PHE.BANNED_PROP_MODELS, string.lower(v))
 				end
+			end
+		else
+			printVerbose("[PH: Enhanced] Cannot read "..dir.."/model_bans.txt: Error - did not exist. Did you just delete it or what?")
+		end
+		]]
+		
+		if ( file.Exists ( dir.."/model_bans.txt","DATA" ) ) then
+			local PROP_MODEL_BANS_READ = util.JSONToTable(file.Read(dir.."/model_bans.txt"))
+			-- empty the tables anyway.
+			table.Empty(PHE.BANNED_PROP_MODELS)
+			for _,v in pairs(PROP_MODEL_BANS_READ) do
+				printVerbose("[PH:E Model Bans] Adding entry of restricted model to be used --> "..string.lower(v))
+				table.insert(PHE.BANNED_PROP_MODELS, string.lower(v))
 			end
 		else
 			printVerbose("[PH: Enhanced] Cannot read "..dir.."/model_bans.txt: Error - did not exist. Did you just delete it or what?")

@@ -451,8 +451,12 @@ function ph_BaseMainWindow(ply, cmd, args)
 		end
 		
 		-- Self Explanationary.
-		if !GetConVar("ph_use_custom_plmodel"):GetBool() then
-		
+		if GetConVar("ph_use_custom_plmodel"):GetBool() then
+			-- Call the VGUI Properties of PlayerModelAdditions().
+			Ph:PlayerModelAdditions()
+			tab:AddSheet("Player Model", panel, "icon16/brick.png")
+		else
+			-- Show small message instead
 			local scroll = vgui.Create( "DScrollPanel", panel )
 			scroll:Dock(FILL)
 			
@@ -467,11 +471,6 @@ function ph_BaseMainWindow(ply, cmd, args)
 			
 			-- this hook is intended to use for custom player model outside from PH:E Menu. (like Custom Donator Model window or something).
 			hook.Call("PH_CustomPlayermdlButton", nil, panel, gridmdl, function(cmd,typ,data,panel,text) Ph:CreateVGUIType(cmd,typ,data,panel,text) end)
-			
-			tab:AddSheet("Player Model", panel, "icon16/brick.png")
-		else
-			-- Call the VGUI Properties of PlayerModelAdditions().
-			Ph:PlayerModelAdditions()
 			
 			tab:AddSheet("Player Model", panel, "icon16/brick.png")
 		end
@@ -494,6 +493,9 @@ function ph_BaseMainWindow(ply, cmd, args)
 		Ph:CreateVGUIType("ph_show_tutor_control", "check", "CLIENT", gridpl, "Show Tutorial Pop-up (Shown only 2x on each prop spawns)")
 		Ph:CreateVGUIType("ph_show_custom_crosshair", "check", "CLIENT", gridpl, "Enable Custom Crosshair")
 		Ph:CreateVGUIType("ph_show_team_topbar", "check", "CLIENT", gridpl, "Show total alive team players bar on the top left (At least 4 Players will be shown)")
+		Ph:CreateVGUIType("spacerdonate","spacer",nil,gridpl,"" )
+		Ph:CreateVGUIType("", "label", false, gridpl, "Miscellaneous")
+		Ph:CreateVGUIType("cl_permhide_donate", "check", "CLIENT", gridpl, "Re-Enable Support Reminder message on join")
 		
 	tab:AddSheet("Player", panel, "icon16/user_orange.png")
 	end
@@ -523,6 +525,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 		local panel,grid = Ph:CreateBasicLayout(Color(40,40,40,180),tab)
 
 		Ph:CreateVGUIType("", "label", false, grid, "Serverside gamemode Options (Only visible for Admins/Owner)")
+		Ph:CreateVGUIType("ph_sv_enable_donation_message", "check", "SERVER", grid, "Show/Don't show the support message for the Prop Hunt: Enhanced Gamemode on player spawn.")
 		Ph:CreateVGUIType("ph_use_custom_plmodel", "check", "SERVER", grid, "Enable custom models for Hunters")
 		Ph:CreateVGUIType("ph_use_custom_plmodel_for_prop", "check", "SERVER", grid, "Enable custom models for Props - Make sure to enable for Hunter too.")
 		Ph:CreateVGUIType("ph_customtaunts_delay", "slider", {min = 2, max = 120, init = GetConVar("ph_customtaunts_delay"):GetInt(), dec = 0, kind = "SERVER"}, grid, "Custom Taunts Delay (Seconds)")

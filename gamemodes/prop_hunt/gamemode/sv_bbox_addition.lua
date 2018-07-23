@@ -39,9 +39,9 @@ local function DoConfig()
 	1:
 		1: "model/path/b.mdl"
 		2:
-			min 	= {0,0,0}
+			min 	= {-0,-0,-0}
 			max 	= {16,16,72}
-			dmin	= {0,0,0}
+			dmin	= {-0,-0,-0}
 			dmax	= {16,16,28}
 	]]
 	
@@ -68,7 +68,6 @@ local function DoConfig()
 	
 end
 
--- Todo: This feature will be available on Revision C.
 hook.Add("Initialize", "PHE.InitOBBModelData", function()
 
 	if !file.Exists("phe-config/obb","DATA") then

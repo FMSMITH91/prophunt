@@ -119,7 +119,7 @@ end
 function GM:PositionScoreboard( ScoreBoard )
 
 	if ( GAMEMODE.TeamBased ) then
-		ScoreBoard:SetSize( 800, ScrH() - 50 )
+		ScoreBoard:SetSize( ScrW()/1.2, ScrH() - 50 )
 		ScoreBoard:SetPos( (ScrW() - ScoreBoard:GetWide()) * 0.5,  25 )
 	else
 		ScoreBoard:SetSize( 420, ScrH() - 64 )

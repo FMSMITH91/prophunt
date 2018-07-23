@@ -36,7 +36,7 @@ function PHE:CheckUpdate(bool)
 		return false,false,false
 	end
 	
-	printVerbose("[*PH: Enhanced Update] Incoming update result data:\n ===\n"..result.."\n ===\n")
+	printVerbose("[*PH: Enhanced Update] Incoming update result data:\n ===\n"..tostring(result).."\n ===\n")
 	local data = util.JSONToTable(result)
 	
 	local ver = tonumber(data.version)

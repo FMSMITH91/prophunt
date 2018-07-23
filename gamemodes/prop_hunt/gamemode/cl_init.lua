@@ -30,6 +30,8 @@ function Initialize()
 	CreateClientConVar("ph_show_custom_crosshair","1",true,false,"Show custom crosshair for props")
 	CreateClientConVar("ph_show_tutor_control","1",true,false,"Show 'Prop Gameplay Control' hud on each prop spawns. This only show twice and reset until map changes/user disconnect.")
 	
+	CreateClientConVar("cl_permhide_donate","0",true,true, "Show Donation Message on Every Initial Spawn?")
+	
 	CL_GLIMPCAM 	= 0
 	MAT_LASERDOT 	= Material("sprites/glow04_noz")
 	
@@ -442,6 +444,32 @@ end)
 -- Sets the local blind variable to be used in CalcView
 net.Receive("SetBlind", function()
 	blind = net.ReadBool()
+end)
+
+local cooldown	= 86400
+net.Receive("utilWLVShowMessage", function()
+	if (GetConVar("cl_permhide_donate"):GetBool()) then return end
+
+	local nextDonateNotify = cookie.GetNumber("nextDonateNotify",0)
+	local time		 = os.time()
+	
+	if time < nextDonateNotify then
+		print("[PH: Enhanced] - Skipping Donation Message. Will show the message again later on "..os.date("%Y/%m/%d - %H:%M:%S",nextDonateNotify))
+	else
+		Derma_Query("Hello! This message is from the Author of Prop Hunt: Enhanced (Wolvindra-Vinzuerio), Would you like to take a time for a moment?\nIf you are enjoyed and interested with Prop Hunt: Enhanced gamemode, Would you consider take a moment to support?\n\nYour Support is really helpful for the gamemode development! Thank you :)\n\n(Note: if you are an admin, you can disable this message under F1 Admin Prop Hunt Menu)", "[ Prop Hunt: Enhanced ] - Support Our Gamemode!",
+		"Sure!", function()
+			print("[PH: Enhanced] - Opening the page...")
+			gui.OpenURL("https://project.wolvindra.net/phe/go/donate_go.php?gamemodeonly=true")
+		end,
+		"No but remind me later", function()
+			cookie.Set("nextDonateNotify", time + cooldown)
+			print("[PH: Enhanced] - Skipping Donation Message for Tomorrow...")
+		end,
+		"No, Don't show this message", function()
+			print("[PH: Enhanced] - Skipping Donation Message Permanently...")
+			RunConsoleCommand("cl_permhide_donate","1")
+		end)
+	end
 end)
 
 --[[ Here you can add more than 2 additional freeze cam sounds. 
