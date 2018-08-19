@@ -1,4 +1,4 @@
-PHE.RESULT = {}
+PHE.RESULT = false
 
 local function UPDATE_SET_RESULT(result)
 	PHE.RESULT = result
@@ -69,7 +69,7 @@ local function CheckUpdate()
 	
 		local version,rev,changelog = PHE:CheckUpdate(true)
 		
-		if !version && !rev && !changelog then
+		if (!version || !rev || !changelog) then
 			MsgC(Color(230,20,20), "[!!] Error Retreiving updates info")
 			return
 		end

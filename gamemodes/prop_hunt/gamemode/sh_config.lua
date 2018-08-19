@@ -241,6 +241,17 @@ function PHE:AddCustomTaunt(idTeam,strName,strTaunt)
 	end
 end
 
+-- External Use only, such as Taunt Collection or other.
+-- MAKE SURE TO CALL 'PHE:RefreshTauntList()' AFTER REMOVING THE SPECIFIED TAUNTS!
+function PHE:RemoveCustomTauntByPath(idTeam,strTaunt)
+	if idTeam == TEAM_PROPS then
+		if table.HasValue(PHE.PH_TAUNT_CUSTOM.PROP, strTaunt) then table.RemoveByValue(strTaunt) end
+	end
+	if idTeam == TEAM_HUNTERS then
+		if table.HasValue(PHE.PH_TAUNT_CUSTOM.HUNTER, strTaunt) then table.RemoveByValue(strTaunt) end
+	end
+end
+
 function PHE:GetAllTeamTaunt(teamid)
 	if teamid == TEAM_PROPS then
 		local taunt = table.Copy(PHE.PROP_TAUNTS)
@@ -334,7 +345,7 @@ hook.Add("PostCleanupMap","PHE.RefreshTaunts",function()
 	PHE:RefreshTauntList()
 end)
 
-concommand.Add("phe_refresh_taunt_list", function() PHE:RefreshTauntList() end, nil, "(EXPERIMENTAL) Force Refresh the Taunt List. This may caused some taunts may be missing. Restart is Required!")
+concommand.Add("phe_refresh_taunt_list", function() PHE:RefreshTauntList() end, nil, "(EXPERIMENTAL) Force Refresh the Taunt List. This may cause some taunts are missing. Restart map is Required!")
 
 -- Add the custom player model bans for props AND prop banned models
 if SERVER then
@@ -409,7 +420,7 @@ if SERVER then
 		end
 		
 		if ( !file.Exists(dir.."/model_bans.txt","DATA") ) then
-			file.Write( dir.."/model_bans.txt", mdlpermabans ,true )
+			file.Write( dir.."/model_bans.txt", util.TableToJSON( mdlpermabans, true ))
 		end
 		
 		--[[

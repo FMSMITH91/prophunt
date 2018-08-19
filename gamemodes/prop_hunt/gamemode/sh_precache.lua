@@ -1,6 +1,6 @@
 -- Generic Sound Precache function
-local ph_precache_phe_core = CreateConVar("ph_precache_phe_core", "1", {FCVAR_ARCHIVE, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Precache Prop Hunt: Enhanced core sounds during player initial spawn.")
-local ph_precache_taunts	= CreateConVar("ph_precache_taunts", "0", {FCVAR_ARCHIVE, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Precache Prop Hunt: Enhanced core taunts during player's initial spawn.")
+CreateConVar("ph_precache_phe_core", "1", {FCVAR_ARCHIVE, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Precache Prop Hunt: Enhanced core sounds during player initial spawn.")
+CreateConVar("ph_precache_taunts", "0", {FCVAR_ARCHIVE, FCVAR_REPLICATED, FCVAR_NOTIFY}, "Precache Prop Hunt: Enhanced core taunts during player's initial spawn.")
 
 hook.Add("PlayerInitialSpawn", "PHE.PrecacheSoundCore", function()
 	-- WARNING: THESE ARE FIXED FOR OPTIMISATION PURPOSE. 

@@ -123,7 +123,7 @@ function ph_BaseMainWindow(ply, cmd, args)
 				
 				local pnl = vgui.Create("DPanel")
 				pnl:SetSize(panel:GetColWide(),panel:GetRowHeight())
-				pnl:SetBackgroundColor(Color(120,120,120,200))
+				pnl:SetBackgroundColor(Color(0,0,0,0))
 				
 				local function btncreation(pPanel,pText, f)
 					local btn = vgui.Create("DButton", pPanel)

@@ -15,6 +15,11 @@ include("sh_player.lua")
 AddCSLuaFile("sh_precache.lua")
 include("sh_precache.lua")
 
+-- Plugins! :D
+PHE.PLUGINS = {}
+AddCSLuaFile("sh_plugins.lua")
+include("sh_plugins.lua")
+
 -- MapVote
 if SERVER then
     AddCSLuaFile("sh_mapvote.lua")
@@ -41,7 +46,7 @@ GM.Name		= "Prop Hunt : Enhanced"
 GM.Author	= "Wolvindra-Vinzuerio & D4UNKN0WNM4N2010 | Original: Kowalski/AMT"
 
 GM._VERSION = "15"
-GM.REVISION	= "D"
+GM.REVISION	= "E"
 GM.DONATEURL = "https://project.wolvindra.net/phe/go/donate_go.php?gamemodeonly=true"
 GM.UPDATEURL = "https://raw.githubusercontent.com/Vinzuerio/ph-enhanced/master/updates/version.json"
 
