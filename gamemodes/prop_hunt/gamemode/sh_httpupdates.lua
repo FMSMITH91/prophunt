@@ -31,7 +31,7 @@ function PHE:CheckUpdate(bool)
 	
 	result = UPDATE_DO_FETCH() or UPDATE_GET_RESULT() or PHE.RESULT or false
 	
-	if !result then
+	if (!result || result == "") then
 		print("[!PH: Enhanced Update] Unknown Error retreiving update.")
 		return false,false,false
 	end
@@ -45,10 +45,10 @@ function PHE:CheckUpdate(bool)
 	
 	local text
 	if tonumber(GAMEMODE._VERSION) > ver then
-		text = "[!PH: Enhanced Update] New version of "..ver.." is available. To update, please procceed to this link: \n --> https://project.wolvindra.net/phe/?go=download \n --> Changelog: "..log
+		text = "[!PH: Enhanced Update] New version of "..ver.." is available. To update, please procceed to this link: \n --> https://prophunt.wolvindra.net/?go=download \n --> Changelog: "..log
 		MsgC(Color(0,160,230), text.."\n")
 	elseif string.lower(GAMEMODE.REVISION) != rev then
-		text = "[!PH: Enhanced Update] New Revision of "..rev.." is available. To update, please procceed with this revision, visit this link: \n --> https://project.wolvindra.net/phe/?go=download&rev="..rev.." \n --> Changelog: "..log
+		text = "[!PH: Enhanced Update] New Revision of "..rev.." is available. To update, please procceed with this revision, visit this link: \n --> https://prophunt.wolvindra.net/?go=download&rev="..rev.." \n --> Changelog: "..log
 		MsgC(Color(0,160,230), text.."\n")
 	elseif tonumber(GAMEMODE._VERSION) == ver && string.lower(GAMEMODE.REVISION) == rev then
 		text = "[*PH: Enhanced Update] Your gamemode is up to date. (Version "..ver.." - Revision "..string.upper(rev)..")"

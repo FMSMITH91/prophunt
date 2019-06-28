@@ -37,19 +37,28 @@ if CLIENT then
 		main.grid:SetRowHeight(300)
 		
 		if table.Count(PHE.PLUGINS) < 1 then
-			local lbl = vgui.Create("DLabel",main.panel)
-			lbl:SetPos(40,60)
-			lbl:SetText("No Plugins are available. Find more Prop Hunt: Enhanced Exclusive Plugins here!")
-			lbl:SetFont("Trebuchet24")
-			lbl:SetTextColor(color_white)
-			lbl:SizeToContents()
-			
-			local but = vgui.Create("DButton",main.panel)
-			but:SetPos(40,96)
-			but:SetSize(256,40)
-			but:SetText("Explore PH: Enhanced Plugins")
-			but.DoClick = function() gui.OpenURL("https://project.wolvindra.net/phe/?go=plugins") end
-			but:SetIcon("icon16/bricks.png")
+			if LocalPlayer():IsSuperAdmin() then
+				local lbl = vgui.Create("DLabel",main.panel)
+				lbl:SetPos(40,60)
+				lbl:SetText("No Plugins are available. Find more Prop Hunt: Enhanced Exclusive Plugins here!")
+				lbl:SetFont("Trebuchet24")
+				lbl:SetTextColor(color_white)
+				lbl:SizeToContents()
+				
+				local but = vgui.Create("DButton",main.panel)
+				but:SetPos(40,96)
+				but:SetSize(256,40)
+				but:SetText("Find PH:E Plugins")
+				but.DoClick = function() gui.OpenURL("https://project.wolvindra.net/phe/?go=plugins") end
+				but:SetIcon("icon16/bricks.png")
+			else
+				local lbl = vgui.Create("DLabel",main.panel)
+				lbl:SetPos(40,60)
+				lbl:SetText("This server has no custom addons/plugins installed.")
+				lbl:SetFont("Trebuchet24")
+				lbl:SetTextColor(color_white)
+				lbl:SizeToContents()
+			end
 		else
 			for plName,Data in pairs(PHE.PLUGINS) do
 				local section = {}

@@ -1,6 +1,32 @@
+CreateClientConVar("ph_cl_halos", "1", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
+CreateClientConVar("ph_cl_pltext", "1", true, false, "Options for Text above players. 0 = Disable. 1 = Enable.")
+CreateClientConVar("ph_cl_endround_sound", "1", true, false, "Play a sound when round ends? 0 to disable.")
+CreateClientConVar("ph_cl_autoclose_taunt", "1", true, false, "Auto close the taunt window (When Double Clicking on them)?")
+CreateClientConVar("ph_cl_spec_hunter_line", "1", true, false, "Draw a line on hunters so we can see their aim in spectator mode.")
+CreateClientConVar("cl_enable_luckyballs_icon", "1", true,false, "Enable 'Lucky ball' icon to be displayed once they spawned")
+CreateClientConVar("cl_enable_devilballs_icon", "1", true,false, "Enable 'Devil ball' icon to be displayed once they spawned")
+CreateClientConVar("ph_hud_use_new", "1", true, false, "Use new PH: Enhanced HUD")
+CreateClientConVar("ph_show_team_topbar", "1", true, false, "Show total alive team players bar on the top left (Experimental)")
+CreateClientConVar("ph_show_custom_crosshair","1",true,false,"Show custom crosshair for props")
+CreateClientConVar("ph_show_tutor_control","1",true,false,"Show 'Prop Gameplay Control' hud on each prop spawns. This only show twice and reset until map changes/user disconnect.")
+
+surface.CreateFont( "HunterBlindLockFont",
+	{
+		font	= "Arial",
+		size	= 14,
+		weight	= 1200,
+		antialias = true,
+		underline = false
+	})
+
+	surface.CreateFont("TrebuchetBig", {
+		font = "Impact",
+		size = 40
+	})
+
 include("sh_init.lua")
 include("sh_config.lua")
-CL_GLOBAL_LIGHT_STATE = 0
+CL_GLOBAL_LIGHT_STATE	= 0
 include("cl_hud_mask.lua")
 include("cl_hud.lua")
 include("cl_menu.lua")
@@ -18,36 +44,8 @@ function Initialize()
 	client_prop_light = false
 	blind = false
 	
-	CreateClientConVar("ph_cl_halos", "1", true, true, "Toggle Enable/Disable Halo effects when choosing a prop.")
-	CreateClientConVar("ph_cl_pltext", "1", true, false, "Options for Text above players. 0 = Disable. 1 = Enable.")
-	CreateClientConVar("ph_cl_endround_sound", "1", true, false, "Play a sound when round ends? 0 to disable.")
-	CreateClientConVar("ph_cl_autoclose_taunt", "1", true, false, "Auto close the taunt window (When Double Clicking on them)?")
-	CreateClientConVar("ph_cl_spec_hunter_line", "1", true, false, "Draw a line on hunters so we can see their aim in spectator mode.")
-	CreateClientConVar("cl_enable_luckyballs_icon", "1", true,false, "Enable 'Lucky ball' icon to be displayed once they spawned")
-	CreateClientConVar("cl_enable_devilballs_icon", "1", true,false, "Enable 'Devil ball' icon to be displayed once they spawned")
-	CreateClientConVar("ph_hud_use_new", "1", true, false, "Use new PH: Enhanced HUD")
-	CreateClientConVar("ph_show_team_topbar", "1", true, false, "Show total alive team players bar on the top left (Experimental)")
-	CreateClientConVar("ph_show_custom_crosshair","1",true,false,"Show custom crosshair for props")
-	CreateClientConVar("ph_show_tutor_control","1",true,false,"Show 'Prop Gameplay Control' hud on each prop spawns. This only show twice and reset until map changes/user disconnect.")
-	
-	CreateClientConVar("cl_permhide_donate","0",true,true, "Show Donation Message on Every Initial Spawn?")
-	
 	CL_GLIMPCAM 	= 0
 	MAT_LASERDOT 	= Material("sprites/glow04_noz")
-	
-	surface.CreateFont( "HunterBlindLockFont",
-	{
-		font	= "Arial",
-		size	= 14,
-		weight	= 1200,
-		antialias = true,
-		underline = false
-	})
-
-	surface.CreateFont("TrebuchetBig", {
-		font = "Impact",
-		size = 40
-	})
 end
 hook.Add("Initialize", "PH_Initialize", Initialize)
 
@@ -262,7 +260,7 @@ local ply = LocalPlayer()
 		end
 		trace.filter = ents.FindByClass("ph_prop")
 		
-		local trace2 = util.TraceLine(trace) 
+		local trace2 = util.TraceLine(trace)
 		if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(PHE.USABLE_PROP_ENTITIES, trace2.Entity:GetClass()) then
 			color = Color(10,255,10,255)
 		else
@@ -341,30 +339,8 @@ function PHEDrawPropselectHalos()
 end
 hook.Add("PreDrawHalos", "PHEDrawPropselectHalos", PHEDrawPropselectHalos)
 
--- the 'Accurate' prop disguise and Play random taunt.
-hook.Add("KeyPress", "tracetest.GetPropInfo", function(pl,key)
-	if ((pl:Team() == TEAM_PROPS && pl:Alive()) && key == IN_ATTACK) then	
-		local trace = {}
-		if cHullz < 24 then
-			trace.start = LocalPlayer():EyePos() + Vector(0, 0, cHullz + (24-cHullz))
-			trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, cHullz + (24-cHullz)) + LocalPlayer():EyeAngles():Forward() * 100
-		elseif cHullz > 84 then
-			trace.start = LocalPlayer():EyePos() + Vector(0, 0, cHullz - 84)
-			trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, cHullz - 84) + LocalPlayer():EyeAngles():Forward() * 300
-		else
-			trace.start = LocalPlayer():EyePos() + Vector(0, 0, 8)
-			trace.endpos = LocalPlayer():EyePos() + Vector(0, 0, 8) + LocalPlayer():EyeAngles():Forward() * 100
-		end
-		trace.filter = ents.FindByClass("ph_prop")
-		
-		local trace2 = util.TraceLine(trace) 
-		if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(PHE.USABLE_PROP_ENTITIES, trace2.Entity:GetClass()) then
-			net.Start("CL2SV_ExchangeProp")
-			net.WriteEntity(trace2.Entity)
-			net.SendToServer()
-		end
-	end
-	
+-- Play random taunt
+hook.Add("KeyPress", "tracetest.GetPropInfo", function(pl, key)
 	if ((pl:Team() == TEAM_PROPS && pl:Alive()) && key == IN_ATTACK2) then
 		LocalPlayer():ConCommand("gm_showspare1")
 	end
@@ -444,32 +420,6 @@ end)
 -- Sets the local blind variable to be used in CalcView
 net.Receive("SetBlind", function()
 	blind = net.ReadBool()
-end)
-
-local cooldown	= 86400
-net.Receive("utilWLVShowMessage", function()
-	if (GetConVar("cl_permhide_donate"):GetBool()) then return end
-
-	local nextDonateNotify = cookie.GetNumber("nextDonateNotify",0)
-	local time		 = os.time()
-	
-	if time < nextDonateNotify then
-		print("[PH: Enhanced] - Skipping Donation Message. Will show the message again later on "..os.date("%Y/%m/%d - %H:%M:%S",nextDonateNotify))
-	else
-		Derma_Query("Hello! This message is from the Author of Prop Hunt: Enhanced (Wolvindra-Vinzuerio), Would you like to take a time for a moment?\nIf you are enjoyed and interested with Prop Hunt: Enhanced gamemode, Would you consider take a moment to support?\n\nYour Support is really helpful for the gamemode development! Thank you :)\n\n(Note: if you are an admin, you can disable this message under F1 Admin Prop Hunt Menu)", "[ Prop Hunt: Enhanced ] - Support Our Gamemode!",
-		"Sure!", function()
-			print("[PH: Enhanced] - Opening the page...")
-			gui.OpenURL("https://project.wolvindra.net/phe/go/donate_go.php?gamemodeonly=true")
-		end,
-		"No but remind me later", function()
-			cookie.Set("nextDonateNotify", time + cooldown)
-			print("[PH: Enhanced] - Skipping Donation Message for Tomorrow...")
-		end,
-		"No, Don't show this message", function()
-			print("[PH: Enhanced] - Skipping Donation Message Permanently...")
-			RunConsoleCommand("cl_permhide_donate","1")
-		end)
-	end
 end)
 
 --[[ Here you can add more than 2 additional freeze cam sounds. 

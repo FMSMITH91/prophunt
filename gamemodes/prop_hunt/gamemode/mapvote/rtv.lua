@@ -52,11 +52,13 @@ hook.Add( "PlayerDisconnected", "Remove RTV", function( ply )
 	end
 
 	timer.Simple( 0.1, function()
-
-		if RTV.ShouldChange() then
-			RTV.Start()
+		if (#player.GetAll() < 1 && !GetConVar("mv_change_when_no_player"):GetBool()) then 
+			print("MapVote: There is no player to force change map...")
+		else
+			if RTV.ShouldChange() then
+				RTV.Start()
+			end
 		end
-
 	end )
 
 end )

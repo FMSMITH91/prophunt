@@ -148,7 +148,7 @@ local function MainFrame()
 					list:AddLine("<< WARNING: NO TAUNTS DETECTED! >>")
 				end
 			else
-				if PHE:GetTeamTaunt(TEAM_PROPS,true) != false then
+				if PHE:GetTeamTaunt(TEAM_HUNTERS,true) != false then
 					for name,val in pairs(PHE:GetTeamTaunt(TEAM_HUNTERS,true)) do
 						list:AddLine(name)
 					end
@@ -202,9 +202,8 @@ local function MainFrame()
 			net.Start("CL2SV_PlayThisTaunt"); net.WriteString(tostring(snd)); net.SendToServer();
 			isplayed = true
 			timer.Simple(GetConVar("ph_customtaunts_delay"):GetInt(), function() isplayed = false; end)
-			LocalPlayer().last_taunt_time = CurTime()
 		else
-			chat.AddText(Color(220,40,0),"[PH:E - Taunts] Warning: ",Color(220,220,220),"You have to wait "..GetConVar("ph_customtaunts_delay"):GetInt().." seconds to play this taunt again!")
+			chat.AddText(Color(220,40,0),"[PH:E - Taunts] Warning: ",Color(220,220,220),"Please wait in " .. GetConVar("ph_customtaunts_delay"):GetInt() .. " seconds...!")
 		end
 	end
 	

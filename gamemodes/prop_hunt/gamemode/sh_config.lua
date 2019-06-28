@@ -1,10 +1,7 @@
 -- Global Var for custom taunt, delivering from taunts/prop -or- hunter_taunts.lua
 PHE.PH_TAUNT_CUSTOM = {}
-
-AddCSLuaFile("taunts/hunter_taunts.lua")
-AddCSLuaFile("taunts/prop_taunts.lua")
-include("taunts/hunter_taunts.lua")
-include("taunts/prop_taunts.lua")
+PHE.PH_TAUNT_CUSTOM.PROP = {}
+PHE.PH_TAUNT_CUSTOM.HUNTER = {}
 
 -- Time (in seconds) for spectator check (Default: 0.1)
 PHE.SPECTATOR_CHECK_ADD = 0.1
@@ -194,39 +191,24 @@ PHE.WINNINGSOUNDS = {
 	["Draw"]	= {"misc/ph_rounddraw_1.mp3", "misc/ph_rounddraw_2.mp3"}
 }
 
--- Add custom taunts, if any. See taunts/prop_taunts.lua or taunts/hunter_taunts.lua for more info.
 local function AddDemTaunt()
 
-	if (!file.Exists("phe-config/taunts", "DATA")) then
-		file.CreateDir("phe-config/taunts")
+	printVerbose("[PH:E Taunts] Initializing Custom Taunts...")
+	for propName,propTaunt in pairs(list.Get("PHE.CustomPropTaunts")) do 
+		printVerbose("[PH:E Taunts] Adding Custom PROP taunts -> "..propName)
+		PHE.PH_TAUNT_CUSTOM.PROP[propName] = propTaunt
+		if (SERVER) then 
+			resource.AddSingleFile("sound/"..propTaunt)
+		end
 	end
-
-	printVerbose("[PH:E Taunts] Adding Custom Taunts Init...")
-	PHE.PH_TAUNT_CUSTOM.HUNTER 	= INITHunterTaunts()
-	PHE.PH_TAUNT_CUSTOM.PROP	= INITPropTaunts()
+	for huntName,huntTaunt in pairs(list.Get("PHE.CustomHunterTaunts")) do
+		printVerbose("[PH:E Taunts] Adding Custom HUNTER taunts -> "..huntName)
+		PHE.PH_TAUNT_CUSTOM.HUNTER[huntName] = huntTaunt 
+		if (SERVER) then
+			resource.AddSingleFile("sound/"..huntTaunt)
+		end
+	end
 	
-	-- Send Files to the clients.
-	if (SERVER) then
-		printVerbose("[PH:E Taunts] Adding FastDL for Custom Prop Taunts...")
-		if table.Count(PHE.PH_TAUNT_CUSTOM.PROP) > 0 then
-			for name,tprop in pairs(PHE.PH_TAUNT_CUSTOM.PROP) do
-					printVerbose("[PH:E Taunts] --> Adding taunt: "..name.." : "..tprop)
-					resource.AddSingleFile("sound/"..tprop)
-			end
-		else
-			printVerbose("[PH:E Taunts] WARNING! Custom taunts table is EMPTY!")
-		end
-		
-		printVerbose("[PH:E Taunts] Adding FastDL for Custom Hunter Taunts...")
-		if table.Count(PHE.PH_TAUNT_CUSTOM.HUNTER) > 0 then
-			for name,thunter in pairs(PHE.PH_TAUNT_CUSTOM.HUNTER) do
-				printVerbose("[PH:E Taunts] --> Adding taunt: "..name.." : "..thunter)
-				resource.AddSingleFile("sound/"..thunter)
-			end
-		else
-			printVerbose("[PH:E Taunts] WARNING! Custom taunts table is EMPTY!")
-		end
-	end
 end
 hook.Add("Initialize", "PHE.AddTauntTables", AddDemTaunt)
 
@@ -341,7 +323,8 @@ function PHE:RefreshTauntList()
 	table.sort(PHE.HUNTER_TAUNTS)
 	table.sort(PHE.PH_TAUNT_CUSTOM.HUNTER)
 end
-hook.Add("PostCleanupMap","PHE.RefreshTaunts",function()
+
+hook.Add("InitPostEntity","PHE.RefreshTaunts",function()
 	PHE:RefreshTauntList()
 end)
 
@@ -349,14 +332,14 @@ concommand.Add("phe_refresh_taunt_list", function() PHE:RefreshTauntList() end, 
 
 -- Add the custom player model bans for props AND prop banned models
 if SERVER then
-	if ( !file.Exists( "phe-config", "DATA" ) ) then
-		printVerbose("[PH: Enhanced] Warning: ./data/phe-config/ does not exist. Creating New One...")
-		file.CreateDir( "phe-config" )
+	if ( !file.Exists( "phe_config", "DATA" ) ) then
+		printVerbose("[PH: Enhanced] Warning: ./data/phe_config/ does not exist. Creating New One...")
+		file.CreateDir( "phe_config" )
 	end
 	
 	local function AddBadPLModels()
 
-		local dir = "phe-config/prop_plymodel_bans"
+		local dir = "phe_config/prop_plymodel_bans"
 		
 		-- Create base config area
 		if ( !file.Exists( dir, "DATA" ) ) then
@@ -367,24 +350,6 @@ if SERVER then
 		if ( !file.Exists( dir.."/bans.txt", "DATA" ) ) then
 			file.Write( dir.."/bans.txt", util.TableToJSON({"models/player.mdl"}, true) )
 		end
-
-		--[[
-		
-		////// Old Code. Use this for debug purpose / other method (this won't let clear the existing table.)
-		if ( file.Exists( dir.."/bans.txt", "DATA" ) ) then
-		
-			local PROP_PLMODEL_BANS_READ = util.JSONToTable( file.Read( dir.."/bans.txt", "DATA" ) )
-			for k, v in pairs(PROP_PLMODEL_BANS_READ) do
-				if !table.HasValue(PHE.PROP_PLMODEL_BANS, string.lower(v)) then
-					printVerbose("[PH:E PlayerModels] Adding custom prop player model ban --> "..string.lower(v))
-					table.insert(PHE.PROP_PLMODEL_BANS, string.lower(v))
-				end
-			end
-		else
-			
-			printVerbose("[PH: Enhanced] Cannot read "..dir.."/bans.txt: Error - did not exist. Did you just delete it or what?")
-			
-		end]]
 		
 		if ( file.Exists( dir.."/bans.txt", "DATA" ) ) then
 		
@@ -407,7 +372,7 @@ if SERVER then
 	hook.Add("Initialize", "PHE.AddBadPlayerModels", AddBadPLModels)
 	
 	local function AddBannedPropModels()
-		local dir = "phe-config/prop_model_bans"
+		local dir = "phe_config/prop_model_bans"
 		
 		local mdlpermabans = {
 			"models/props/cs_assault/dollar.mdl",
@@ -423,26 +388,10 @@ if SERVER then
 			file.Write( dir.."/model_bans.txt", util.TableToJSON( mdlpermabans, true ))
 		end
 		
-		--[[
-		
-		////// Old Code. Use this for debug purpose / other method (this won't let clear the existing table.)
-		if ( file.Exists ( dir.."/model_bans.txt","DATA" ) ) then
-			local PROP_MODEL_BANS_READ = util.JSONToTable(file.Read(dir.."/model_bans.txt"))
-			for k,v in pairs(PROP_MODEL_BANS_READ) do
-				if !table.HasValue(PHE.BANNED_PROP_MODELS, string.lower(v)) then
-					printVerbose("[PH:E Model Bans] Adding entry of restricted model to be used --> "..string.lower(v))
-					table.insert(PHE.BANNED_PROP_MODELS, string.lower(v))
-				end
-			end
-		else
-			printVerbose("[PH: Enhanced] Cannot read "..dir.."/model_bans.txt: Error - did not exist. Did you just delete it or what?")
-		end
-		]]
-		
 		if ( file.Exists ( dir.."/model_bans.txt","DATA" ) ) then
 			local PROP_MODEL_BANS_READ = util.JSONToTable(file.Read(dir.."/model_bans.txt"))
 			-- empty the tables anyway.
-			table.Empty(PHE.BANNED_PROP_MODELS)
+			table.Empty(PHE.BANNED_PROP_MODELS)	
 			for _,v in pairs(PROP_MODEL_BANS_READ) do
 				printVerbose("[PH:E Model Bans] Adding entry of restricted model to be used --> "..string.lower(v))
 				table.insert(PHE.BANNED_PROP_MODELS, string.lower(v))

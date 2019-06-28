@@ -1,5 +1,5 @@
 -- Ship
-resource.AddWorkshop("417565863")
+resource.AddWorkshop("1754658833")
 
 -- Send required file to clients
 AddCSLuaFile("sh_init.lua")
@@ -18,6 +18,7 @@ include("sv_networkfunctions.lua")
 include("sh_init.lua")
 include("sh_config.lua")
 include("sv_admin.lua")
+include("sv_autotaunt.lua")
 include("sv_tauntwindow.lua")
 
 include("sv_bbox_addition.lua")
@@ -192,10 +193,10 @@ end
 
 -- Called when an entity takes damage
 function EntityTakeDamage(ent, dmginfo)
-    local att = dmginfo:GetAttacker()
+	local att = dmginfo:GetAttacker()
 	
 	-- Code from: https://facepunch.com/showthread.php?t=1500179 , Special thanks from AlcoholicoDrogadicto(http://steamcommunity.com/profiles/76561198082241865/) for suggesting this.
-    if GAMEMODE:InRound() && ent && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && ent.ph_prop then
+	if GAMEMODE:InRound() && ent && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && ent.ph_prop then
 		-- Prevent Prop 'Friendly Fire'
 		if ( dmginfo:GetAttacker():IsPlayer() && dmginfo:GetAttacker():Team() == ent:Team() ) 
 			then printVerbose("DMGINFO::ATTACKED!!-> "..tostring(dmginfo:GetAttacker())..", DMGTYPE: "..dmginfo:GetDamageType())
@@ -203,9 +204,9 @@ function EntityTakeDamage(ent, dmginfo)
 		end
 		--Debug purpose.
 		printVerbose("!! " .. ent:Name() .. "'s PLAYER entity appears to have taken damage, we can redirect it to the prop! (Model is: " .. ent.ph_prop:GetModel() .. ")")
-        ent.ph_prop:TakeDamageInfo(dmginfo)
-        return
-    end
+		ent.ph_prop:TakeDamageInfo(dmginfo)
+		return
+	end
 	
 	if GAMEMODE:InRound() && ent && (ent:GetClass() != "ph_prop" && ent:GetClass() != "func_breakable" && ent:GetClass() != "prop_door_rotating" && ent:GetClass() != "prop_dynamic*") && !ent:IsPlayer() && att && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive() then
 		if att:Armor() >= 5 && GetConVar("ph_hunter_fire_penalty"):GetInt() >= 5 then
@@ -227,7 +228,7 @@ hook.Add("EntityTakeDamage", "PH_EntityTakeDamage", EntityTakeDamage)
 
 -- Called when player tries to pickup a weapon
 function GM:PlayerCanPickupWeapon(pl, ent)
- 	if pl:Team() != TEAM_HUNTERS then
+	if pl:Team() != TEAM_HUNTERS then
 		return false
 	end
 	
@@ -239,6 +240,7 @@ function PH_ResetCustomTauntWindowState()
 	ForceCloseTauntWindow(0)
 	-- Extra additional
 	PHE.VOICE_IS_END_ROUND = 0
+	-- Reset Player's Height
 end
 hook.Add("PostCleanupMap", "PH_ResetCustomTauntWindow", PH_ResetCustomTauntWindowState)
 
@@ -282,9 +284,10 @@ function GM:PlayerSetModel(pl)
 end
 
 -- The [E] & Mouse Click 1 behaviour is now moved in here!
-function GM:PlayerExchangeProp(pl,ent)
+function GM:PlayerExchangeProp(pl, ent)
 
-	if !IsValid(ent) then return end
+	if !IsValid(pl) then return; end
+	if !IsValid(ent) then return; end
 
 	if pl:Team() == TEAM_PROPS && pl:IsOnGround() && !pl:Crouching() && table.HasValue(PHE.USABLE_PROP_ENTITIES, ent:GetClass()) && ent:GetModel() then
 		if table.HasValue(PHE.BANNED_PROP_MODELS, ent:GetModel()) then
@@ -360,10 +363,10 @@ function GM:PlayerExchangeProp(pl,ent)
 				pl:SetHullDuck(Vector(hullxymin, hullxymin, 0), Vector(hullxymax, hullxymax, dhullz))
 			
 				net.Start("SetHull")
-					net.WriteInt(hullxymax,32)
-					net.WriteInt(hullz,32)
-					net.WriteInt(dhullz,32)
-					net.WriteInt(new_health,9)
+					net.WriteInt(hullxymax, 32)
+					net.WriteInt(hullz, 32)
+					net.WriteInt(dhullz, 32)
+					net.WriteInt(new_health, 9)
 				net.Send(pl)
 			end
 		end
@@ -375,9 +378,21 @@ end
 
 -- Called when a player tries to use an object. By default this pressed ['E'] button. MouseClick 1 will be mentioned below at line @351
 function GM:PlayerUse(pl, ent)
-	if !pl:Alive() || pl:Team() == TEAM_SPECTATOR || pl:Team() == TEAM_UNASSIGNED then return false end
-	
-	self:PlayerExchangeProp(pl,ent)
+	if !pl:Alive() || pl:Team() == TEAM_SPECTATOR || pl:Team() == TEAM_UNASSIGNED then return false; end
+
+	-- Prevent Execution Spam by holding ['E'] button too long.
+	if pl.UseTime <= CurTime() then
+		
+		local hmx, hz = ent:GetPropSize()
+		if GetConVar("phe_check_props_boundaries"):GetBool() && !pl:CheckHull(hmx, hmx, hz) then
+			pl:SendLua("chat.AddText(Color(235, 10, 15), \"[PH: Enhanced]\", Color(220, 220, 220), \" There is no room to change that prop!\")")
+		else
+			self:PlayerExchangeProp(pl, ent)
+		end
+		
+		pl.UseTime = CurTime() + 1
+		
+	end
 	
 	-- Prevent the door exploit
 	if table.HasValue(PHE.EXPLOITABLE_DOORS, ent:GetClass()) && pl.last_door_time && pl.last_door_time + 1 > CurTime() then
@@ -388,12 +403,34 @@ function GM:PlayerUse(pl, ent)
 	return true
 end
 
-net.Receive("CL2SV_ExchangeProp", function(len,ply)
+net.Receive("CL2SV_ExchangeProp", function(len, ply)
 	local Prop = net.ReadEntity()
 	
-	if !ply:IsHoldingEntity() then
-		GAMEMODE:PlayerExchangeProp(ply,Prop)
+	ply:PrintMessage(HUD_PRINTCONSOLE, "-=* NOTICE *=-")
+	ply:PrintMessage(HUD_PRINTCONSOLE, "Hello! We've noticed you tried using the \"CL2SV_ExchangeProp\" net message.")
+	ply:PrintMessage(HUD_PRINTCONSOLE, "Sad news is that this net message is no longer used (due to exploits). Shame, isn't it?")
+	ply:PrintMessage(HUD_PRINTCONSOLE, "")
+	ply:PrintMessage(HUD_PRINTCONSOLE, "This net message will still respond, but you will receive this message instead.")
+	ply:PrintMessage(HUD_PRINTCONSOLE, "-=* NOTICE *=-")
+	
+	--[[
+	if ply.UseTime <= CurTime() then
+	
+		if !ply:IsHoldingEntity() then
+			local hmx,hz = Prop:GetPropSize()
+			if (GetConVar("phe_check_props_boundaries"):GetBool() && !ply:CheckHull(hmx,hmx,hz)) then
+				ply:SendLua("chat.AddText(Color(235,10,15), \"[PH: Enhanced]\", Color(220,220,220), \" There is no room to change that prop!\")")
+			else
+				GAMEMODE:PlayerExchangeProp(ply, Prop)
+			end
+		end
+		
+		ply.UseTime = CurTime() + 1
+		
 	end
+	]]
+	
+	-- OBSOLETE : THIS IS COMMENTED OUT BECAUSE THIS METHOD IS SILLY AND SHOULD NOT BE USED. --yeah kind of my fault! >.<
 end)
 
 -- Called when player presses [F3]. Plays a taunt for their team
@@ -421,7 +458,7 @@ function GM:ShowSpare1(pl)
 		pl.last_taunt = rand_taunt
 		
 		pl:EmitSound(rand_taunt, 100)
-		pl:SendLua("LocalPlayer().last_taunt_time = CurTime()")
+		pl:SetNWFloat("LastTauntTime", CurTime())
 	end	
 end
 
@@ -439,15 +476,7 @@ hook.Add("PlayerDisconnected", "PH_PlayerDisconnected", PlayerDisconnected)
 -- Set specific variable for checking in player initial spawn, then use Player:IsHoldingEntity()
 hook.Add("PlayerInitialSpawn", "PHE.SetupInitData", function(ply)
 	ply.LastPickupEnt = NULL
-	
-	if GetConVar("ph_sv_enable_donation_message"):GetBool() then
-		timer.Simple(6, function()
-			if !IsValid(ply) then return end
-			
-			net.Start("utilWLVShowMessage")
-			net.Send(ply)
-		end)
-	end
+	ply.UseTime = 0
 end)
 hook.Add("AllowPlayerPickup", "PHE.IsHoldingEntity", function(ply,ent)
 	ply.LastPickupEnt = ent
@@ -472,6 +501,7 @@ function PlayerSpawn(pl)
 	pl:SetRenderMode(RENDERMODE_TRANSALPHA)
 	pl:UnLock()
 	pl:ResetHull()
+	pl:SetNWFloat("LastTauntTime", CurTime())
 	pl.last_taunt_time = 0
 	
 	net.Start("ResetHull")
@@ -517,7 +547,7 @@ function GM:RoundTimerEnd()
 	if !GAMEMODE:InRound() then
 		return
 	end
-   
+
 	GAMEMODE:RoundEndWithResult(TEAM_PROPS, "Props win!")
 	PHE.VOICE_IS_END_ROUND = 1
 	ForceCloseTauntWindow(1)
@@ -715,19 +745,56 @@ end
 
 -- Player pressed a key
 function PlayerPressedKey(pl, key)
+	-- Use traces to select a prop
+	local min,max = pl:GetHull()
 	if pl && pl:IsValid() && pl:Alive() && pl:Team() == TEAM_PROPS then
-		if ( key == IN_RELOAD ) then
+		plhullz = max.z
+	
+		if key == IN_ATTACK then
+			local trace = {}
+			if plhullz < 24 then
+				trace.start = pl:EyePos() + Vector(0, 0, plhullz + (24-  plhullz))
+				trace.endpos = pl:EyePos() + Vector(0, 0, plhullz + (24 - plhullz)) + pl:EyeAngles():Forward() * 100
+			elseif plhullz > 84 then
+				trace.start = pl:EyePos() + Vector(0, 0, plhullz - 84)
+				trace.endpos = pl:EyePos() + Vector(0, 0, plhullz - 84) + pl:EyeAngles():Forward() * 300
+			else
+				trace.start = pl:EyePos() + Vector(0, 0, 8)
+				trace.endpos = pl:EyePos() + Vector(0, 0, 8) + pl:EyeAngles():Forward() * 100
+			end
+			trace.filter = ents.FindByClass("ph_prop")
+			
+			local trace2 = util.TraceLine(trace) 
+			if trace2.Entity && trace2.Entity:IsValid() && table.HasValue(PHE.USABLE_PROP_ENTITIES, trace2.Entity:GetClass()) then
+				if pl.UseTime <= CurTime() then
+					if !pl:IsHoldingEntity() then
+						local hmx, hz = trace2.Entity:GetPropSize()
+						if GetConVar("phe_check_props_boundaries"):GetBool() && !pl:CheckHull(hmx, hmx, hz) then
+							pl:SendLua("chat.AddText(Color(235, 10, 15), \"[PH: Enhanced]\", Color(220, 220, 220), \" There is no room to change that prop!\")")
+						else
+							GAMEMODE:PlayerExchangeProp(pl, trace2.Entity)
+						end
+					end
+					pl.UseTime = CurTime() + 1
+				end
+			end
+		end
+	end
+	
+	-- Prop rotation lock key
+	if pl && pl:IsValid() && pl:Alive() && pl:Team() == TEAM_PROPS then
+		if key == IN_RELOAD then
 			if pl:GetPlayerLockedRot() then
 				pl:SetNWBool("PlayerLockedRotation", false)
 				pl:PrintMessage(HUD_PRINTCENTER, "Prop Rotation Lock: Disabled")
 				net.Start("PHE.rotateState")
-				net.WriteInt(0, 2)
+					net.WriteInt(0, 2)
 				net.Send(pl)
 			else
 				pl:SetNWBool("PlayerLockedRotation", true)
 				pl:PrintMessage(HUD_PRINTCENTER, "Prop Rotation Lock: Enabled")
 				net.Start("PHE.rotateState")
-				net.WriteInt(1, 2)
+					net.WriteInt(1, 2)
 				net.Send(pl)
 			end
 		end

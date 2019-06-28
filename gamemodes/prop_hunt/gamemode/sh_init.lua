@@ -2,6 +2,17 @@
 PHE = {}
 PHE.__index = PHE
 
+-- Some config stuff
+AddCSLuaFile("config/sh_init.lua")
+include("config/sh_init.lua")
+
+AddCSLuaFile("sh_drive_prop.lua")
+include("sh_drive_prop.lua")
+
+-- ULX Mapvote
+AddCSLuaFile("ulx/modules/sh/sh_phe_mapvote.lua")
+include("ulx/modules/sh/sh_phe_mapvote.lua")
+
 -- Initialize and Add ConVar Blocks.
 AddCSLuaFile("sh_convars.lua")
 include("sh_convars.lua")
@@ -42,12 +53,12 @@ DeriveGamemode("fretta")
 IncludePlayerClasses()
 
 -- Information about the gamemode
-GM.Name		= "Prop Hunt : Enhanced"
-GM.Author	= "Wolvindra-Vinzuerio & D4UNKN0WNM4N2010 | Original: Kowalski/AMT"
+GM.Name		= "Prop Hunt: ENHANCED"
+GM.Author	= "Wolvindra-Vinzuerio & D4UNKN0WNM4N2010"
 
 GM._VERSION = "15"
-GM.REVISION	= "E"
-GM.DONATEURL = "https://project.wolvindra.net/phe/go/donate_go.php?gamemodeonly=true"
+GM.REVISION	= "I"
+GM.DONATEURL = "https://prophunt.wolvindra.net/go/donate_go.php?gamemodeonly=true"
 GM.UPDATEURL = "https://raw.githubusercontent.com/Vinzuerio/ph-enhanced/master/updates/version.json"
 
 -- Help info
@@ -62,10 +73,9 @@ What's New:
 - New Prop Hunt Enhanced HUD
 - New Hunter 'Armor' Method
 - New gamemode settings in PH Menu
+- New gamemode Plugins
 - New UI for Menu & Taunt Window
-- Added MK Bren Alt. model
 - Smoother prop movements
-- Removed old 'static' movement (no-rotation)
 - and many more..!]]
 
 -- Fretta configuration

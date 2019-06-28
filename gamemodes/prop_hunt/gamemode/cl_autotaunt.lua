@@ -1,3 +1,4 @@
+-- For the love of furry heck, THIS PLACE NEEDS A CLEAN!
 -- Props will autotaunt at specified intervals
 local isEnabled = false
 local isProp = false
@@ -14,15 +15,14 @@ local h = 30
 local previousTime
 local tweenTime = 0
 
-local WHOLE_TAUNTS = {}
-
 local function TimeLeft()
 	local ply = LocalPlayer()
-	local lastTauntTime = ply.last_taunt_time
+	local lastTauntTime = ply:GetNWFloat("LastTauntTime")
 	local nextTauntTime = lastTauntTime + delay
 	local currentTime = CurTime()
 	return nextTauntTime - currentTime
 end
+
 -- a: amplitude
 -- p: period
 local function outElastic(t, b, c, d, a, p)
@@ -48,7 +48,7 @@ local function outElastic(t, b, c, d, a, p)
 end
 
 local function AutoTauntPaint()
-	if !isEnabled || !isProp || !started then return end
+	if !isEnabled || !isProp || !started then return; end
 
 	if tweenTime < 1 then
 		x = outElastic(tweenTime, xStart, xEnd - xStart, 1, 1, 0.5)
@@ -85,14 +85,6 @@ local function CheckAutoTaunt()
 		printVerbose("[PH:E AutoTaunt] Blocked!")
 		return
 	end
-
-	if timeLeft <= 0 then
-		local rand_taunt = table.Random(WHOLE_TAUNTS)
-		net.Start("CL2SV_PlayThisTaunt");
-		net.WriteString(rand_taunt);
-		net.SendToServer();
-		LocalPlayer().last_taunt_time = CurTime()
-	end
 end
 
 local function Setup()
@@ -105,16 +97,15 @@ local function Setup()
 	tweenTime = 0
 
 	if isEnabled && isProp then
-		delay = GetConVarNumber("ph_autotaunt_delay")
+		delay = GetConVar("ph_autotaunt_delay"):GetInt()
 		timer.Create(timerID, 1, 0, CheckAutoTaunt)
-		ply.last_taunt_time = CurTime()
 	end
 end
 
 local function CheckPlayer()
 	local ply = LocalPlayer()
 
-	if ply:Team() == TEAM_PROPS then
+	if ply:Alive() && ply:Team() == TEAM_PROPS then
 		if timer.Exists(teamCheckTimer) then
 			timer.Destroy(teamCheckTimer)
 		end
@@ -127,8 +118,6 @@ local function CheckPlayer()
 end
 
 local function AutoTauntSpawn()
-	WHOLE_TAUNTS = table.Copy(PHE:GetAllTeamTaunt(TEAM_PROPS))
-
 	xStart = ScrW() + 200
 	xEnd = ScrW() - 195
 	y = ScrH() - 65
