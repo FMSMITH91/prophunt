@@ -485,6 +485,11 @@ function GM:OnEndOfGame(bGamemodeVote)
 
 		v:Freeze(true)
 		v:ConCommand( "+showscores" )
+		timer.Simple(GAMEMODE.VotingDelay, function()
+			if (IsValid(v)) then
+				v:ConCommand("-showscores")
+			end
+		end)
 		
 	end
 	
