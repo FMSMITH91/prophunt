@@ -578,12 +578,12 @@ function GM:OnPreRoundStart(num)
 						pl:SendLua( [[notification.AddLegacy("Additionally you can toggle lock rotation by pressing R key!", NOTIFY_GENERIC, 18 )]] )
 						pl:SendLua( [[surface.PlaySound("garrysmod/content_downloaded.wav")]] )
 					end
+			
+				local propscore = team.GetScore(TEAM_PROPS)
+				local huntscore = team.GetScore(TEAM_HUNTERS)
+				team.SetScore(TEAM_PROPS, huntscore)
+				team.SetScore(TEAM_HUNTERS, propscore)
 				end
-			local propscore = team.GetScore( TEAM_PROPS )
-			local huntscore = team.GetScore( TEAM_HUNTERS )
-	
-			team.SetScore( TEAM_PROPS, huntscore )
-			team.SetScore( TEAM_HUNTERS, propscore )
 
 			pl:ChatPrint("Teams have been swapped!")
 			end
