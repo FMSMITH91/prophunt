@@ -8,7 +8,7 @@ CLASS.WalkSpeed 			= 250
 CLASS.CrouchedWalkSpeed 	= 0.2
 CLASS.RunSpeed				= 275
 CLASS.DuckSpeed				= 0.2
-CLASS.JumpPower				= 250
+CLASS.JumpPower				= 275
 CLASS.DrawTeamRing			= false
 
 -- Prevent 'mod_studio: MOVETYPE_FOLLOW with No Models error.'

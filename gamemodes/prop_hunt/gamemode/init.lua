@@ -464,7 +464,7 @@ end
 -- Called when player presses any button
 function GM:PlayerButtonDown (pl, button)
 	-- Stop if player isn't alive or button is not the one the player binded
-	if !pl:Alive () || button != pl:GetInfoNum ("ph_cl_taunt_key", KEY_F4) then return end
+	if !pl:Alive () || button != pl:GetInfoNum ("ph_cl_taunt_key", KEY_F3) then return end
 
 	DoPlayerTaunt (pl)
 end
@@ -578,14 +578,12 @@ function GM:OnPreRoundStart(num)
 						pl:SendLua( [[notification.AddLegacy("Additionally you can toggle lock rotation by pressing R key!", NOTIFY_GENERIC, 18 )]] )
 						pl:SendLua( [[surface.PlaySound("garrysmod/content_downloaded.wav")]] )
 					end
-			
-				local propscore = team.GetScore(TEAM_PROPS)
-				local huntscore = team.GetScore(TEAM_HUNTERS)
-				team.SetScore(TEAM_PROPS, huntscore)
-				team.SetScore(TEAM_HUNTERS, propscore)
 				end
-
 			pl:ChatPrint("Teams have been swapped!")
+			local propscore = team.GetScore( TEAM_PROPS );
+			local huntscore = team.GetScore( TEAM_HUNTERS );
+			team.SetScore(TEAM_PROPS, huntscore)
+			team.SetScore(TEAM_HUNTERS, propscore)
 			end
 		end
 

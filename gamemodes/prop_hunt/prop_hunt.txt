@@ -173,7 +173,7 @@
 			"text"		"Wait for Players"
 			"help"		"Should we wait for players for proper round?"
 			"type"		"CheckBox"
-			"default"	"0"
+			"default"	"1"
 		}
 		
 		19
@@ -191,7 +191,7 @@
 			"text"		"Enable Auto Taunting"
 			"help"		"Should the players be forced to taunt ever X seconds"
 			"type"		"CheckBox"
-			"default"	"1"
+			"default"	"0"
 		}
 
 		21
