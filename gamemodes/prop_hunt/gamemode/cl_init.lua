@@ -14,7 +14,7 @@ CreateClientConVar("ph_cl_taunt_key","94",true,true,"Key to play a random taunt 
 surface.CreateFont( "HunterBlindLockFont",
 	{
 		font	= "Arial",
-		size	= 36,
+		size	= 26,
 		weight	= 1200,
 		antialias = true,
 		underline = false
@@ -172,7 +172,7 @@ local ply = LocalPlayer()
 			surface.SetFont("HunterBlindLockFont")
 			local tw, _ = surface.GetTextSize(blindlock_time_left_msg)
 
-			draw.RoundedBox(8, 20, 20, tw + 20, 46, Color(0, 0, 0, 75))
+			draw.RoundedBox(8, 20, 20, tw + 20, 36, Color(0, 0, 0, 75))
 			draw.DrawText(blindlock_time_left_msg, "HunterBlindLockFont", 31, 26, Color(255, 255, 0, 255), TEXT_ALIGN_LEFT)
 		end
 	end
