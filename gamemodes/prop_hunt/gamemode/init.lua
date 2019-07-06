@@ -567,6 +567,10 @@ function GM:OnPreRoundStart(num)
 	game.CleanUpMap()
 
 	if GetGlobalInt("RoundNumber") != 1 && (GetConVar("ph_swap_teams_every_round"):GetInt() == 1 || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0)) then
+		local propscore = team.GetScore(TEAM_PROPS)
+		local huntscore = team.GetScore(TEAM_HUNTERS)
+		team.SetScore(TEAM_PROPS, huntscore)
+		team.SetScore(TEAM_HUNTERS, propscore)
 		for _, pl in pairs(player.GetAll()) do
 			if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
 				if pl:Team() == TEAM_PROPS then
@@ -580,10 +584,6 @@ function GM:OnPreRoundStart(num)
 					end
 				end
 			pl:ChatPrint("Teams have been swapped!")
-			local propscore = team.GetScore( TEAM_PROPS );
-			local huntscore = team.GetScore( TEAM_HUNTERS );
-			team.SetScore(TEAM_PROPS, huntscore)
-			team.SetScore(TEAM_HUNTERS, propscore)
 			end
 		end
 
