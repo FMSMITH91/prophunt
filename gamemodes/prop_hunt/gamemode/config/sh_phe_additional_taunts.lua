@@ -10,8 +10,7 @@ taunts.Hunter = {
 -- Begin Table: Props
 taunts.Props = {
 	["Windows XP Shutdown"]			=	"taunts/ph_enhanced/ext_xp_off.wav",
-	["Windows XP Startup"]			=	"taunts/ph_enhanced/ext_xp_start.wav",
-	["Dimmadome"]			=	"taunts/ph_enhanced/dimmadome.wav"
+	["Windows XP Startup"]			=	"taunts/ph_enhanced/ext_xp_start.wav"
 	-- Add more Props Taunt here...
 }
 
