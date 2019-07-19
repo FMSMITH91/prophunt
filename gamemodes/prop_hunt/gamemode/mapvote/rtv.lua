@@ -12,10 +12,10 @@ RTV.Wait = 60 -- The wait time in seconds. This is how long a player has to wait
 
 RTV._ActualWait = CurTime() + RTV.Wait
 
-RTV.PlayerCount = MapVote.Config.RTVPlayerCount or 3
+RTV.PlayerCount = MapVote.Config.RTVPlayerCount or 2
 
 function RTV.ShouldChange()
-	return RTV.TotalVotes >= math.Round(#player.GetAll() * 0.66)
+	return RTV.TotalVotes >= math.Round(#player.GetAll() * 0.60)
 end
 
 function RTV.RemoveVote()

@@ -101,7 +101,7 @@
 			"text"		"Team Props Collision"
 			"help"		"Should Team Props collide with each other?"
 			"type"		"CheckBox"
-			"default"	"1"
+			"default"	"0"
 		}
 		
 		11
@@ -137,16 +137,16 @@
 			"text"		"Custom Taunts delay"
 			"help"		"How many times Custom Taunt should be able to played again?"
 			"type"		"Numeric"
-			"default"	"6"
+			"default"	"4"
 		}
 
 		15
 		{
 			"name"		"ph_normal_taunt_delay"
 			"text"		"Normal taunts delay"
-			"help"		"How many in seconds delay for props to play normal [F3] taunt again? (Default is 2)"
+			"help"		"How many in seconds delay for props to play normal [F3] taunt again? (Default is 4)"
 			"type"		"Numeric"
-			"default"	"6"
+			"default"	"4"
 		}
 		
 		16
@@ -173,7 +173,7 @@
 			"text"		"Wait for Players"
 			"help"		"Should we wait for players for proper round?"
 			"type"		"CheckBox"
-			"default"	"1"
+			"default"	"0"
 		}
 		
 		19
@@ -182,7 +182,7 @@
 			"text"		"Minimum Players to wait"
 			"help"		"Numbers of mininum players that we should wait for round start. Value must not contain less than 1."
 			"type"		"Numeric"
-			"default"	"1"
+			"default"	"2"
 		}
 
 		20

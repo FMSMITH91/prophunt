@@ -457,7 +457,7 @@ function DoPlayerTaunt(pl)
 end
 
 function GM:CanStartRound()
-	if #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= 2 then return true end
+	if #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= GetConVar("ph_min_waitforplayers"):GetInt() then return true end
 	return false
 end
 

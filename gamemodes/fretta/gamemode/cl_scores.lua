@@ -56,7 +56,7 @@ function GM:AddScoreboardVoice( ScoreBoard )
 			main:SetPaintBackground(false)
  
 			local vc = vgui.Create("DImageButton", main)
-				vc:SetPos(10, 6)
+				vc:SetPos(15, 6)
 				vc:SetSize(20, 20)
 			if IsValid(ply) && ply != LocalPlayer() then
 				muted = false
@@ -103,7 +103,7 @@ end
 function GM:AddScoreboardDeaths( ScoreBoard )
 
 	local f = function( ply ) return ply:Deaths() end
-	ScoreBoard:AddColumn( "Deaths", 60, f, 0.5, nil, 6, 6 )
+	ScoreBoard:AddColumn( "Deaths", 60, f, 0.5, nil, 5, 5 )
 
 end
 

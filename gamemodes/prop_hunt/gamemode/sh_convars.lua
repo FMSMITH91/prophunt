@@ -6,14 +6,14 @@ local mdlenable = CreateConVar("ph_use_custom_plmodel", "0", { FCVAR_SERVER_CAN_
 local mdltype	= CreateConVar("ph_use_playermodeltype", "0", {FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY}, "Which model list that should deliver from? 0 = All Playermodels availale, 1 = Use Legacy method: list.Get('PlayerOptionsModel') (Recommended if you want to custom your model list)")
 
 -- Enhanced Prop Hunt specify convars
-local cmcoll	= CreateConVar("ph_prop_camera_collisions", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Attempts to stop props from viewing inside walls.")
+local cmcoll	= CreateConVar("ph_prop_camera_collisions", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Attempts to stop props from viewing inside walls.")
 local fcam		= CreateConVar("ph_freezecam", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Freeze Camera.")
 local propcoll	= CreateConVar("ph_prop_collision", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props collide with each other?")
 
 -- Custom Taunts ConVars
-local ct_delay	= CreateConVar("ph_customtaunts_delay", "6", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play custom taunt again? (Default is 6)")
+local ct_delay	= CreateConVar("ph_customtaunts_delay", "4", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play custom taunt again? (Default is 4)")
 local ct_enable	= CreateConVar("ph_enable_custom_taunts", "2", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Enable custom taunts for prop teams by pressing C? (Default 0)\n  You must have a list of custom taunts to enable this.")
-local nt_delay	= CreateConVar("ph_normal_taunt_delay", "2", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play normal [F3] taunt again? (Default is 2)")
+local nt_delay	= CreateConVar("ph_normal_taunt_delay", "4", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play normal [F3] taunt again? (Default is 4)")
 
 -- The Prop Jump Multiplier (count by float)
 local pjumpx	= CreateConVar("ph_prop_jumppower", "1.4", {FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY}, "Multipliers for Prop Jump Power (Do not confused with Prop's Gravity!). Default is 1.4. Min. 1.")
@@ -46,8 +46,8 @@ local round_time = CreateConVar("ph_round_time", "300", { FCVAR_SERVER_CAN_EXECU
 local round_map	= CreateConVar("ph_rounds_per_map", "10", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Numbers played on a map (Default: 10)")
 
 -- Round Control
-local wait_pl	= CreateConVar( "ph_waitforplayers", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should we wait for players for proper round?" )
-local wait_pl_min = CreateConVar( "ph_min_waitforplayers", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Numbers of mininum players that we should wait for round start. Value must not contain less than 1." )
+local wait_pl	= CreateConVar( "ph_waitforplayers", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should we wait for players for proper round?" )
+local wait_pl_min = CreateConVar( "ph_min_waitforplayers", "2", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Numbers of mininum players that we should wait for round start. Value must not contain less than 1." )
 
 -- Verbose mode & Function
 local verbose	= CreateConVar("ph_print_verbose", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Developer Verbose. Some printed messages will only appear if this is enabled.")
