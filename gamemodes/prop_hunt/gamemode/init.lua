@@ -802,4 +802,4 @@ function PlayerPressedKey(pl, key)
 		end
 	end
 end
-hook.Add("KeyPress", "PlayerPressedKey", PlayerPressedKey)
+hook.Add("KeyPress", "PlayerPressedKey", PlayerPressedKey, HOOK_HIGH)
