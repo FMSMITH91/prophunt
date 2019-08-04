@@ -12,7 +12,7 @@ local propcoll	= CreateConVar("ph_prop_collision", "0", { FCVAR_SERVER_CAN_EXECU
 
 -- Custom Taunts ConVars
 local ct_delay	= CreateConVar("ph_customtaunts_delay", "4", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play custom taunt again? (Default is 4)")
-local ct_enable	= CreateConVar("ph_enable_custom_taunts", "2", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Enable custom taunts for prop teams by pressing C? (Default 0)\n  You must have a list of custom taunts to enable this.")
+local ct_enable	= CreateConVar("ph_enable_custom_taunts", "2", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Enable custom taunts for prop teams by pressing C? (Default 2)\n  You must have a list of custom taunts to enable this.")
 local nt_delay	= CreateConVar("ph_normal_taunt_delay", "4", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play normal [F3] taunt again? (Default is 4)")
 
 -- The Prop Jump Multiplier (count by float)
@@ -72,3 +72,6 @@ local obb_every = CreateConVar("ph_reload_obb_setting_everyround", "1",{ FCVAR_S
 
 -- This is for a temporary.
 local check_boundaries = CreateConVar("phe_check_props_boundaries", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "[EXPERIMENTAL] This feature is under Work-in-Progress! Enable prop boundaries Check? This will prevent you to stuck with other objects/Wall.")
+
+-- Language implementation
+local lang = CreateConVar("ph_language", "en", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Language of the server, requires map change.")
