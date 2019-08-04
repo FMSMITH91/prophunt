@@ -34,7 +34,7 @@ else
 end
 
 if ConVarExists("mv_maplimit") then
-	print("[MapVote] Loading ConVars...")
+	printVerbose("[MapVote] Loading ConVars...")
 	MapVote.Config = {
 		MapLimit 		= GetConVar("mv_maplimit"):GetInt(),
 		TimeLimit 		= GetConVar("mv_timelimit"):GetInt(),
@@ -42,10 +42,54 @@ if ConVarExists("mv_maplimit") then
 		EnableCooldown 	= GetConVar("mv_cooldown"):GetBool(),
 		MapsBeforeRevote = GetConVar("mv_mapbeforerevote"):GetBool(),
 		RTVPlayerCount 	= GetConVar("mv_rtvcount"):GetInt(),
-		MapPrefixes 	= string.Explode(",", GetConVar("mv_mapprefix"):GetString())
+		MapPrefixes 	= string.Explode(",", GetConVar("mv_mapprefix"):GetString():lower())
 	}
 else
 	MapVote.Config = {}
+end
+
+local conv = {
+	["mv_maplimit"]		= function(cvar,old,new)
+		if new && (new != nil || new != "") then
+			MapVote.Config.MapLimit = tonumber(new)
+		end
+	end,
+	["mv_timelimit"]	= function(cvar,old,new)
+		if new && (new != nil || new != "") then
+			MapVote.Config.TimeLimit = tonumber(new)
+		end
+	end,
+	["mv_allowcurmap"]	= function(cvar,old,new)
+		if new && (new != nil || new != "") then
+			MapVote.Config.AllowCurrentMap = tobool(new)
+		end
+	end,
+	["mv_cooldown"]		= function(cvar,old,new)
+		if new && (new != nil || new != "") then
+			MapVote.Config.EnableCooldown = tobool(new)
+		end
+	end,
+	["mv_mapbeforerevote"]	= function(cvar,old,new)
+		if new && (new != nil || new != "") then
+			MapVote.Config.MapsBeforeRevote = tobool(new)
+		end
+	end,
+	["mv_rtvcount"]		= function(cvar,old,new)
+		if new && (new != nil || new != "") then
+			MapVote.Config.RTVPlayerCount = tonumber(new)
+		end
+	end,
+	["mv_mapprefix"]	= function(cvar,old,new)
+		if new && (new != nil || new != "") then
+			MapVote.Config.MapPrefixes = string.Explode(",", new:lower())
+		end
+	end
+}
+
+-- Precheck when the convar is changed
+for cvar,func in pairs(conv) do
+	printVerbose("[MapVote] Adding ConVar Callbacks for: "..cvar)
+	cvars.AddChangeCallback(cvar, func)
 end
 
 function CoolDownDoStuff()
@@ -64,6 +108,17 @@ function CoolDownDoStuff()
     file.Write("mapvote/recentmaps.txt", util.TableToJSON(recentmaps))
 end
 
+function MapVote.GetFromULX()
+	if (ulx == nil) then
+		print("[!PH: Enhanced] Warning: ULX is not installed!")
+		return false
+	end
+
+	if (ulx.votemaps) then
+		return ulx.votemaps
+	end
+end
+
 function MapVote.Start(length, current, limit, prefix)
     current = current or MapVote.Config.AllowCurrentMap or false
     length = length or MapVote.Config.TimeLimit or 28
@@ -72,7 +127,8 @@ function MapVote.Start(length, current, limit, prefix)
     prefix = prefix or MapVote.Config.MapPrefixes
 
     local is_expression = false
-
+	local ulxmap = MapVote.GetFromULX()
+	
     if not prefix then
         local info = file.Read(GAMEMODE.Folder.."/"..GAMEMODE.FolderName..".txt", "GAME")
 
@@ -90,7 +146,15 @@ function MapVote.Start(length, current, limit, prefix)
         end
     end
     
-    local maps = file.Find("maps/*.bsp", "GAME")
+	local maps = {}
+	
+	if GetConVar("mv_use_ulx_votemaps"):GetBool() && ulxmap ~= false then
+		for _,map in pairs(ulxmap) do
+			table.insert(maps, map..".bsp")
+		end
+	else
+		maps = file.Find("maps/*.bsp", "GAME")
+	end
     
     local vote_maps = {}
     

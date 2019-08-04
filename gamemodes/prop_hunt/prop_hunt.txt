@@ -11,7 +11,7 @@
         "selectable"            "1"
         
 	"menusystem"	"1"
-	"workshopid"	"417565863"
+	"workshopid"	"1754658833"
 	"settings"
 	{
 		1
@@ -97,23 +97,14 @@
 		
 		10
 		{
-			"name"		"ph_better_prop_movement"
-			"text"		"Better Prop Movement"
-			"help"		"Should Enable Prop Rotation or Not? (Originally facing to 0 0 0). Props rotate and are seen properly by the local player."
-			"type"		"CheckBox"
-			"default"	"1"
-		}
-		
-		11
-		{
 			"name"		"ph_prop_collision"
 			"text"		"Team Props Collision"
 			"help"		"Should Team Props collide with each other?"
 			"type"		"CheckBox"
-			"default"	"1"
+			"default"	"0"
 		}
 		
-		12
+		11
 		{
 			"name"		"ph_use_custom_plmodel"
 			"text"		"Hunters Custom Models"
@@ -122,7 +113,7 @@
 			"default"	"0"
 		}
 		
-		13
+		12
 		{
 			"name"		"ph_use_custom_plmodel_for_prop"
 			"text"		"Props Custom Models"
@@ -131,22 +122,31 @@
 			"default"	"0"
 		}
 		
-		14
+		13
 		{
 			"name"		"ph_enable_custom_taunts"
 			"text"		"Custom Taunts"
 			"help"		"Enable custom taunts Window?"
-			"type"		"CheckBox"
-			"default"	"0"
+			"type"		"Numeric"
+			"default"	"2"
 		}
 		
-		15
+		14
 		{
 			"name"		"ph_customtaunts_delay"
 			"text"		"Custom Taunts delay"
 			"help"		"How many times Custom Taunt should be able to played again?"
 			"type"		"Numeric"
-			"default"	"6"
+			"default"	"4"
+		}
+
+		15
+		{
+			"name"		"ph_normal_taunt_delay"
+			"text"		"Normal taunts delay"
+			"help"		"How many in seconds delay for props to play normal [F3] taunt again? (Default is 4)"
+			"type"		"Numeric"
+			"default"	"4"
 		}
 		
 		16
@@ -165,6 +165,50 @@
 			"help"		"Serverside control for if a clients see client's team player names through walls."
 			"type"		"CheckBox"
 			"default"	"0"
+		}
+		
+		18
+		{
+			"name"		"ph_waitforplayers"
+			"text"		"Wait for Players"
+			"help"		"Should we wait for players for proper round?"
+			"type"		"CheckBox"
+			"default"	"0"
+		}
+		
+		19
+		{
+			"name"		"ph_min_waitforplayers"
+			"text"		"Minimum Players to wait"
+			"help"		"Numbers of mininum players that we should wait for round start. Value must not contain less than 1."
+			"type"		"Numeric"
+			"default"	"2"
+		}
+
+		20
+		{
+			"name"		"ph_autotaunt_enabled"
+			"text"		"Enable Auto Taunting"
+			"help"		"Should the players be forced to taunt ever X seconds"
+			"type"		"CheckBox"
+			"default"	"0"
+		}
+
+		21
+		{
+			"name"		"ph_autotaunt_delay"
+			"text"		"Auto Taunt Timer"
+			"help"		"Time before auto taunt is invoked"
+			"type"		"Numeric"
+			"default"	"45"
+		}
+		22
+		{
+			"name"		"ph_hunter_smg_grenades"
+			"text"		"SMG Grenades"
+			"help"		"Grenades given to hunters"
+			"type"		"Numeric"
+			"default"	"1"
 		}
 	}
 

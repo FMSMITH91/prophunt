@@ -15,14 +15,14 @@ function GM:GetScoreboard()
 end
 
 function GM:ScoreboardShow()
-	
+	gui.EnableScreenClicker(true)
 	GAMEMODE:GetScoreboard():SetVisible( true )
 	GAMEMODE:PositionScoreboard( GAMEMODE:GetScoreboard() )
 	
 end
 
 function GM:ScoreboardHide()
-	
+	gui.EnableScreenClicker(false)
 	GAMEMODE:GetScoreboard():SetVisible( false )
 	
 end
@@ -33,11 +33,53 @@ function GM:AddScoreboardAvatar( ScoreBoard )
 		local av = vgui.Create( "AvatarImage", ScoreBoard )
 			av:SetSize( 32, 32 )
 			av:SetPlayer( ply )
+			av.Click = function()
+				print( "LOL" )
+			end
 			return av
 	end
 	
 	ScoreBoard:AddColumn( "", 32, f, 360 ) // Avatar
 
+end
+
+local function canMute(ply)
+	return LocalPlayer():CheckGroup(ply:GetUserGroup() )
+end
+ 
+ 
+function GM:AddScoreboardVoice( ScoreBoard )
+ 
+	local f = function(ply)
+ 
+		local main = vgui.Create("DPanel", ScoreBoard)
+			main:SetPaintBackground(false)
+ 
+			local vc = vgui.Create("DImageButton", main)
+				vc:SetPos(15, 6)
+				vc:SetSize(20, 20)
+			if IsValid(ply) && ply != LocalPlayer() then
+				muted = false
+				if canMute(ply) then
+					muted = ply:IsMuted()
+				else
+					vc:SetAlpha(100)
+				end
+				vc:SetImage(muted and "icon16/sound_mute.png" or "icon16/sound.png")
+			else
+				vc:Hide()
+			end
+ 
+			function vc.DoClick()
+				if IsValid(ply) && ply != LocalPlayer() && canMute(ply) then
+					ply:SetMuted(!ply:IsMuted() )
+				end
+			end
+		return main
+	end
+ 
+	ScoreBoard:AddColumn( "Mute", 40, f, 0.5, nil, 6, 6 )
+ 
 end
 
 function GM:AddScoreboardSpacer( ScoreBoard, iSize )
@@ -54,60 +96,30 @@ end
 function GM:AddScoreboardKills( ScoreBoard )
 
 	local f = function( ply ) return ply:Frags() end
-	ScoreBoard:AddColumn( "Kills", 40, f, 0.5, nil, 5, 5 )
+	ScoreBoard:AddColumn( "Kills", 55, f, 0.5, nil, 6, 6 )
 
 end
 
 function GM:AddScoreboardDeaths( ScoreBoard )
 
 	local f = function( ply ) return ply:Deaths() end
-	ScoreBoard:AddColumn( "Deaths", 55, f, 0.5, nil, 5, 5 )
+	ScoreBoard:AddColumn( "Deaths", 60, f, 0.5, nil, 5, 5 )
 
 end
 
 function GM:AddScoreboardPing( ScoreBoard )
 
-	local f = function( ply ) return ply:Ping() end
-	ScoreBoard:AddColumn( "Ping", 40, f, 0.1, nil, 5, 5 )
+	local f = function( ply ) return ply:ScoreboardPing() end
+	ScoreBoard:AddColumn( "Ping", 40, f, 0.1, nil, 6, 6 )
 
 end
-
---[[
-// Scrapped. to do: fix me 
-
-function GM:AddScoreboardVoice( ScoreBoard )
-
-   local f = function(ply)
-		local vc = vgui.Create("DImageButton", ScoreBoard)
-			vc:SetSize (16,16)
-			if ply != LocalPlayer() then
-				local muted = ply:IsMuted()
-				vc:SetImage(muted and "icon16/sound_mute.png" or "icon16/sound.png")
-			else
-				vc:Hide()
-			end
-			
-			-- click function
-			vc.DoClick = function()
-			   if IsValid(ply) and ply != LocalPlayer() then
-				  ply:SetMuted(not ply:IsMuted())
-			   end
-			end
-			
-			return vc
-	end
-	
-	ScoreBoard:AddColumn( "Mute", 20, f, 0.5, nil, 6, 6 )
-
-end
-]]
 
 // THESE SHOULD BE THE ONLY FUNCTION YOU NEED TO OVERRIDE
 
 function GM:PositionScoreboard( ScoreBoard )
 
 	if ( GAMEMODE.TeamBased ) then
-		ScoreBoard:SetSize( 800, ScrH() - 50 )
+		ScoreBoard:SetSize( ScrW()/1.2, ScrH() - 50 )
 		ScoreBoard:SetPos( (ScrW() - ScoreBoard:GetWide()) * 0.5,  25 )
 	else
 		ScoreBoard:SetSize( 420, ScrH() - 64 )
@@ -137,7 +149,7 @@ function GM:CreateScoreboard( ScoreBoard )
 
 	// This makes it so that it's behind chat & hides when you're in the menu
 	// Disable this if you want to be able to click on stuff on your scoreboard
-	ScoreBoard:ParentToHUD()
+	//ScoreBoard:ParentToHUD()
 	
 	ScoreBoard:SetRowHeight( 32 )
 
@@ -153,13 +165,14 @@ function GM:CreateScoreboard( ScoreBoard )
 	ScoreBoard:SetSkin( GAMEMODE.HudSkin )
 
 	self:AddScoreboardAvatar( ScoreBoard )		// 1
-	self:AddScoreboardWantsChange( ScoreBoard )	// 2
-	self:AddScoreboardName( ScoreBoard )		// 3
-	self:AddScoreboardKills( ScoreBoard )		// 4
-	self:AddScoreboardDeaths( ScoreBoard )		// 5
-	self:AddScoreboardPing( ScoreBoard )		// 6
+	self:AddScoreboardVoice( ScoreBoard )		// 2
+	self:AddScoreboardWantsChange( ScoreBoard )	// 3
+	self:AddScoreboardName( ScoreBoard )		// 4
+	self:AddScoreboardKills( ScoreBoard )		// 5
+	self:AddScoreboardDeaths( ScoreBoard )		// 6
+	self:AddScoreboardPing( ScoreBoard )		// 7
 		
 	// Here we sort by these columns (and descending), in this order. You can define up to 4
-	ScoreBoard:SetSortColumns( { 4, true, 5, false, 3, false } )
+	ScoreBoard:SetSortColumns( { 5, true, 6, false, 4, false } )
 	
 end

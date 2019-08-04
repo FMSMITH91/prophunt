@@ -1,53 +1,86 @@
--- Verbose mode
-function printverbose(text)
-	if PRINT_VERBOSE_ENABLED && text then
-		print(tostring(text))
-	end
-end
-if !ConVarExists("ph_print_verbose") then
-	local ph_print_verbose = CreateConVar("ph_print_verbose", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE }, "Some printed messages will only appear if this is enabled.")
-end
+-- Initialize the shared variable
+PHE = {}
+PHE.__index = PHE
+
+-- Some config stuff
+AddCSLuaFile("config/sh_init.lua")
+include("config/sh_init.lua")
+
+AddCSLuaFile("sh_drive_prop.lua")
+include("sh_drive_prop.lua")
+
+-- ULX Mapvote
+AddCSLuaFile("ulx/modules/sh/sh_phe_mapvote.lua")
+include("ulx/modules/sh/sh_phe_mapvote.lua")
+
+-- Initialize and Add ConVar Blocks.
+AddCSLuaFile("sh_convars.lua")
+include("sh_convars.lua")
 
 -- Include the required lua files
+AddCSLuaFile("sh_config.lua")
 include("sh_config.lua")
 include("sh_player.lua")
 
+-- Add Sound Precaching Functions
+AddCSLuaFile("sh_precache.lua")
+include("sh_precache.lua")
+
+-- Plugins! :D
+PHE.PLUGINS = {}
+AddCSLuaFile("sh_plugins.lua")
+include("sh_plugins.lua")
+
 -- MapVote
 if SERVER then
-    AddCSLuaFile("sh_mapvote.lua")
-    AddCSLuaFile("mapvote/cl_mapvote.lua")
+	AddCSLuaFile("sh_mapvote.lua")
+	AddCSLuaFile("mapvote/cl_mapvote.lua")
 
 	include("sh_mapvote.lua")
-    include("mapvote/sv_mapvote.lua")
-    include("mapvote/rtv.lua")
+	include("mapvote/sv_mapvote.lua")
+	include("mapvote/rtv.lua")
 else
 	include("sh_mapvote.lua")
-    include("mapvote/cl_mapvote.lua")
+	include("mapvote/cl_mapvote.lua")
 end
+
+-- Updates!
+AddCSLuaFile("sh_httpupdates.lua")
+include("sh_httpupdates.lua")
 
 -- Fretta!
 DeriveGamemode("fretta")
 IncludePlayerClasses()
 
 -- Information about the gamemode
-GM.Name		= "Enhanced Prop Hunt"
-GM.Author	= "Wolvindra-Vinzuerio and D4UNKN0WNM4N2010 (Enhanced), original by Kowalski/AMT"
+GM.Name		= "Prop Hunt: ENHANCED"
+GM.Author	= "Wolvindra-Vinzuerio & D4UNKN0WNM4N2010"
+
+GM._VERSION = "15"
+GM.REVISION	= "K"
+GM.DONATEURL = "https://prophunt.wolvindra.net/?go=donate"
+GM.UPDATEURL = ""
 
 -- Help info
-GM.Help = [[Prop Hunt is a twist on the classic backyard game Hide and Seek.
-TEAM PROP:
-As a Prop you have ]]..HUNTER_BLINDLOCK_TIME..[[ seconds to replicate an existing prop on the map and then find a good hiding spot. Press [E] to replicate the prop you are looking at.
-You can also rotate the prop around and lock the rotation by pressing R.
+GM.Help = [[An Enhanced Classic Prop Hunt Gamemode.
 
-TEAM HUNTER:
-As a Hunter you will be blindfolded for the first ]]..HUNTER_BLINDLOCK_TIME..[[ seconds of the round while the Props hide. When your blindfold is taken off, you will need to find props controlled by players and kill them. Damaging non-player props will lower your health significantly. 
-However, killing a Prop will increase your health by ]]..HUNTER_KILL_BONUS..[[ points.
+To See More Help, Click 'Prop Hunt Menu' for more!
 
-Both teams can press [F3] to play a taunt sound. Props can press [C] for custom taunts.]]
+Version: ]] .. GM._VERSION .. [[ Revision: ]] .. GM.REVISION  .. [[
+
+What's New:
+- Optimised gamemode and more reliable
+- New Prop Hunt Enhanced HUD
+- New Hunter 'Armor' Method
+- New gamemode settings in PH Menu
+- New gamemode Plugins
+- New UI for Menu & Taunt Window
+- Smoother prop movements
+- and many more..!]]
 
 -- Fretta configuration
-GM.GameLength				= GetConVarNumber("ph_game_time")
-GM.AddFragsToTeamScore		= false
+GM.GameLength				= GetConVar("ph_game_time"):GetInt()
+GM.AddFragsToTeamScore		= true
 GM.CanOnlySpectateOwnTeam 	= true
 GM.ValidSpectatorModes 		= { OBS_MODE_CHASE, OBS_MODE_IN_EYE, OBS_MODE_ROAMING }
 GM.Data 					= {}
@@ -56,73 +89,20 @@ GM.NoAutomaticSpawning		= true
 GM.NoNonPlayerPlayerDamage	= true
 GM.NoPlayerPlayerDamage 	= true
 GM.RoundBased				= true
-GM.RoundLimit				= ROUNDS_PER_MAP
-GM.RoundLength 				= ROUND_TIME
+GM.RoundLimit				= GetConVar("ph_rounds_per_map"):GetInt()
+GM.RoundLength 				= GetConVar("ph_round_time"):GetInt()
 GM.RoundPreStartTime		= 0
-GM.SuicideString			= "died mysteriously." -- i think this one is pretty obsolete.
+GM.SuicideString			= "was dead or died mysteriously." -- i think this one is pretty obsolete.
 GM.TeamBased 				= true
 GM.AutomaticTeamBalance 	= false
 GM.ForceJoinBalancedTeams 	= true
-
--- Additional xP
-if !ConVarExists("ph_use_custom_plmodel_for_prop") then
-	local ph_use_custom_plmodel_for_prop = CreateConVar("ph_use_custom_plmodel_for_prop", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "[EXPERIMENTAL] Should use a custom Player's Model for Props when the round begins?")
-end
-
-if !ConVarExists("ph_use_custom_plmodel") then
-	local ph_use_custom_plmodel = CreateConVar("ph_use_custom_plmodel", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should use a custom player model available for Hunters?\nPlease note that you must have to activate \'ph_use_custom_plmodel_for_prop\' too!")
-end
-
--- D4UNKN0WNM4N2010: Yay! Prop Hunt specify cvars.
-if !ConVarExists("ph_prop_camera_collisions") then
-	local ph_prop_camera_collisions = CreateConVar("ph_prop_camera_collisions", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Attempts to stop props from viewing inside walls.")
-end
-
-if !ConVarExists("ph_freezecam") then
-	local ph_freezecam = CreateConVar("ph_freezecam", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Freeze Camera.")
-end
-
-if !ConVarExists("ph_better_prop_movement") then
-	local ph_better_prop_movement = CreateConVar("ph_better_prop_movement", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Enable Prop Rotation or Not?")
-end
-
-if !ConVarExists("ph_prop_collision") then
-	local ph_prop_collision = CreateConVar("ph_prop_collision", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should Team Props collide with each other?")
-end
-
--- Custom Taunts ConVars
-if !ConVarExists("ph_customtaunts_delay") then
-	local ph_customtaunts_delay = CreateConVar("ph_customtaunts_delay", "6", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How many in seconds delay for props to play custom taunt again? (Default is 6)")
-end
-
-if !ConVarExists("ph_enable_custom_taunts") then
-	local ph_enable_custom_taunts = CreateConVar("ph_enable_custom_taunts", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Enable custom taunts for prop teams by pressing C? (Default 0)\n  You must have a list of custom taunts to enable this.")
-end
-
-if !ConVarExists("ph_enable_lucky_balls") then
-	local ph_enable_lucky_balls = CreateConVar("ph_enable_lucky_balls", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_NOTIFY }, "If you hate lucky balls, we're sorry. :(")
-end
-
-if !ConVarExists("ph_enable_plnames") then
-	local ph_enable_plnames = CreateConVar("ph_enable_plnames", "0", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Serverside control for if a clients see client\'s team player names through walls.")
-end
-
-if !ConVarExists("ph_hunter_fire_penalty") then
-	local ph_hunter_fire_penalty = CreateConVar("ph_hunter_fire_penalty", "5", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Health points removed from hunters when they shoot.")
-	local ph_hunter_kill_bonus = CreateConVar("ph_hunter_kill_bonus", "20", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How much health to give back to the Hunter after killing a prop.")
-	local ph_swap_teams_every_round = CreateConVar("ph_swap_teams_every_round", "1", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Should teams swapped on every round?")
-	local ph_game_time = CreateConVar("ph_game_time", "30", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Maximum Time Left (in minutes) - Default is 30 minutes.")
-	local ph_hunter_blindlock_time = CreateConVar("ph_hunter_blindlock_time", "30", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "How long hunters are blinded (in seconds)")
-	local ph_round_time = CreateConVar("ph_round_time", "300", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Time (in seconds) for each rounds.")
-	local ph_rounds_per_map = CreateConVar("ph_rounds_per_map", "10", { FCVAR_SERVER_CAN_EXECUTE, FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY }, "Numbers played on a map (Default: 10)")
-end
 
 -- Called on gamemdoe initialization to create teams
 function GM:CreateTeams()
 	if !GAMEMODE.TeamBased then
 		return
 	end
-	
+
 	TEAM_HUNTERS = 1
 	team.SetUp(TEAM_HUNTERS, "Hunters", Color(150, 205, 255, 255))
 	team.SetSpawnPoint(TEAM_HUNTERS, {"info_player_counterterrorist", "info_player_combine", "info_player_deathmatch", "info_player_axis"})
@@ -136,7 +116,13 @@ end
 
 -- Check collisions
 function CheckPropCollision(entA, entB)
+	-- Disable prop on prop collisions
 	if !GetConVar("ph_prop_collision"):GetBool() && (entA && entB && ((entA:IsPlayer() && entA:Team() == TEAM_PROPS && entB:IsValid() && entB:GetClass() == "ph_prop") || (entB:IsPlayer() && entB:Team() == TEAM_PROPS && entA:IsValid() && entA:GetClass() == "ph_prop"))) then
+		return false
+	end
+
+	-- Disable hunter on hunter collisions so we can allow bullets through them
+	if (IsValid(entA) && IsValid(entB) && (entA:IsPlayer() && entA:Team() == TEAM_HUNTERS && entB:IsPlayer() && entB:Team() == TEAM_HUNTERS)) then
 		return false
 	end
 end

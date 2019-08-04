@@ -30,15 +30,15 @@ language.Add( "prop_physics_respawnable", "Prop" )
 language.Add( "prop_physics_multiplayer", "Prop" )
 language.Add( "entityflame", "Fire" )
 
-surface.CreateLegacyFont( "Trebuchet MS", 40, 700, true, false, "FRETTA_HUGE" )
-surface.CreateLegacyFont( "Trebuchet MS", 40, 700, true, false, "FRETTA_HUGE_SHADOW", true )
-surface.CreateLegacyFont( "Trebuchet MS", 24, 700, true, false, "FRETTA_LARGE" )
-surface.CreateLegacyFont( "Trebuchet MS", 24, 700, true, false, "FRETTA_LARGE_SHADOW", true )
-surface.CreateLegacyFont( "Trebuchet MS", 19, 700, true, false, "FRETTA_MEDIUM" )
-surface.CreateLegacyFont( "Trebuchet MS", 19, 700, true, false, "FRETTA_MEDIUM_SHADOW", true )
-surface.CreateLegacyFont( "Trebuchet MS", 16, 700, true, false, "FRETTA_SMALL" )
+surface.CreateLegacyFont( "Roboto", 40, 700, true, false, "FRETTA_HUGE" )
+surface.CreateLegacyFont( "Roboto", 40, 700, true, false, "FRETTA_HUGE_SHADOW", true )
+surface.CreateLegacyFont( "Roboto", 24, 700, true, false, "FRETTA_LARGE" )
+surface.CreateLegacyFont( "Roboto", 24, 700, true, false, "FRETTA_LARGE_SHADOW", true )
+surface.CreateLegacyFont( "Roboto", 19, 700, true, false, "FRETTA_MEDIUM" )
+surface.CreateLegacyFont( "Roboto", 19, 700, true, false, "FRETTA_MEDIUM_SHADOW", true )
+surface.CreateLegacyFont( "Roboto", 16, 700, true, false, "FRETTA_SMALL" )
 
-surface.CreateLegacyFont( "Trebuchet MS", ScreenScale( 10 ), 700, true, false, "FRETTA_NOTIFY", true )
+surface.CreateLegacyFont( "Roboto", ScreenScale( 10 ), 700, true, false, "FRETTA_NOTIFY", true )
 
 CreateClientConVar( "cl_spec_mode", "5", true, true )
 
@@ -165,6 +165,13 @@ end
 
 function GM:TeamChangeNotification( ply, oldteam, newteam )
 
+	local random_spectator_text = {
+		"to watch and chill.",
+		"to see them hanging around.",
+		" ", -- you serious?
+		"to see the things."
+	}
+
 	if( ply && ply:IsValid() ) then
 		local nick = ply:Nick();
 		local oldTeamColor = team.GetColor( oldteam );
@@ -172,12 +179,20 @@ function GM:TeamChangeNotification( ply, oldteam, newteam )
 		local newTeamColor = team.GetColor( newteam );
 		
 		if( newteam == TEAM_SPECTATOR ) then
-			chat.AddText( oldTeamColor, nick, color_white, " joined ", newTeamColor, newTeamName ); 
+			chat.AddText( oldTeamColor, nick, color_white, " joined ", newTeamColor, newTeamName , color_white, " "..table.Random(random_spectator_text));
 		else
 			chat.AddText( oldTeamColor, nick, color_white, " joined ", newTeamColor, newTeamName );
 		end
 		
-		chat.PlaySound( "buttons/button15.wav" );
+		surface.PlaySound("buttons/lightswitch2.wav")
 	end
 end
-usermessage.Hook( "fretta_teamchange", function( um )  if( GAMEMODE && um ) then  GAMEMODE:TeamChangeNotification( um:ReadEntity(), um:ReadShort(), um:ReadShort() ) end end )
+net.Receive("fretta_teamchange", function()
+	local ply  = net.ReadEntity()
+	local oldt = net.ReadInt(12)
+	local newt = net.ReadInt(12)
+		
+	if (GAMEMODE) then
+		GAMEMODE:TeamChangeNotification(ply, oldt, newt)
+	end
+end)

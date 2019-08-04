@@ -123,13 +123,17 @@ net.Receive( "NPCKilledNPC", RecvNPCKilledNPC )
 function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 
 	local RdmDeathString = {
-		"committed suicide!",
-		"died mysteriously!",
-		"died by magic.",
+		"suicided!",
+		"died mysteriously.",
+		"died from magic.",
 		"no-scoped themself.",
-		"rage-quited.",
+		"has just ragequit.",
 		"is drunk.",
-		"died... Better luck next time!"
+		"died... better luck next time!",
+		"slapped themself.",
+		"tripped on a stick.",
+		"died by the force.",
+		"ragdolled."
 	}
 	
 	local stringtext = table.Random( RdmDeathString )

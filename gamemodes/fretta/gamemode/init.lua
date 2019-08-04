@@ -4,6 +4,9 @@
 	The entire server side bit of Fretta starts here.
 */
 
+util.AddNetworkString("PlayableGamemodes")
+util.AddNetworkString("fretta_teamchange")
+
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "shared.lua" )
 AddCSLuaFile( 'skin.lua' )
@@ -37,8 +40,6 @@ GM.ReconnectedPlayers = {}
 
 function GM:Initialize()
 
-	util.AddNetworkString("PlayableGamemodes")
-
 	/*
 	// Disabled - causes games to end in the middle of a round - we don't want that to happen!
 	// ::Think takes care of this anyway.
@@ -50,6 +51,9 @@ function GM:Initialize()
 	*/
 	
 	// If we're round based, wait 3 seconds before the first round starts
+	
+	--GAMEMODE:SetInRound( false ) --iguess?
+	
 	if ( GAMEMODE.RoundBased ) then
 		timer.Simple( 3, function() GAMEMODE:StartRoundBasedGame() end )
 	end
@@ -86,6 +90,8 @@ end
 ---------------------------------------------------------*/
 function GM:CanPlayerSuicide( ply )
 
+	if not GAMEMODE:InRound() then return false end
+
 	if( ply:Team() == TEAM_UNASSIGNED || ply:Team() == TEAM_SPECTATOR ) then
 		return false // no suicide in spectator mode
 	end
@@ -114,6 +120,7 @@ end
 ---------------------------------------------------------*/
 function GM:PlayerInitialSpawn( pl )
 
+	--pl:SetTeam( TEAM_UNASSIGNED )
 	pl:SetTeam( TEAM_SPECTATOR )
 	pl:SetPlayerClass( "Spectator" )
 	pl.m_bFirstSpawn = true
@@ -181,10 +188,14 @@ function GM:PlayerSpawn( pl )
 			GAMEMODE:PlayerSpawnAsSpectator( pl )
 			
 			// Follow a random player until we join a team
+			--[[
 			if ( #player.GetAll() > 1 ) then
 				pl:Spectate( OBS_MODE_CHASE )
 				pl:SpectateEntity( table.Random( player.GetAll() ) )
 			end
+			]]--
+			
+			pl:Spectate( OBS_MODE_ROAMING )
 			
 		end
 	
@@ -396,13 +407,13 @@ function GM:OnPlayerChangedTeam( ply, oldteam, newteam )
 	
 	//PrintMessage( HUD_PRINTTALK, Format( "%s joined '%s'", ply:Nick(), team.GetName( newteam ) ) )
 	
-	// Send umsg for team change
- 
-    umsg.Start( "fretta_teamchange", rf );
-		umsg.Entity( ply );
-		umsg.Short( oldteam );
-		umsg.Short( newteam );
-    umsg.End();
+	// Send net for team change
+	
+	net.Start("fretta_teamchange")
+		net.WriteEntity(ply)
+		net.WriteInt(oldteam, 12)
+		net.WriteInt(newteam, 12)
+	net.Broadcast()
 	
 end
 
@@ -474,6 +485,11 @@ function GM:OnEndOfGame(bGamemodeVote)
 
 		v:Freeze(true)
 		v:ConCommand( "+showscores" )
+		timer.Simple(GAMEMODE.VotingDelay, function()
+			if (IsValid(v)) then
+				v:ConCommand("-showscores")
+			end
+		end)
 		
 	end
 	
@@ -491,8 +507,8 @@ function GM:EndOfGame( bGamemodeVote )
 	
 	if ( bGamemodeVote ) then
 	
-		MsgN( "Starting gamemode voting..." )
-		PrintMessage( HUD_PRINTTALK, "Starting gamemode voting..." );
+		MsgN( "Starting map voting..." )
+		PrintMessage( HUD_PRINTTALK, "Starting map voting..." );
 		timer.Simple( GAMEMODE.VotingDelay, function() MapVote.Start() end )
 		
 	end
@@ -563,13 +579,15 @@ function GM:PlayerDeathThink( pl )
 end
 
 function GM:GetFallDamage( ply, flFallSpeed )
-	
+
+	if not GAMEMODE:InRound() then return 0 end
+
 	if ( GAMEMODE.RealisticFallDamage ) then
 		return flFallSpeed / 8
 	end
-	
+
 	return 10
-	
+
 end
 
 function GM:PostPlayerDeath( ply )
