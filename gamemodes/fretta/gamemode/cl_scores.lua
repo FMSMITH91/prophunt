@@ -15,6 +15,7 @@ function GM:GetScoreboard()
 end
 
 function GM:ScoreboardShow()
+
 	gui.EnableScreenClicker(true)
 	GAMEMODE:GetScoreboard():SetVisible( true )
 	GAMEMODE:PositionScoreboard( GAMEMODE:GetScoreboard() )
@@ -22,6 +23,7 @@ function GM:ScoreboardShow()
 end
 
 function GM:ScoreboardHide()
+	
 	gui.EnableScreenClicker(false)
 	GAMEMODE:GetScoreboard():SetVisible( false )
 	
@@ -78,7 +80,7 @@ function GM:AddScoreboardVoice( ScoreBoard )
 		return main
 	end
  
-	ScoreBoard:AddColumn( "Mute", 40, f, 0.5, nil, 6, 6 )
+	ScoreBoard:AddColumn( LANG.PHEMENU.MUTE.TAB, 40, f, 0.5, nil, 6, 6 )
  
 end
 
@@ -89,28 +91,28 @@ end
 function GM:AddScoreboardName( ScoreBoard )
 
 	local f = function( ply ) return ply:Name() end
-	ScoreBoard:AddColumn( "Name", nil, f, 10, nil, 4, 4 )
+	ScoreBoard:AddColumn( PHE.LANG.DERMA.NAME, nil, f, 10, nil, 4, 4 )
 
 end
 
 function GM:AddScoreboardKills( ScoreBoard )
 
 	local f = function( ply ) return ply:Frags() end
-	ScoreBoard:AddColumn( "Kills", 55, f, 0.5, nil, 6, 6 )
+	ScoreBoard:AddColumn( PHE.LANG.DERMA.KILLS, 40, f, 0.5, nil, 6, 6 )
 
 end
 
 function GM:AddScoreboardDeaths( ScoreBoard )
 
 	local f = function( ply ) return ply:Deaths() end
-	ScoreBoard:AddColumn( "Deaths", 60, f, 0.5, nil, 5, 5 )
+	ScoreBoard:AddColumn( PHE.LANG.DERMA.DEATHS, 60, f, 0.5, nil, 6, 6 )
 
 end
 
 function GM:AddScoreboardPing( ScoreBoard )
 
 	local f = function( ply ) return ply:ScoreboardPing() end
-	ScoreBoard:AddColumn( "Ping", 40, f, 0.1, nil, 6, 6 )
+	ScoreBoard:AddColumn( PHE.LANG.DERMA.PING, 40, f, 0.1, nil, 6, 6 )
 
 end
 
