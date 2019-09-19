@@ -80,7 +80,7 @@ function GM:AddScoreboardVoice( ScoreBoard )
 		return main
 	end
  
-	ScoreBoard:AddColumn( "Mute", 40, f, 0.5, nil, 6, 6 )
+	ScoreBoard:AddColumn( LANG.PHEMENU.MUTE.TAB, 40, f, 0.5, nil, 6, 6 )
  
 end
 

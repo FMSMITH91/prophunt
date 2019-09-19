@@ -155,6 +155,7 @@ local ply = LocalPlayer()
 		local blindlock_time_left = (GetConVar("ph_hunter_blindlock_time"):GetInt() - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 
 		if blindlock_time_left < 1 && blindlock_time_left > -6 then
+			blindlock_time_left_msg = "Ready or not, here we come!"
 			blindlock_time_left_msg = PHE.LANG.HUD.BLINDEND
 			overlaydraw = 0
 		elseif blindlock_time_left > 0 then
