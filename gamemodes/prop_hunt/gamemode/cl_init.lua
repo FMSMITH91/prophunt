@@ -2,7 +2,7 @@ CreateClientConVar("ph_cl_halos", "1", true, true, "Toggle Enable/Disable Halo e
 CreateClientConVar("ph_cl_pltext", "1", true, false, "Options for Text above players. 0 = Disable. 1 = Enable.")
 CreateClientConVar("ph_cl_endround_sound", "1", true, false, "Play a sound when round ends? 0 to disable.")
 CreateClientConVar("ph_cl_autoclose_taunt", "1", true, false, "Auto close the taunt window (When Double Clicking on them)?")
-CreateClientConVar("ph_cl_spec_hunter_line", "1", true, false, "Draw a line on hunters so we can see their aim in spectator mode.")
+CreateClientConVar("ph_cl_spec_hunter_line", "0", true, false, "Draw a line on hunters so we can see their aim in spectator mode.")
 CreateClientConVar("cl_enable_luckyballs_icon", "1", true,false, "Enable 'Lucky ball' icon to be displayed once they spawned")
 CreateClientConVar("cl_enable_devilballs_icon", "1", true,false, "Enable 'Devil ball' icon to be displayed once they spawned")
 CreateClientConVar("ph_hud_use_new", "1", true, false, "Use new PH: Enhanced HUD")
