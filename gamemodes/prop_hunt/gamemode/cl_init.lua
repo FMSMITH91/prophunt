@@ -155,7 +155,6 @@ local ply = LocalPlayer()
 		local blindlock_time_left = (GetConVar("ph_hunter_blindlock_time"):GetInt() - (CurTime() - GetGlobalFloat("RoundStartTime", 0))) + 1
 
 		if blindlock_time_left < 1 && blindlock_time_left > -6 then
-			blindlock_time_left_msg = "Ready or not, here we come!"
 			blindlock_time_left_msg = PHE.LANG.HUD.BLINDEND
 			overlaydraw = 0
 		elseif blindlock_time_left > 0 then
@@ -274,7 +273,7 @@ local ply = LocalPlayer()
 	-- The 'You were Killed By' text, or the Freeze Cam text.
 	if LocalPlayer():GetNWBool("InFreezeCam", false) then
 		local textx = ScrW() / 2
-		draw.SimpleTextOutlined(string.format(LANG.HUD.FREEZECAM, LocalPlayer():GetNWEntity("PlayerKilledByPlayerEntity", nil):Name()), "TrebuchetBig", textx, ScrH() * 0.75, Color(255, 10, 10, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1.5, Color(0, 0, 0, 255))
+		draw.SimpleTextOutlined(string.format(PHE.LANG.HUD.FREEZECAM, LocalPlayer():GetNWEntity("PlayerKilledByPlayerEntity", nil):Name()), "TrebuchetBig", textx, ScrH() * 0.75, Color(255, 10, 10, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1.5, Color(0, 0, 0, 255))
 	end
 end
 hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
