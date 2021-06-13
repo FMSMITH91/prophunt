@@ -12,10 +12,10 @@ RTV.Wait = 60 -- The wait time in seconds. This is how long a player has to wait
 
 RTV._ActualWait = CurTime() + RTV.Wait
 
-RTV.PlayerCount = MapVote.Config.RTVPlayerCount or 2
+RTV.PlayerCount = MapVote.Config.RTVPlayerCount or 3
 
 function RTV.ShouldChange()
-	return RTV.TotalVotes >= math.Round(#player.GetAll() * 0.60)
+	return RTV.TotalVotes >= math.Round(#player.GetAll()*0.66)
 end
 
 function RTV.RemoveVote()
@@ -35,11 +35,8 @@ function RTV.AddVote( ply )
 	if RTV.CanVote( ply ) then
 		RTV.TotalVotes = RTV.TotalVotes + 1
 		ply.RTVoted = true
-		MsgN( ply:Nick() .. " has voted to Rock the Vote." )
-		-- Loop, because PrintMessage doesn't seem to be working alone
-		for _, _ply in pairs (player.GetAll ()) do
-			_ply:PrintMessage( HUD_PRINTTALK, ply:Nick() .. " has voted to Rock the Vote. (" .. RTV.TotalVotes .. "/" .. math.Round(#player.GetAll() * 0.66) .. ")" )
-		end
+		MsgN( ply:Nick().." has voted to Rock the Vote." )
+		PrintMessage( HUD_PRINTTALK, ply:Nick().." has voted to Rock the Vote. ("..RTV.TotalVotes.."/"..math.Round(#player.GetAll()*0.66)..")" )
 
 		if RTV.ShouldChange() then
 			RTV.Start()
@@ -55,7 +52,7 @@ hook.Add( "PlayerDisconnected", "Remove RTV", function( ply )
 	end
 
 	timer.Simple( 0.1, function()
-		if (#player.GetAll() < 1 && !GetConVar("mv_change_when_no_player"):GetBool()) then
+		if (#player.GetAll() < 1 && !GetConVar("mv_change_when_no_player"):GetBool()) then 
 			print("MapVote: There is no player to force change map...")
 		else
 			if RTV.ShouldChange() then
@@ -67,8 +64,8 @@ hook.Add( "PlayerDisconnected", "Remove RTV", function( ply )
 end )
 
 function RTV.CanVote( ply )
-	local plyCount = table.Count(player.GetAll())
-
+	local plyCount = player.GetCount()
+	
 	if RTV._ActualWait >= CurTime() then
 		return false, "You must wait a bit before voting!"
 	end
@@ -85,8 +82,8 @@ function RTV.CanVote( ply )
 		return false, "There has already been a vote, the map is going to change!"
 	end
 	if plyCount < RTV.PlayerCount then
-		return false, "You need more players before you can rock the vote!"
-	end
+        return false, "You need more players before you can rock the vote!"
+    end
 
 	return true
 
@@ -96,7 +93,7 @@ function RTV.StartVote( ply )
 
 	local can, err = RTV.CanVote(ply)
 
-	if !can then
+	if not can then
 		ply:PrintMessage( HUD_PRINTTALK, err )
 		return
 	end
@@ -114,4 +111,4 @@ hook.Add( "PlayerSay", "RTV Chat Commands", function( ply, text )
 		return ""
 	end
 
-end, HOOK_HIGH )
+end )

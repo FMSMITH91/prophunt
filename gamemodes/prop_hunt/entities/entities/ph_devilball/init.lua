@@ -64,7 +64,7 @@ Please note that you might have to create a custom serverside lua with full of f
 		-- code...
 	end)
 	
-Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with printVerbose!
+Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with PHX.VerboseMsg!
 ]]
 ENT.funclists = {
 	function(pl)
@@ -167,17 +167,17 @@ local function ResetEverything()
 		end
 	end
 end
-hook.Add("PH_RoundEnd", "PHE.ForceResetDevilBall", ResetEverything)
+hook.Add("PH_RoundEnd", "PHX.ForceResetDevilBall", ResetEverything)
 
 function ENT:AddMoreLuckyEvents()
 	local t = list.Get("DevilBallsAddition")
-	if table.Count(t) > 0 then
+	if !table.IsEmpty(t) then
 		for name,tab in pairs(t) do
-			printVerbose("[ Devil Ball :: Add Event ] Adding new Devil Balls events : "..name)
+			PHX.VerboseMsg("[PHX: Devil Crystal] Adding new events: "..name)
 			table.insert(self.funclists, tab)
 		end
 	else
-		printVerbose("[ Devil Ball :: Add Event ] There is no additional Devil Balls events detected, ignoring...")
+		PHX.VerboseMsg("[PHX: Devil Crystal] There is no additional events detected, skipping...")
 	end
 end
 

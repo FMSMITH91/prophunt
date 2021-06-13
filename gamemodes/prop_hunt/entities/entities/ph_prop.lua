@@ -93,7 +93,7 @@ if SERVER then
 		
 				MsgAll(attacker:Name() .. " found and killed " .. pl:Name() .. "\n") 
 
-				if GetConVar("ph_freezecam"):GetBool() then
+				if PHX.CVAR.FreezeCamera:GetBool() then
 					if pl:GetNWBool("InFreezeCam", false) then
 						pl:PrintMessage(HUD_PRINTCONSOLE, "!! WARNING: Something went wrong with the Freeze Camera, but it's still enabled!")
 					else

@@ -1,0 +1,6 @@
+"fr_phx"
+{
+	"base"				"base"
+	"title"				"Modified Fretta for PH:X"
+	"menusystem"		"0"
+}
