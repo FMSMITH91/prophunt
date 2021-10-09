@@ -1,380 +1,248 @@
-local Ph = {}
-function ph_BaseMainWindow(ply, cmd, args)
+CreateClientConVar("ph_cl_hide_donate_panel", "0", true, false, "Show Donation panel in F1 menu.")
+PHX.UI = PHX.UI or {}
+
+-- Global for Mute Function.
+function PHX.UI:GetMutedStateIcon(bool)
+	if bool then
+		return "vgui/phehud/voice_off"
+	end
+	
+	return "vgui/phehud/voice_on"
+end
+
+function PHX.UI.BaseMainMenu(ply, cmd, args)
+	
+	if (PHX.LANGUAGES[PHX:GetCLCVar( "ph_cl_language" )] == nil or table.IsEmpty(PHX.LANGUAGES[PHX:GetCLCVar( "ph_cl_language" )])) then
+		PHX:AddChat("Error: Cannot open Prop Hunt X Menu because the language you're using is not available.", Color(255,0,0))
+		PHX:AddChat("Please revert to default language by typing 'ph_cl_language en_us' in the console!", Color(255,255,0))
+		return
+	end
+
 	local mdlName = ply:GetInfo("cl_playermodel")
 	local mdlPath = player_manager.TranslatePlayerModel(mdlName)
-
-	local frm = vgui.Create("DFrame")
-	frm:SetSize(ScrW() - 96,ScrH() - 64)
-	frm:SetTitle("Prop Hunt: Enhanced | Help & Settings menu")
-	frm.Paint = function(self,w,h)
-		surface.SetDrawColor(30,30,30,180)
+	
+	PHX.UI.MainForm = vgui.Create("DFrame")
+	PHX.UI.MainForm:SetSize(ScrW(),ScrH())
+	PHX.UI.MainForm:SetTitle( PHX:FTranslate("PHXM_WINDOW_TITLE") )
+	PHX.UI.MainForm.Paint = function(self,w,h)
+		surface.SetDrawColor(20,20,20,200)
 		surface.DrawRect(0,0,w,h)
 	end
-	frm:SetDraggable(false)
-	frm:Center()
-	frm:MakePopup()
-
-	local tab = vgui.Create("DPropertySheet", frm)
-	tab:Dock(FILL)
-	tab:DockMargin(12,12,12,12)
-	tab.Paint = function(self)
+	PHX.UI.MainForm:SetDraggable(false)
+	PHX.UI.MainForm:Center()
+	PHX.UI.MainForm:MakePopup()
+	
+	PHX.UI.PnlTab = vgui.Create("DColumnSheet", PHX.UI.MainForm)	-- DPropertySheet
+	PHX.UI.PnlTab:Dock(FILL)
+	PHX.UI.PnlTab:DockMargin(16,8,16,16)
+	PHX.UI.PnlTab.Paint = function(self)
 		surface.SetDrawColor(50,50,50,255)
 		surface.DrawRect(0,0,self:GetWide(),self:GetTall())
 	end
-
-	function Ph:GetMutedStateIcon(bool)
-		if bool then
-			return "vgui/phehud/voice_off"
-		end
-
-		return "vgui/phehud/voice_on"
-	end
-
-	function Ph:CreateBasicLayout(color,pTab) -- Warning: This one only can be used within this scope! todo: See 'cl_credits.lua' to see some details.
-		local panel = vgui.Create("DPanel", pTab)
+	
+	PHX.UI.PnlTab.Navigation:SetWide(200)
+	--PHX.UI.PnlTab:UseButtonOnlyStyle()
+	
+	function PHX.UI:CreateBasicLayout( color, pTab )
+		local panel = vgui.Create("DPanel", pTab )
 		panel:SetBackgroundColor(color)
-
+		panel:Dock(FILL)
+		
 		local scroll = vgui.Create( "DScrollPanel", panel )
 		scroll:Dock(FILL)
-
-		local grid = vgui.Create("DGrid", scroll)
-		grid:Dock(NODOCK)
-		grid:SetPos(10,10)
+		scroll:InvalidateParent(true)
+		
+		local grid = scroll:Add("DGrid")
+		grid:SetPos(16,12)
 		grid:SetCols(1)
-		grid:SetColWide(800)
-		grid:SetRowHeight(32)
-
+		grid:SetColWide(PHX.UI.MainForm:GetWide() - 200)
+		grid:SetRowHeight(35)
+		
 		return panel,grid
 	end
-
-	-- Base Function for Automated-VGUI Creation. I've Spent 8 Hours to do this with laptop keep autoshutdowns... Damn it
-	-- Usage of Ph:CreateVGUIType(cmd,typ,data,panel,text)
-	-- typ: check, label, btn, slider
-	function Ph:CreateVGUIType(cmd,typ,data,panel,text)
-		-- CheckBox
-		if typ == "check" then
-			if type(data) == "string" then
-				local chk = vgui.Create("DCheckBoxLabel")
-				chk:SetSize(panel:GetColWide(),panel:GetRowHeight())
-				chk:SetText(text)
-				local num = GetConVar(cmd):GetBool()
-				if num then
-					chk:SetChecked(true); chk:SetValue(1);
+	
+	function PHX.UI.PaintTabButton ( item, text )
+	
+		local font = "HudHintTextLarge"
+		local color = color_white
+	
+		item.Button:SetSize(item.Button:GetParent():GetWide(), 72)
+		item.Button:SetText("")
+		item.Button.m_Image:SetImageColor(color)
+		
+		item.Button.Paint = function(self, w, h)
+			if self:GetToggle() then
+				surface.SetDrawColor(200,150,12,200)
+				surface.DrawRect(0,0,w,h)
+				
+				surface.SetDrawColor(102,75,6,200)
+				surface.DrawRect(w*0.95,0,w*0.1,h)
+			else
+				surface.SetDrawColor(20,20,20,200)
+				surface.DrawRect(0,0,w,h)
+			end
+			
+			draw.DrawText( text, font ,w*0.25,h*0.4, color, TEXT_ALIGN_LEFT )
+		end
+		
+		item.Button.OnCursorEntered = function(self)
+			color = Color(255,255,0)
+			self:SetColor(color)
+			self.m_Image:SetImageColor(color)
+		end
+		
+		item.Button.OnCursorExited = function(self)
+			color = color_white
+			self:SetColor(color)
+			self.m_Image:SetImageColor(color)
+		end
+	
+	end
+	
+	--[[
+	Info:
+		cmd: the Console Command to execute for.
+		typ: the Data type variable. (see below)
+		data: what data cotains. string / number / userdata
+		panel: the Parent panel we'll use for. In this case usually is the "PHX.UI.PnlTab"
+		text: A label text.
+	
+	Usage:
+		PHX.UI:CreateVGUIType( cmd, typ, data, panel, text )
+		
+	Available Data type of "typ": 
+		"check", "label", "btn", "slider"
+	]]
+	function PHX.UI:CreateVGUIType( cmd, typ, data, panel, text )
+		-- do the Action.
+		local CreateMenu = PHX.CLUI[ typ ]( cmd, data, panel, text )
+		panel:AddItem( CreateMenu )
+	end
+	
+	--[[
+		Info:
+			DonationPanel
+			
+		Usage:
+			<internal:call>
+	]]
+	
+	function PHX.UI:DonationPanel()
+		if (not GetConVar("ph_cl_hide_donate_panel"):GetBool()) then
+			
+			local panel = vgui.Create("DPanel", PHX.UI.PnlTab )
+			panel:Dock(FILL)
+			panel:DockMargin(10,10,0,0)
+			panel:SetBackgroundColor(Color(0,0,0,0))
+			
+			local title = panel:Add("DLabel")
+			title:Dock(TOP)
+			title:SetSize(0,30)
+			title:SetFont("Trebuchet24")
+			title:SetText("Support Prop Hunt: X!")
+			
+			local title = panel:Add("DLabel")
+			title:Dock(TOP)
+			title:DockMargin(0,6,0,6)
+			title:SetSize(0,18)
+			title:SetFont("HudHintTextLarge")
+			title:SetText("If you liked with this update and would like to help with PH:Z Development, You can consider donating!")
+			
+			local pn = panel:Add("DPanel")
+			pn:Dock(TOP)
+			pn:SetSize(0,160)
+			pn:SetBackgroundColor(Color(0,0,0,0))
+			local DonateLogo = pn:Add("DImage")
+			DonateLogo:SetPos(0,0)
+			DonateLogo:SetSize(256,128)
+			DonateLogo:SetImage("vgui/bmac.vmt")
+			
+			local btnDn = pn:Add("DButton")
+			btnDn:SetPos(6,110)
+			btnDn:SetSize(240,24)
+			btnDn:SetText("Donate via Buy me a Coffee")
+			btnDn.DoClick = function()
+				gui.OpenURL("https://www.buymeacoffee.com/wolvindra")
+			end
+			
+			local check = panel:Add("DCheckBoxLabel")
+			check:Dock(TOP)
+			check:SetSize(0,24)
+			check:SetText("Hide this panel next time you open (You can re-enable this by typing 'ph_cl_hide_donate_panel' in console).")
+			check:SetChecked(false)
+			check:SetValue(0)
+			function check:OnChange( bool )
+				local v = 0
+				if bool then
+					v = 1
 				else
-					chk:SetChecked(false); chk:SetValue(0);
+					v = 0
 				end
-				function chk:OnChange(bool)
-					local v = 0
-					if bool then
-						v = 1
-					else
-						v = 0
-					end
-					if data == "SERVER" then
-						net.Start("SvCommandReq")
-						  net.WriteString(cmd)
-						  net.WriteInt(v,2)
-						net.SendToServer()
-					elseif data == "CLIENT" then
-						RunConsoleCommand(cmd, v)
-						chat.AddText(Color(200,0,0),"[Settings]", color_white, " Cvar '" .. cmd .. "' has been changed to " .. v)
-						if v == 1 then
-							surface.PlaySound("buttons/button9.wav")
-						else
-							surface.PlaySound("buttons/button19.wav")
-						end
-					end
-				end
-				panel:AddItem(chk)
-			else
-				print(cmd .. " -> Ph:CreateVGUIType FAILED! - 'data' argument must containt string value, Got: " .. type(data) .. " instead!!")
+				RunConsoleCommand("ph_cl_hide_donate_panel", tostring(v))
 			end
-		end
-
-		-- Label
-		if typ == "label" then
-			local txt = vgui.Create("DLabel")
-			txt:SetSize(panel:GetColWide(),panel:GetRowHeight())
-			txt:SetText(text)
-			if !data then
-				txt:SetFont("HudHintTextLarge")
-			else
-				txt:SetFont(data)
-			end
-			txt:SetTextColor(color_white)
-			panel:AddItem(txt)
-		end
-
-		-- Spacer/Divider
-		if typ == "spacer" then
-			local pnl = vgui.Create("DPanel")
-			pnl:SetSize(panel:GetColWide(),panel:GetRowHeight())
-			pnl:SetBackgroundColor(Color(0,0,0,0))
-
-			panel:AddItem(pnl)
-		end
-
-		-- Button
-		if typ == "btn" then
-			if type(data) == "table" then
-				-- How many buttons that will be created. Note: maximum are 6 buttons in 1 segment.
-				local legal = data.max
-				if data.max < 1 then legal = 1 end
-				if data.max > 6 then legal = 6 end
-
-				local pnl = vgui.Create("DPanel")
-				pnl:SetSize(panel:GetColWide(),panel:GetRowHeight())
-				pnl:SetBackgroundColor(Color(0,0,0,0))
-
-				local function btncreation(pPanel,pText, f)
-					local btn = vgui.Create("DButton", pPanel)
-					btn:SetText(pText)
-					btn:Dock(LEFT)
-					btn:DockMargin(8,2,0,2)
-					-- If this looks stupid, but it working, it ain't stupid!
-					btn:SizeToContents()
-					btn:SetSize(btn:GetWide() + 8,btn:GetTall())
-					btn.DoClick = f
-
-					if data.wide then
-						btn:SetWide(data.wide)
-					end
-				end
-
-				for i = 1,legal do
-					btncreation(pnl,data.textdata[i][1], data.textdata[i][2])
-				end
-				panel:AddItem(pnl)
-			else
-				print(cmd .. " -> Ph:CreateVGUIType FAILED! - 'data' argument must containt table value, Example:\n\n   { max = max_num_button, textdata = {[1] = {text, function}, [2] = {text, function}, etc...}} \n  --> Got " .. type(data) .. " instead!!")
-			end
-		end
-
-		-- Slider
-		if typ == "slider" then
-			if type(data) == "table" then
-				local min = data.min
-				local max = data.max
-				local dval = data.init
-				local dec = data.dec
-				local kind = data.kind
-				local float = data.float
-
-				local pnl = vgui.Create("DPanel")
-				pnl:SetSize(panel:GetColWide(),panel:GetRowHeight() - 6)
-				pnl:SetBackgroundColor(Color(120,120,120,200))
-
-				local slider = vgui.Create("DNumSlider",pnl)
-				slider:SetPos(10,0)
-				slider:SetSize(panel:GetColWide() - 30,panel:GetRowHeight() - 6)
-				slider:SetText(text)
-				slider:SetMin(min)
-				slider:SetMax(max)
-				slider:SetValue(dval)
-				slider:SetDecimals(dec)
-				slider.OnValueChanged = function(pnl,val)
-					slider:SetValue(math.Round (val, dec))
-					if kind == "SERVER" then
-						net.Start("SvCommandSliderReq")
-						net.WriteString(cmd)
-						net.WriteBool(float)
-						if float then
-							net.WriteFloat(val)
-						else
-							net.WriteInt(slider:GetValue(), 16)
-						end
-						net.SendToServer()
-					elseif kind == "CLIENT" then
-						if float then
-							RunConsoleCommand(cmd, val)
-						else
-							RunConsoleCommand(cmd, math.Round(val))
-						end
-					end
-				end
-				panel:AddItem(pnl)
-			else
-				print(cmd .. " -> Ph:CreateVGUIType FAILED! - 'data' argument must containt table value, Example:\n\n   { min = min value, max = max value, init = initial value, dec = decimal count, kind = SERVER/CLIENT} } \n  --> Got " .. type(data) .. " instead!!")
-			end
-		end
-
-		-- Mute Functions
-		if typ == "mute" then
-			if type(data) == "Player" && IsValid(data) then
-				local ply = data
-
-				local pnl = vgui.Create("DPanel")
-				pnl:SetSize(panel:GetColWide(),panel:GetRowHeight() - 6)
-				pnl:SetBackgroundColor(Color(20,20,20,150))
-
-				local ava = vgui.Create("AvatarImage", pnl)
-				ava:Dock(LEFT)
-				ava:SetSize(24,24)
-				ava:SetPlayer(ply,32)
-
-				local name = vgui.Create("DLabel", pnl)
-				name:Dock(LEFT)
-				name:DockMargin(8,4,8,4)
-				name:SetSize(panel:GetColWide() / 2,0)
-				name:SetText(ply:Nick())
-				name:SetFont("HudHintTextLarge")
-				name:SetTextColor(color_white)
-
-				local imagebtn
-				local button = vgui.Create("DButton", pnl)
-				button:Dock(RIGHT)
-				button:DockMargin(4,0,4,0)
-				button:SetSize(24,0)
-				button:SetText("")
-				button.Paint = function(btn)
-					surface.SetDrawColor(90,90,90,0)
-					surface.DrawRect(0,0,btn:GetWide(),btn:GetTall())
-				end
-
-				button.DoClick = function()
-					if !IsValid(ply) then return end
-					local mute = ply:IsMuted()
-					ply:SetMuted(!mute)
-					imagebtn:SetImage(Ph:GetMutedStateIcon(!mute))
-				end
-
-				if ply == LocalPlayer() then
-					button:SetVisible(false)
-				else
-					button:SetVisible(true)
-				end
-
-				imagebtn = vgui.Create("DImage",button)
-				imagebtn:Dock(FILL)
-				imagebtn:SetImage(Ph:GetMutedStateIcon(ply:IsMuted()))
-
-				panel:AddItem(pnl)
-			else
-				print(cmd .. " -> Ph:CreateVGUIType FAILED! - 'data' argument must containt Entity userdata value \n  --> Got " .. type(data) .. " instead!!")
-			end
-		end
-
-		-- Binder
-		if typ == "binder" then
-			local pnl = vgui.Create ("DPanel")
-			pnl:SetSize(panel:GetColWide(),panel:GetRowHeight() - 12)
-			pnl.Paint = function () end
-
-			local binder = pnl:Add ("DBinder")
-			binder:Dock (LEFT)
-			binder:SetWide (75)
-			-- Update values
-			binder:SetValue (GetConVar (cmd):GetInt ())
-			-- Make it change convar
-			binder.OnChange = function (this, num)
-				RunConsoleCommand (cmd, num)
-				chat.AddText(Color(200, 0, 0), "[Settings]", color_white, " Cvar '" .. cmd .. "' has been changed to " .. num .. " (" .. input.GetKeyName (num) .. ")")
-				surface.PlaySound("buttons/button9.wav")
-			end
-			-- Text
-			local label = pnl:Add ("DLabel")
-			label:Dock (FILL)
-			label:DockMargin (9, 0, 0, 0)
-			label:SetText (text)
-
-			panel:AddItem (pnl)
-		end
-
-		-- Combo Box
-		if typ == "combobox" then
-			if type(data) == "table" then
-				local pnl = vgui.Create ("DPanel")
-				pnl:SetSize(panel:GetColWide(),panel:GetRowHeight() - 12)
-				pnl.Paint = function () end
-
-				local box = vgui.Create("DComboBox", pnl)
-				box:Dock(LEFT)
-				box:SetWide(75)
-
-				if data.wide then
-					box:SetWide(data.wide)
-				end
-
-				-- Add choices
-				for choiceData, choiceText in pairs(data.choices) do
-					box:AddChoice(choiceText, choiceData)
-				end
-
-				-- Select default
-				box:SetValue(data.default)
-
-				box.OnSelect = function(this, _, _, choiceData)
-					if data.kind == "SERVER" then
-						net.Start("SvCommandBoxReq")
-						net.WriteString(cmd)
-						net.WriteString(choiceData)
-						net.SendToServer()
-					else
-						RunConsoleCommand(cmd, choiceData)
-					end
-				end
-
-				-- Text
-				local label = pnl:Add ("DLabel")
-				label:Dock (FILL)
-				label:DockMargin (9, 0, 0, 0)
-				label:SetText (text)
-
-				panel:AddItem (pnl)
-
-			else
-				print(cmd .. " -> Ph:CreateVGUIType FAILED! - 'data' argument must containt table value, Example:\n\n   { choices = { data1 = text1, data2 = text2 },  default = \"default text to show\" } \n  --> Got " .. type(data) .. " instead!!")
-			end
+			
+			local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_donate.png")
+			PHX.UI.PaintTabButton(PanelModify, "Donate")
+			
 		end
 	end
-
-	function Ph:HelpSelections()
-		local panel = vgui.Create("DPanel", tab)
+	
+	--[[
+		Info: 
+			HelpSelections // Help Menu Tab panel
+		
+		Usage:
+			<internal::call>
+	]]
+	function PHX.UI:HelpSelections()
+		local panel = vgui.Create("DPanel", PHX.UI.PnlTab)
 		panel:SetBackgroundColor(Color(100,100,100,255))
-
+		panel:Dock(FILL)
+	
 		local helpImage = vgui.Create("DImage", panel)
 		helpImage.Count = 1
 		helpImage:Dock(FILL)
 		helpImage:SetImage("vgui/phhelp1.vmt")
+	
 		local pBottom = vgui.Create("DPanel", panel)
 		pBottom:Dock(BOTTOM)
 		pBottom:SetSize(0,40)
 		pBottom:SetBackgroundColor(Color(0,0,0,0))
-
+		
 		local motd = vgui.Create("DButton", pBottom)
 		motd:Dock(FILL)
 		motd:SetSize(0,40)
-		motd:SetText("SERVER INFORMATION & RULES [MOTD]")
-		motd:SetFont("PHE.ArmorFont")
+		motd:SetText(PHX:FTranslate("SERVER_INFO_MOTD"))
+		motd:SetFont("PHX.ArmorFont")
 		motd:SetTextColor(color_white)
-		motd.hover = { r = 55, g = 55, b = 55}
+		motd.hover = {r=55,g=55,b=55}
 		motd.Paint = function(pnl)
 		if pnl:IsHovered() then
-			pnl.hover = { r = 70, g = 70, b = 70}
+			pnl.hover = {r=70,g=70,b=70}
 		else
-			pnl.hover = { r = 55, g = 55, b = 55}
+			pnl.hover = {r=55,g=55,b=55}
 		end
 			surface.SetDrawColor(pnl.hover.r,pnl.hover.g,pnl.hover.b,255)
 			surface.DrawRect(0,0,motd:GetWide(),motd:GetTall())
 		end
-		motd.DoClick = function() ply:ConCommand("ulx motd"); frm:Close() end
-
+		motd.DoClick = function() ply:ConCommand("ulx motd"); PHX.UI.MainForm:Close() end
+		
 		local bnext = vgui.Create("DButton", pBottom)
 		bnext:Dock(RIGHT)
 		bnext:SetSize(128,40)
-		bnext:SetText("NEXT >")
+		bnext:SetText(PHX:FTranslate("MISC_NEXT"))
 		bnext:SetFont("HudHintTextLarge")
 		bnext:SetTextColor(color_white)
-		bnext.hover = { r = 100, g = 100, b = 100}
+		bnext.hover = {r=100,g=100,b=100}
 		bnext.Paint = function(pnl)
 		if pnl:IsHovered() then
-			pnl.hover = { r = 130, g = 130, b = 130}
+			pnl.hover = {r=130,g=130,b=130}
 			pnl:SetTextColor(color_white)
 		elseif pnl:GetDisabled() then
-			pnl.hover = { r = 20, g = 20, b = 20}
+			pnl.hover = {r=20,g=20,b=20}
 			pnl:SetTextColor(Color(40,40,40))
 		else
-			pnl.hover = { r = 100, g = 100, b = 100}
+			pnl.hover = {r=100,g=100,b=100}
 			pnl:SetTextColor(color_white)
 		end
 			surface.SetDrawColor(pnl.hover.r,pnl.hover.g,pnl.hover.b,255)
@@ -382,28 +250,28 @@ function ph_BaseMainWindow(ply, cmd, args)
 		end
 		bnext.DoClick = function(pnl)
 			helpImage.Count = helpImage.Count + 1
-			if helpImage.Count >= 6 then
-				helpImage.Count = 6
+			if helpImage.Count > 6 then
+				helpImage.Count = 1
 			end
-			helpImage:SetImage("vgui/phhelp" .. helpImage.Count .. ".vmt")
+			helpImage:SetImage("vgui/phhelp"..helpImage.Count..".vmt")
 		end
-
+		
 		local bprev = vgui.Create("DButton", pBottom)
 		bprev:Dock(LEFT)
 		bprev:SetSize(128,40)
-		bprev:SetText("< PREVIOUS")
+		bprev:SetText(PHX:FTranslate("MISC_PREV"))
 		bprev:SetFont("HudHintTextLarge")
 		bprev:SetTextColor(color_white)
-		bprev.hover = { r = 100, g = 100, b = 100}
+		bprev.hover = {r=100,g=100,b=100}
 		bprev.Paint = function(pnl)
 		if pnl:IsHovered() then
-			pnl.hover = { r = 130, g = 130, b = 130}
+			pnl.hover = {r=130,g=130,b=130}
 			pnl:SetTextColor(color_white)
 		elseif pnl:GetDisabled() then
-			pnl.hover = { r = 20, g = 20, b = 20}
+			pnl.hover = {r=20,g=20,b=20}
 			pnl:SetTextColor(Color(40,40,40))
 		else
-			pnl.hover = { r = 100, g = 100, b = 100}
+			pnl.hover = {r=100,g=100,b=100}
 			pnl:SetTextColor(color_white)
 		end
 			surface.SetDrawColor(pnl.hover.r,pnl.hover.g,pnl.hover.b,255)
@@ -411,38 +279,49 @@ function ph_BaseMainWindow(ply, cmd, args)
 		end
 		bprev.DoClick = function(pnl)
 			helpImage.Count = helpImage.Count - 1
-			if helpImage.Count <= 1 then
-				helpImage.Count = 1
+			if helpImage.Count < 1 then
+				helpImage.Count = 6
 			end
-			helpImage:SetImage("vgui/phhelp" .. helpImage.Count .. ".vmt")
+			helpImage:SetImage("vgui/phhelp"..helpImage.Count..".vmt")
 		end
 
-		tab:AddSheet(PHE.LANG.PHEMENU.HELP.TAB, panel, "icon16/help.png")
+		local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_help.png")
+		PHX.UI.PaintTabButton(PanelModify, PHX:FTranslate("PHXM_TAB_HELP"))
 	end
-
-	function Ph:PlayerModelSelections()
-		local panel = vgui.Create("DPanel", tab)
+	
+	--[[
+		Info: 
+			PlayerModelSelections // Playermodel UI and Selections.
+			This may include Model Additions that are based from "ph_use_playermodeltype"
+			and "ph_use_custom_plmodel" convars.
+		
+		Usage:
+			<internal::call>
+	]]
+	function PHX.UI:PlayerModelSelections()
+		local panel = vgui.Create("DPanel", PHX.UI.PnlTab)
 		panel:SetBackgroundColor(Color(40,40,40,120))
-
-		-- Prefer had to do this instead doing all over and over.
-		function Ph:PlayerModelAdditions()
-
+		panel:Dock(FILL)
+		
+		function PHX.UI:PlayerModelAdditions()
+		
 			-- the Model's DPanel preview. The Pos & Size must be similar as the ModelPreview.
 			local panelpreview = vgui.Create( "DPanel", panel )
 			panelpreview:Dock(FILL)
 			panelpreview:SetBackgroundColor(Color(120,120,120,100))
-
+			panelpreview:DockMargin(8,10,10,10)
+			
 			-- Model Preview.
 			local modelPreview = vgui.Create( "DModelPanel", panelpreview )
 			modelPreview:Dock(FILL)
 			modelPreview:SetFOV ( 50 )
 			modelPreview:SetModel ( mdlPath )
-
+			
 			local slider = vgui.Create("DNumSlider", panelpreview)
 			slider:Dock(BOTTOM)
 			slider:SetSize(0,32)
-			slider:SetText(" " .. PHE.LANG.PHEMENU.PLAYERMODEL.SETFOV)
-			slider:SetMin(50)
+			slider:SetText(PHX:FTranslate("PHXM_PLAYERMODEL_SETFOV"))
+			slider:SetMin(30)
 			slider:SetMax(90)
 			slider:SetValue(40)
 			slider:SetDecimals(0)
@@ -450,287 +329,433 @@ function ph_BaseMainWindow(ply, cmd, args)
 				slider:SetValue(val)
 				modelPreview:SetFOV(val)
 			end
-
+			
 			local scroll = vgui.Create( "DScrollPanel", panel )
 			scroll:Dock(LEFT)
-			scroll:SetSize( 720, 0 )
-
+			scroll:SetSize( 640, 0 )
+			scroll:DockMargin(10,10,15,10)
+			
 			-- ^dito, grid dimensions 66x66 w/ Coloumn 7.
 			local pnl = vgui.Create( "DGrid", scroll )
 			pnl:Dock(FILL)
-			pnl:SetCols( 10 )
+			pnl:SetCols( 9 )
 			pnl:SetColWide( 68 )
 			pnl:SetRowHeight( 68 )
-
-			local plMode = GetConVar("ph_use_playermodeltype"):GetInt()
+			
+			local plMode = PHX:GetCVar( "ph_use_playermodeltype" )
 			local plWhich = {
 				[0]	= player_manager.AllValidModels(),
 				[1]	= list.Get("PlayerOptionsModel")
 			}
 			if plMode == nil then plWhich = 0 end
-
+			
 			-- Get All Valid Paired Models and sort 'em out.
 			for name, model in SortedPairs( plWhich[plMode] ) do
-
+				
 				-- dont forget to cache.
 				util.PrecacheModel(model)
-
+				
 				local icon = vgui.Create( "SpawnIcon" )
-
+				
 				-- Click functions
 				icon.DoClick = function()
 					surface.PlaySound( "buttons/combine_button3.wav" )
 					RunConsoleCommand( "cl_playermodel", name )
 					modelPreview:SetModel(model)
-					Derma_Query("Model " .. name .. " has been selected and it will be applied after respawn!", "Model Applied",
-						"OK", function() end)
+					Derma_Query(PHX:FTranslate("QUERY_MODEL_SELECTED", name), "PHX",
+						PHX:FTranslate("MISC_OK"), function() end)
 				end
-
+				
 				-- Right click functions
 				icon.DoRightClick = function()
-					-- Same as above, but they has custom menus once user tries to right click on the models.
 					local menu = DermaMenu()
-					-- if user caught it says 'ERROR' but the model present, refresh it (:RebuildSpawnIcon)
-					menu:AddOption( "Apply Model", function()						surface.PlaySound( "buttons/combine_button3.wav" )
+					menu:AddOption( "Apply Model", function() 
+						surface.PlaySound( "buttons/combine_button3.wav" )
 						RunConsoleCommand( "cl_playermodel", name )
 						modelPreview:SetModel(model)
-						Derma_Query("Model " .. name .. " has been selected and it will be applied after respawn!", "Model Applied", "OK", function() end)
+						Derma_Query(PHX:FTranslate("QUERY_MODEL_SELECTED", name), "PHX", PHX:FTranslate("MISC_OK"), function() end)
 					end):SetIcon("icon16/tick.png")
 					menu:AddSpacer()
-					menu:AddOption( "Refresh Icon", function() icon:RebuildSpawnIcon() end):SetIcon("icon16/arrow_refresh.png")
-					menu:AddOption( "Preview", function() modelPreview:SetModel(model) end):SetIcon("icon16/magnifier.png")
-					menu:AddOption( "Model Information", function()
-						Derma_Message( "Model's name is: " .. name .. "\n \nUsable by: Everyone.", "Model Info", "Close" )
+					menu:AddOption( PHX:FTranslate("MDL_MENU_REFRESH"), function() icon:RebuildSpawnIcon() end):SetIcon("icon16/arrow_refresh.png")
+					menu:AddOption( PHX:FTranslate("MDL_MENU_PREVIEW"), function() modelPreview:SetModel(model) end):SetIcon("icon16/magnifier.png")
+					menu:AddOption( PHX:FTranslate("MDL_MENU_MODELINFO"),	function()
+						Derma_Message( PHX:FTranslate("QUERY_MODEL_INFO", name), "Model Info", "Close" )
 						end ):SetIcon("icon16/information.png")
 					menu:AddSpacer()
-					menu:AddOption( "Close" ):SetIcon("icon16/cross.png")
+					menu:AddOption( PHX:FTranslate("MISC_CLOSE") ):SetIcon("icon16/cross.png")
 					menu:Open()
 				end
-
+				
 				-- Make sure the user has noticed after choosing a model by indicating from "Borders".
-				icon.PaintOver = function()
-					if ( GetConVar( "cl_playermodel" ):GetString() == name ) then
-						surface.SetDrawColor( Color( 255, 210 + math.sin(RealTime() * 10) * 40, 0 ) )
-						surface.DrawOutlinedRect( 4, 4, icon:GetWide() - 8, icon:GetTall() - 8 )
-						surface.DrawOutlinedRect( 3, 3, icon:GetWide() - 6, icon:GetTall() - 6 )
+				icon.PaintOver = function() 
+					if ( GetConVar("cl_playermodel"):GetString() == name ) then 
+						surface.SetDrawColor( Color( 255, 210 + math.sin(RealTime()*10)*40, 0 ) )
+						surface.DrawOutlinedRect( 4, 4, icon:GetWide()-8, icon:GetTall()-8 )
+						surface.DrawOutlinedRect( 3, 3, icon:GetWide()-6, icon:GetTall()-6 ) 
 					end
 				end
-
+				
 				-- Set set etc...
 				icon:SetModel(model)
 				icon:SetSize(64,64)
 				icon:SetTooltip(name)
-
+				
 				pnl:AddItem(icon)
 			end
 			return pnl
 		end
-
+		
 		-- Self Explanationary.
-		if GetConVar("ph_use_custom_plmodel"):GetBool() then
+		if PHX:GetCVar( "ph_use_custom_plmodel" ) then
 			-- Call the VGUI Properties of PlayerModelAdditions().
-			Ph:PlayerModelAdditions()
-			tab:AddSheet(PHE.LANG.PHEMENU.PLAYERMODEL.TAB, panel, "icon16/brick.png")
+			PHX.UI:PlayerModelAdditions()
+			local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_plmodel.png")
+			PHX.UI.PaintTabButton(PanelModify, PHX:FTranslate("PHXM_TAB_MODEL"))
 		else
 			-- Show small message instead
 			local scroll = vgui.Create( "DScrollPanel", panel )
 			scroll:Dock(FILL)
-
+			
 			local gridmdl = vgui.Create("DGrid", scroll)
 			gridmdl:Dock(NODOCK)
 			gridmdl:SetPos(10,10)
 			gridmdl:SetCols(1)
 			gridmdl:SetColWide(800)
 			gridmdl:SetRowHeight(32)
-
-			Ph:CreateVGUIType("", "label", false, gridmdl, PHE.LANG.PHEMENU.PLAYERMODEL.OFF)
-
-			-- this hook is intended to use for custom player model outside from PH:E Menu. (like Custom Donator Model window or something).
-			hook.Call("PH_CustomPlayermdlButton", nil, panel, gridmdl, function(cmd,typ,data,panel,text) Ph:CreateVGUIType(cmd,typ,data,panel,text) end)
-
-			tab:AddSheet(PHE.LANG.PHEMENU.PLAYERMODEL.TAB, panel, "icon16/brick.png")
+			
+			PHX.UI:CreateVGUIType("", "label", false, gridmdl, PHX:FTranslate("PHXM_MODEL_DISABLED"))
+			
+			-- this hook is intended to use for custom player model outside from PHX Menu. (like Custom Donator Model window or something).
+			hook.Call("PH_CustomPlayermdlButton", nil, panel, gridmdl, function(cmd,typ,data,panel,text) PHX.UI:CreateVGUIType(cmd,typ,data,panel,text) end)
+			
+			local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_plmodel.png")
+			PHX.UI.PaintTabButton(PanelModify, PHX:FTranslate("PHXM_TAB_MODEL"))
 		end
 	end
+	
+	--[[
+		Info: 
+			PlayerOption // Player Options
+		
+		Usage:
+			<internal::call>
+	]]
+	function PHX.UI:PlayerOption()
+		local panel,gridpl = PHX.UI:CreateBasicLayout(Color(40,40,40,180),PHX.UI.PnlTab)
 
-	function Ph:PlayerOption()
-		local panel,gridpl = Ph:CreateBasicLayout(Color(40,40,40,180),tab)
-
-		Ph:CreateVGUIType("", "label", false, gridpl, PHE.LANG.PHEMENU.PLAYER.OPTIONS)
-		Ph:CreateVGUIType("ph_cl_halos", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_cl_halos)
-		Ph:CreateVGUIType("ph_cl_pltext", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_cl_pltext)
-		Ph:CreateVGUIType("ph_cl_endround_sound", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_cl_endround_sound)
-		Ph:CreateVGUIType("ph_cl_autoclose_taunt", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_cl_autoclose_taunt)
-		Ph:CreateVGUIType("ph_cl_spec_hunter_line", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_cl_spec_hunter_line)
-		Ph:CreateVGUIType("cl_enable_luckyballs_icon", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.cl_enable_luckyballs_icon)
-		Ph:CreateVGUIType("cl_enable_devilballs_icon", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.cl_enable_devilballs_icon)
-		Ph:CreateVGUIType("ph_cl_taunt_key", "binder", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_cl_taunt_key)
-		Ph:CreateVGUIType("hudspacer","spacer",nil,gridpl,"" )
-		Ph:CreateVGUIType("", "label", false, gridpl, "HUD Settings")
-		Ph:CreateVGUIType("ph_hud_use_new", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_hud_use_new)
-		Ph:CreateVGUIType("ph_show_tutor_control", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_show_tutor_control)
-		Ph:CreateVGUIType("ph_show_custom_crosshair", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_show_custom_crosshair)
-		Ph:CreateVGUIType("ph_show_team_topbar", "check", "CLIENT", gridpl, PHE.LANG.PHEMENU.PLAYER.ph_show_team_topbar)
-
-	tab:AddSheet(PHE.LANG.PHEMENU.PLAYER.TAB, panel, "icon16/user_orange.png")
+		PHX.UI:CreateVGUIType("", "label", false, gridpl, PHX:FTranslate("PHXM_PLAYER_LANG"))
+		if (PHX:GetCVar( "ph_use_lang" )) then
+			PHX.UI:CreateVGUIType("", "label", false, gridpl, "Server is currently using a forced language. Current Language is: " .. PHX.LANGUAGES[PHX:GetCVar( "ph_force_lang" )].NameEnglish)
+		else
+			PHX.UI:CreateVGUIType(nil, "langcombobox", nil, gridpl, nil)
+			PHX.UI:CreateVGUIType("", "btn", {max = 1, textdata = {
+			[1] = {"See all available Languages" , 
+			function(self)
+				PHX:showLangPreview()
+			end}
+			}}, gridpl ,"")
+		end
+		PHX.UI:CreateVGUIType("", "label", false, gridpl, PHX:FTranslate("PHXM_PLAYER_BIND"))
+		
+		PHX.UI:CreateVGUIType("ph_default_taunt_key", "binder", false, gridpl, PHX:FTranslate("PHXM_PLAYER_TAUNT_KEY"))
+		PHX.UI:CreateVGUIType("ph_default_customtaunt_key", "binder", false, gridpl, PHX:FTranslate("PHXM_PLAYER_TAUNTWINDOW_KEY"))
+		PHX.UI:CreateVGUIType("ph_default_rotation_lock_key", "binder", false, gridpl, PHX:FTranslate("PHXM_PLAYER_ROTATLOCK_KEY"))
+		
+		PHX.UI:CreateVGUIType("ph_prop_menu_key", "binder", false, gridpl, PHX:FTranslate("PHXM_PLAYER_PROP_CHOOSER_KEY"))
+		PHX.UI:CreateVGUIType("ph_prop_midair_freeze_key", "binder", false, gridpl, PHX:FTranslate("PHXM_PROP_FREEZE_MIDAIR"))
+		
+		PHX.UI:CreateVGUIType("", "label", false, gridpl, PHX:FTranslate("PHXM_PLAYER_OPTIONS"))
+		PHX.UI:CreateVGUIType("ph_cl_halos", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_TOGGLE_HALOS") )
+		PHX.UI:CreateVGUIType("ph_cl_pltext", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_IDNAMES"))
+		PHX.UI:CreateVGUIType("ph_cl_endround_sound", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_ENDROUND_CUE"))
+		PHX.UI:CreateVGUIType("ph_cl_autoclose_taunt", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_TAUNTMENU_AUTOCLOSE"))
+		PHX.UI:CreateVGUIType("ph_cl_spec_hunter_line", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_SEE_HUNTER_LINE"))
+		PHX.UI:CreateVGUIType("cl_enable_luckyballs_icon", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_SEE_LBALL_ICONS"))
+		PHX.UI:CreateVGUIType("cl_enable_devilballs_icon", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_SEE_CRYSTAL_ICONS"))
+		
+		PHX.UI:CreateVGUIType("hudspacer","spacer",nil,gridpl,"" )
+		PHX.UI:CreateVGUIType("", "label", false, gridpl, PHX:FTranslate("PHXM_PLAYER_HUDSETTINGS"))
+		
+		PHX.UI:CreateVGUIType("ph_hud_use_new", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_USE_NEW_HUD"))
+		PHX.UI:CreateVGUIType("ph_show_tutor_control", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_SHOW_TUTOR"))
+		PHX.UI:CreateVGUIType("ph_show_custom_crosshair", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_USE_NEW_CROSSHAIR"))
+		PHX.UI:CreateVGUIType("ph_show_team_topbar", "check", "CLIENT", gridpl, PHX:FTranslate("PHXM_PLAYER_SHOW_TEAM_TOPBAR"))
+		
+		local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_player.png")
+		PHX.UI.PaintTabButton(PanelModify, PHX:FTranslate("PHXM_TAB_PLAYER"))
 	end
-
-	function Ph:PlayerMute()
-		local panel,gridmute = Ph:CreateBasicLayout(Color(40,40,40,180),tab)
-
-		Ph:CreateVGUIType("","label",false,gridmute,PHE.LANG.PHEMENU.MUTE.SELECT)
+	
+	--[[
+		Info: 
+			PlayerMute // Player Mute tab function.
+		
+		Usage:
+			<internal::call>
+	]]
+	function PHX.UI:PlayerMute()
+		local panel,gridmute = PHX.UI:CreateBasicLayout(Color(40,40,40,180),PHX.UI.PnlTab)
+	
+		PHX.UI:CreateVGUIType("","label",false,gridmute, PHX:FTranslate("PHXM_MUTE_SELECT"))
 		for _,Plys in pairs(player.GetAll()) do
-			Ph:CreateVGUIType("","mute",Plys,gridmute,"")
+			PHX.UI:CreateVGUIType("","mute",Plys,gridmute,"")
 		end
-
-		tab:AddSheet(PHE.LANG.PHEMENU.MUTE.TAB, panel, "icon16/sound_delete.png")
+	
+		local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_voice.png")
+		PHX.UI.PaintTabButton(PanelModify, PHX:FTranslate("PHXM_TAB_MUTE"))
 	end
-	-- Call All Functions, but Admin (must check by serverside user rights from sv_admin.lua)
-	Ph:HelpSelections()
-	Ph:PlayerMute()
-	Ph:PlayerOption()
-	Ph:PlayerModelSelections()
+	
+	function PHX.UI:ShowAdminMenu()
+		local panel,grid = PHX.UI:CreateBasicLayout(Color(40,40,40,180),PHX.UI.PnlTab)
 
-	-- Custom Hook Menu here. Give 1 second for better safe-calling...
-	timer.Simple(1, function()
-		hook.Call("PH_CustomTabMenu", nil, tab, function(cmd,typ,data,panel,text) Ph:CreateVGUIType(cmd,typ,data,panel,text) end)
-	end)
-
-	function Ph:ShowAdminMenu()
-		-- Language choices
-		local choices = {}
-
-		for _, lang in pairs(PHE.LANGUAGES) do
-			choices[lang.Code] = string.format("%s - %s (%s)", lang.Name:sub(1, 1):upper() .. lang.Name:sub(2), lang.NameEnglish:sub(1, 1):upper() .. lang.NameEnglish:sub(2), lang.Code)
-		end
-
-
-		local panel,grid = Ph:CreateBasicLayout(Color(40,40,40,180),tab)
-
-		Ph:CreateVGUIType("", "label", false, grid, PHE.LANG.PHEMENU.ADMINS.OPTIONS)
-		Ph:CreateVGUIType("ph_language", "combobox", { choices = choices, default = string.format("%s - %s (%s)", PHE.LANG.Name:sub(1, 1):upper() .. PHE.LANG.Name:sub(2), PHE.LANG.NameEnglish:sub(1, 1):upper() .. PHE.LANG.NameEnglish:sub(2), PHE.LANG.Code), wide = 150, kind = "SERVER" }, grid, PHE.LANG.PHEMENU.ADMINS.ph_language)
-		Ph:CreateVGUIType("ph_use_custom_plmodel", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_use_custom_plmodel)
-		Ph:CreateVGUIType("ph_use_custom_plmodel_for_prop", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_use_custom_plmodel_for_prop)
-		Ph:CreateVGUIType("ph_customtaunts_delay", "slider", {min = 2, max = 120, init = GetConVar("ph_customtaunts_delay"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_customtaunts_delay)
-		Ph:CreateVGUIType("ph_normal_taunt_delay", "slider", {min = 2, max = 120, init = GetConVar("ph_normal_taunt_delay"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_normal_taunt_delay)
-		Ph:CreateVGUIType("ph_autotaunt_enabled", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_autotaunt_enabled)
-		Ph:CreateVGUIType("ph_autotaunt_delay", "slider", {min = 30, max = 180, init = GetConVar("ph_autotaunt_delay"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_autotaunt_delay)
-		Ph:CreateVGUIType("ph_forcejoinbalancedteams", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_forcejoinbalancedteams)
-		Ph:CreateVGUIType("ph_autoteambalance", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_autoteambalance)
-		Ph:CreateVGUIType("", "label", "DermaDefault", grid, PHE.LANG.PHEMENU.ADMINS.ph_allow_prop_pickup)
-		Ph:CreateVGUIType("ph_allow_prop_pickup", "slider", {min = 0, max = 2, init = GetConVar("ph_allow_prop_pickup"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_allow_prop_pickup)
-		Ph:CreateVGUIType("devspacer","spacer",nil,grid,"" )
-		Ph:CreateVGUIType("ph_notice_prop_rotation", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_notice_prop_rotation)
-		Ph:CreateVGUIType("ph_prop_camera_collisions", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_prop_camera_collisions)
-		Ph:CreateVGUIType("ph_freezecam", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_freezecam)
-		Ph:CreateVGUIType("ph_prop_collision", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_prop_collision)
-		Ph:CreateVGUIType("ph_swap_teams_every_round", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_swap_teams_every_round)
-		Ph:CreateVGUIType("ph_hunter_fire_penalty", "slider", 	{min = 2, max = 80, init = GetConVar("ph_hunter_fire_penalty"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_hunter_fire_penalty)
-		Ph:CreateVGUIType("ph_hunter_kill_bonus", "slider", 	{min = 5, max = 100, init = GetConVar("ph_hunter_kill_bonus"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_hunter_kill_bonus)
-		Ph:CreateVGUIType("ph_hunter_smg_grenades", "slider", {min = 0, max = 50, init = GetConVar("ph_hunter_smg_grenades"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_hunter_smg_grenades)
-		Ph:CreateVGUIType("ph_game_time", "slider", 			{min = 20, max = 300, init = GetConVar("ph_game_time"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_game_time)
-		Ph:CreateVGUIType("ph_hunter_blindlock_time", "slider", {min = 15, max = 60, init = GetConVar("ph_hunter_blindlock_time"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_hunter_blindlock_time)
-		Ph:CreateVGUIType("ph_round_time", "slider", 			{min = 120, max = 600, init = GetConVar("ph_round_time"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_round_time)
-		Ph:CreateVGUIType("ph_rounds_per_map", "slider", 		{min = 5, max = 30, init = GetConVar("ph_rounds_per_map"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.ADMINS.ph_rounds_per_map)
-		Ph:CreateVGUIType("ph_enable_lucky_balls", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_enable_lucky_balls)
-		Ph:CreateVGUIType("ph_enable_devil_balls", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_enable_devil_balls)
-		Ph:CreateVGUIType("ph_waitforplayers", "check", "SERVER", grid, PHE.LANG.PHEMENU.ADMINS.ph_waitforplayers)
-		Ph:CreateVGUIType("ph_min_waitforplayers", "slider", { min = 1, max = game.MaxPlayers(), init = GetConVar("ph_min_waitforplayers"):GetInt(), dec = 0, kind = "SERVER" }, grid, PHE.LANG.PHEMENU.ADMINS.ph_min_waitforplayers)
-		Ph:CreateVGUIType("", "label", false, grid, PHE.LANG.PHEMENU.ADMINS.TAUNTMODES)
-		Ph:CreateVGUIType("", "btn", {max = 2, wide = 180, textdata = {
-			[1] = {PHE.LANG.PHEMENU.ADMINS[ "TAUNTMODE" .. (GetConVar("ph_enable_custom_taunts"):GetInt() || 0)],
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_ADMIN_LANGOVERRIDE"))
+		PHX.UI:CreateVGUIType("ph_use_lang", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_FORCELANG"))
+		PHX.UI:CreateVGUIType("ph_force_lang", "langcombobox", true, grid, PHX:FTranslate("PHXM_ADMIN_LANGTOUSE"))
+		PHX.UI:CreateVGUIType("ph_default_lang", "langcombobox", true, grid, PHX:FTranslate("PHXM_ADMIN_PLAYERDEFAULTLANG"))
+		
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_ADMIN_OPTIONS"))
+		PHX.UI:CreateVGUIType("ph_notify_player_join_leave", "check", "SERVER", grid, PHX:FTranslate("PHXM_ENABLE_PLAYER_JOIN_LEAVE"))
+		PHX.UI:CreateVGUIType("ph_use_custom_plmodel", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_CUSTOM_MODEL"))
+		PHX.UI:CreateVGUIType("ph_use_custom_plmodel_for_prop", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_CUSTOM_MODEL_PROP"))
+		PHX.UI:CreateVGUIType("ph_customtaunts_delay", "slider", {min = 2, max = 120, init = PHX:GetCVar( "ph_customtaunts_delay" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_TAUNT_DELAY_CUSTOM"))
+		PHX.UI:CreateVGUIType("ph_normal_taunt_delay", "slider", {min = 2, max = 120, init = PHX:GetCVar( "ph_normal_taunt_delay" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_TAUNT_DELAY_RANDOM"))
+		PHX.UI:CreateVGUIType("ph_autotaunt_enabled", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_AUTOTAUNT_ENABLE"))
+		PHX.UI:CreateVGUIType("ph_autotaunt_delay", "slider", {min = 30, max = 180, init = PHX:GetCVar( "ph_autotaunt_delay" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_TAUNT_DELAY_AUTO"))
+		PHX.UI:CreateVGUIType("ph_enable_taunt_scanner", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_TAUNT_SCANNER"))
+		PHX.UI:CreateVGUIType("ph_prop_right_mouse_taunt", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_PROP_RIGHT_CLICK"))
+		PHX.UI:CreateVGUIType("","spacer",nil,grid,"" )
+		PHX.UI:CreateVGUIType("ph_forcejoinbalancedteams", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_FORCEJOINBALANCE"))
+		PHX.UI:CreateVGUIType("ph_enable_teambalance", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_ENABLETEAMBALANCE"))
+		PHX.UI:CreateVGUIType("","spacer",nil,grid,"" )
+		PHX.UI:CreateVGUIType("ph_notice_prop_rotation", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_NOTICE_ROTATION"))
+		PHX.UI:CreateVGUIType("ph_prop_camera_collisions", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_CAMERA_COLLIDE"))
+		PHX.UI:CreateVGUIType("ph_freezecam", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_FREEZECAM"))
+		PHX.UI:CreateVGUIType("ph_freezecam_hunter", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_FREEZECAM_HUNTER"))
+		PHX.UI:CreateVGUIType("ph_prop_collision", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_PROP_COLLIDE"))
+		PHX.UI:CreateVGUIType("ph_swap_teams_every_round", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_SWAP_TEAM"))
+		PHX.UI:CreateVGUIType("ph_hunter_fire_penalty", "slider", 	{min = 2, max = 80, init = PHX:GetCVar( "ph_hunter_fire_penalty" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_HUNTER_PENALTY"))
+		PHX.UI:CreateVGUIType("ph_hunter_kill_bonus", "slider", 	{min = 5, max = 100, init = PHX:GetCVar( "ph_hunter_kill_bonus" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_HUNTER_KILL_BONUS"))
+		PHX.UI:CreateVGUIType("ph_smggrenadecounts",  "slider", 	{min = 1, max = 50, init = PHX:GetCVar( "ph_smggrenadecounts" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_HUNTER_SMG_GRENADES"))
+		PHX.UI:CreateVGUIType("ph_game_time", "slider", 			{min = 20, max = 300, init = PHX:GetCVar( "ph_game_time" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_GAME_TIME"))
+		PHX.UI:CreateVGUIType("ph_hunter_blindlock_time", "slider", {min = 15, max = 60, init = PHX:GetCVar( "ph_hunter_blindlock_time" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_BLINDLOCK_TIME"))
+		PHX.UI:CreateVGUIType("ph_round_time", "slider", 			{min = 120, max = 600, init = PHX:GetCVar( "ph_round_time" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_ROUND_TIME"))
+		PHX.UI:CreateVGUIType("ph_rounds_per_map", "slider", 		{min = 5, max = 30, init = PHX:GetCVar( "ph_rounds_per_map" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_ROUNDS_PER_MAP"))
+		PHX.UI:CreateVGUIType("ph_enable_lucky_balls", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_ENABLE_LUCKYBALL"))
+		PHX.UI:CreateVGUIType("ph_enable_devil_balls", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_ENABLE_CRYSTAL"))
+		PHX.UI:CreateVGUIType("ph_waitforplayers", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_WAIT_PLAYERS"))
+		PHX.UI:CreateVGUIType("ph_min_waitforplayers", "slider", { min = 1, max = game.MaxPlayers(), init = PHX:GetCVar( "ph_min_waitforplayers" ), dec = 0, kind = "SERVER" }, grid, PHX:FTranslate("PHXM_ADMIN_WAIT_MIN_PLAYERS"))
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_ADMIN_TAUNTMODES"))
+		PHX.UI:CreateVGUIType("", "btn", {max = 2, textdata = {
+			[1] = {PHX:FTranslate( "PHXM_ADMIN_TAUNTMODE_MODE", PHX:GetCVar( "ph_custom_taunt_mode" ) ), 
 			function(self)
 				local CusTauntConvar = {
-					[0] = PHE.LANG.PHEMENU.ADMINS.TAUNTMODE0,
-					[1] = PHE.LANG.PHEMENU.ADMINS.TAUNTMODE1,
-					[2] = PHE.LANG.PHEMENU.ADMINS.TAUNTMODE2
+					[0] = PHX:FTranslate("PHXM_ADMIN_TAUNTMODE0"),
+					[1] = PHX:FTranslate("PHXM_ADMIN_TAUNTMODE1"),
+					[2] = PHX:FTranslate("PHXM_ADMIN_TAUNTMODE2")
 				}
 				local function SendTauntCommandState(state)
 					net.Start("SendTauntStateCmd")
 					net.WriteString(tostring(state))
 					net.SendToServer()
 				end
-
-				self:SetText(CusTauntConvar[GetConVar("ph_enable_custom_taunts"):GetInt()])
+				
+				self:SetText(CusTauntConvar[PHX:GetCVar( "ph_custom_taunt_mode" )])
 				local state = 0
-				if GetConVar("ph_enable_custom_taunts"):GetInt() == 0 then
+				if PHX:GetCVar( "ph_custom_taunt_mode" ) == 0 then
 					state = 1
 					SendTauntCommandState(1)
 					self:SetText(CusTauntConvar[state])
-				elseif GetConVar("ph_enable_custom_taunts"):GetInt() == 1 then
+				elseif PHX:GetCVar( "ph_custom_taunt_mode" ) == 1 then
 					state = 2
 					SendTauntCommandState(2)
 					self:SetText(CusTauntConvar[state])
-				elseif GetConVar("ph_enable_custom_taunts"):GetInt() == 2 then
+				elseif PHX:GetCVar( "ph_custom_taunt_mode" ) == 2 then
 					state = 0
 					SendTauntCommandState(0)
 					self:SetText(CusTauntConvar[state])
 				end
+				
+				self:SizeToContents()
+				self:SetSize(self:GetWide()+16, self:GetTall())
 			end},
-			[2] = {PHE.LANG.PHEMENU.ADMINS.TAUNTSOPEN, function(self)
-				if !LocalPlayer():Alive() then
-					print("You must do this action when you are alive!")
-					frm:Close()
+			[2] = {PHX:FTranslate("PHXM_ADMIN_TAUNTSOPEN"), function(self)
+				if !LocalPlayer():Alive() and (LocalPlayer():Team() == TEAM_PROPS or LocalPlayer():Team() == TEAM_HUNTERS) then
+					PHX:ChatInfo(PHX:Translate("PHXM_ADMIN_MUSTALIVE"), "NOTICE")
+					PHX.UI.MainForm:Close()
+				elseif	LocalPlayer():Team() == TEAM_SPECTATOR then
+					PHX:ChatInfo(PHX:Translate("PHXM_ADMIN_MUSTALIVE"), "WARNING")
+					PHX.UI.MainForm:Close()
 				else
 					LocalPlayer():ConCommand("ph_showtaunts")
 				end
 			end}
 			}
 		}, grid ,"")
-		Ph:CreateVGUIType("devspacer","spacer",nil,grid,"" )
-		Ph:CreateVGUIType("", "label", false, grid, "Developer Options/Experimentals Features")
-		Ph:CreateVGUIType("phe_check_props_boundaries", "check", "SERVER", grid, "[WORK IN PROGRESS] Enable Boundaries Check? This prevents you to get stuck with objects/walls.")
-		Ph:CreateVGUIType("ph_mkbren_use_new_mdl","check","SERVER",grid, "Developer: Use new model for Bren MK II Bonus Weapon (Require Map Restart!)")
-		Ph:CreateVGUIType("ph_print_verbose", "check", "SERVER", grid, "Developer: Enable verbose information of PH:E events in the console")
-		Ph:CreateVGUIType("ph_enable_plnames", "check", "SERVER", grid, "Enable Player team names to be appear on their screen.")
-		Ph:CreateVGUIType("ph_fc_use_single_sound", "check", "SERVER", grid, "Use single Freezecam sound instead of sound list (Use 'ph_fc_cue_path' to determine Freezecam sound path)")
-		Ph:CreateVGUIType("ph_use_playermodeltype", "check", "SERVER", grid, "Use Legacy Model List : 0 = All Playermodels (AddValidModel), 1 = Use Legacy: list.Get('PlayerOptionsModel')")
-		Ph:CreateVGUIType("ph_prop_jumppower", "slider", {min = 1, max = 3, init = GetConVar("ph_prop_jumppower"):GetFloat(), dec = 2, float = true, kind = "SERVER"}, grid, "Additional Jump Power multiplier for Props")
-		Ph:CreateVGUIType("ph_sv_enable_obb_modifier","check","SERVER",grid, "Developer: Enable Customized Prop Entity OBB Model Data Modifier")
-		Ph:CreateVGUIType("ph_reload_obb_setting_everyround","check","SERVER",grid, "Developer: Reload Customized Prop Entity OBB Model Data Modifier every round restarts")
+		PHX.UI:CreateVGUIType("devspacer","spacer",nil,grid,"" )
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_ADMIN_DEVSECTION"))
+		PHX.UI:CreateVGUIType("ph_check_props_boundaries", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_ROOMCHECK"))
+		PHX.UI:CreateVGUIType("ph_mkbren_use_new_mdl","check","SERVER",grid, PHX:FTranslate("PHXM_ADMIN_USENEWMKBREN"))
+		PHX.UI:CreateVGUIType("ph_print_verbose", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_BEVERBOSE"))
+		PHX.UI:CreateVGUIType("ph_enable_plnames", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_SHOWPLNAMEHEAD"))
+		PHX.UI:CreateVGUIType("ph_fc_use_single_sound", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_USESINGLE_FZCAM"))
+		PHX.UI:CreateVGUIType("ph_fc_cue_path","textentry","SERVER", grid, PHX:FTranslate("TEXTENTRY_FZ_SINGLE"))
+		PHX.UI:CreateVGUIType("ph_use_playermodeltype", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_MODELLISTINGTYPE"))
+		PHX.UI:CreateVGUIType("ph_prop_jumppower", "slider", {min = 1, max = 3, init = PHX:GetCVar( "ph_prop_jumppower" ), dec = 2, float = true, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_JUMPPOWER"))
+		PHX.UI:CreateVGUIType("ph_sv_enable_obb_modifier","check","SERVER",grid, PHX:FTranslate("PHXM_ADMIN_ENABLE_OBB"))
+		PHX.UI:CreateVGUIType("ph_reload_obb_setting_everyround","check","SERVER",grid, PHX:FTranslate("PHXM_ADMIN_RELOAD_OBB"))
+		
+		-- new cvar PH:X additions
+		PHX.UI:CreateVGUIType("","spacer",nil,grid,"" )
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_ADMLBL_USABLE_ENTS"))
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_ADMLBL_USABLE_ENTS_REF"))
+		
+		PHX.UI:CreateVGUIType("ph_usable_prop_type", "slider", {min = 1, max = 4, init = PHX:GetCVar( "ph_usable_prop_type" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_USABLE_ENT_TYPE"))
+		PHX.UI:CreateVGUIType("ph_usable_prop_type_notice", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_NOTIFY_ENT_TYPE"))
+		
+		PHX.UI:CreateVGUIType("","spacer",nil,grid,"" )
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_ADMIN_EXPERIMENTALPHX"))
 
-	tab:AddSheet(PHE.LANG.PHEMENU.ADMINS.TAB, panel, "icon16/user_gray.png")
+		PHX.UI:CreateVGUIType("ph_add_hla_combine", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_HLA_COMBINE"))
+		PHX.UI:CreateVGUIType("ph_enable_teambalance", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_TEAMBALANCE"))
+		PHX.UI:CreateVGUIType("ph_max_teamchange_limit", "slider", {min = 3, max = 50, init = PHX:GetCVar( "ph_max_teamchange_limit" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_CHANGETEAM_LIMIT"))
+		PHX.UI:CreateVGUIType("ph_use_new_chat", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_USENEWCHAT"))
+		PHX.UI:CreateVGUIType("ph_new_chat_pos_sub", "slider", {min = 45, max = 1500, init = PHX:GetCVar( "ph_new_chat_pos_sub" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_NEWCHATPOS"))
+
+		PHX.UI:CreateVGUIType("ph_allow_respawnonblind", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_RESPAWNONBLIND"))
+		PHX.UI:CreateVGUIType("ph_allow_respawnonblind_team_only", "slider", {min = 0, max = 2, init = PHX:GetCVar( "ph_allow_respawnonblind_team_only" ), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_RESPAWNONBLIND_TEAM"))
+		PHX.UI:CreateVGUIType("ph_allow_respawn_from_spectator", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_ALLOWRESPAWN_SPECTATOR"))
+		PHX.UI:CreateVGUIType("ph_blindtime_respawn_percent", "slider", {min = 0, max = 1, init = PHX:GetCVar( "ph_blindtime_respawn_percent" ), dec = 2, float = true, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_ADMIN_REWSPANTIMEPERCENT"))
+		PHX.UI:CreateVGUIType("ph_allow_respawnonblind_teamchange", "check", "SERVER", grid, PHX:FTranslate("PHXM_ADMIN_ALLOWRESPAWN_TEAMCHANGE"))
+		
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_ADMIN_PICKUP_PROPS"))
+		
+		PHX.UI:CreateVGUIType("", "btn", {max = 1, textdata = {
+			[1] = {PHX:FTranslate( "PHXM_MODE_DEFAULT", PHX:GetCVar( "ph_allow_pickup_object" ) ), 
+			function(self)
+				local modes = {
+					[0] = PHX:FTranslate("PHXM_MODE0"),
+					[1] = PHX:FTranslate("PHXM_MODE1"),
+					[2] = PHX:FTranslate("PHXM_MODE2"),
+					[3] = PHX:FTranslate("PHXM_MODE3")
+				}
+				local function SendPickupCmdState(state)
+					net.Start("PHXPickupCmdState")
+					net.WriteUInt(state,3)
+					net.SendToServer()
+				end
+				
+				local function apply(panel, state)
+					SendPickupCmdState(state)
+					panel:SetText(modes[state])
+				end
+				
+				self:SetText(modes[PHX:GetCVar( "ph_allow_pickup_object" )])
+				local state = 0
+				if PHX:GetCVar( "ph_allow_pickup_object" ) == 0 then
+					state = 1
+				elseif PHX:GetCVar( "ph_allow_pickup_object" ) == 1 then
+					state = 2
+				elseif PHX:GetCVar( "ph_allow_pickup_object" ) == 2 then
+					state = 3
+				elseif PHX:GetCVar( "ph_allow_pickup_object" ) == 3 then
+					state = 0
+				end
+				apply(self,state)
+				
+				self:SizeToContents()
+				self:SetSize(self:GetWide()+16, self:GetTall())
+			end}
+		}}, grid ,"")
+		
+		PHX.UI:CreateVGUIType("","spacer",nil,grid,"" )
+		
+	local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_admin.png")
+	PHX.UI.PaintTabButton(PanelModify, PHX:FTranslate("PHXM_TAB_ADMIN"))
+	
 	end
-
-	function Ph:MapVoteMenu()
-		local panel,grid = Ph:CreateBasicLayout(Color(40,40,40,180),tab)
-
-		Ph:CreateVGUIType("", "label", false, grid, PHE.LANG.PHEMENU.MAPVOTE.SETTINGS)
-		Ph:CreateVGUIType("mv_allowcurmap","check","SERVER",grid,PHE.LANG.PHEMENU.MAPVOTE.mv_allowcurmap)
-		Ph:CreateVGUIType("mv_cooldown","check","SERVER",grid,PHE.LANG.PHEMENU.MAPVOTE.mv_cooldown)
-		Ph:CreateVGUIType("mv_use_ulx_votemaps","check","SERVER",grid,PHE.LANG.PHEMENU.MAPVOTE.mv_use_ulx_votemaps)
-		Ph:CreateVGUIType("mv_maplimit", "slider", 	{min = 2, max = 80, init = GetConVar("mv_maplimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.MAPVOTE.mv_maplimit)
-		Ph:CreateVGUIType("mv_timelimit", "slider", {min = 15, max = 90, init = GetConVar("mv_timelimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.MAPVOTE.mv_timelimit)
-		Ph:CreateVGUIType("mv_mapbeforerevote", "slider", 	{min = 1, max = 10, init = GetConVar("mv_mapbeforerevote"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.MAPVOTE.mv_mapbeforerevote)
-		Ph:CreateVGUIType("mv_rtvcount", "slider", 	{min = 2, max = game.MaxPlayers(), init = GetConVar("mv_rtvcount"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHE.LANG.PHEMENU.MAPVOTE.mv_rtvcount)
-		Ph:CreateVGUIType("s1","spacer",nil,grid,"" )
-		Ph:CreateVGUIType("", "label", false, grid, PHE.LANG.PHEMENU.MAPVOTE.EXPLANATION1)
-		Ph:CreateVGUIType("", "label", false, grid, PHE.LANG.PHEMENU.MAPVOTE.EXPLANATION2)
-		Ph:CreateVGUIType("s2","spacer",nil,grid,"" )
-		Ph:CreateVGUIType("", "label", false, grid, PHE.LANG.PHEMENU.MAPVOTE.EXPLANATION3)
-		Ph:CreateVGUIType("", "btn", {max = 2, textdata = {
-			[1] = {PHE.LANG.PHEMENU.MAPVOTE.START, function(self)
-				LocalPlayer():ConCommand("map_vote")
+	
+	function PHX.UI:MapVoteMenu()
+		local panel,grid = PHX.UI:CreateBasicLayout(Color(40,40,40,180),PHX.UI.PnlTab)
+		
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_MV_SETTINGS"))
+		PHX.UI:CreateVGUIType("mv_allowcurmap","check","SERVER",grid,PHX:FTranslate("PHXM_MV_ALLOWCURMAP"))
+		PHX.UI:CreateVGUIType("mv_cooldown","check","SERVER",grid,PHX:FTranslate("PHXM_MV_COOLDOWN"))
+		PHX.UI:CreateVGUIType("mv_use_ulx_votemaps","check","SERVER",grid,PHX:FTranslate("PHXM_MV_USE_ULX_VOTEMAPS"))
+		PHX.UI:CreateVGUIType("mv_mapprefix","textentry","SERVER",grid, PHX:FTranslate("TEXTENTRY_MV_PREFIX"))
+		PHX.UI:CreateVGUIType("mv_maplimit", "slider", 	{min = 2, max = 80, init = GetConVar("mv_maplimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_MV_MAPLIMIT"))
+		PHX.UI:CreateVGUIType("mv_timelimit", "slider", {min = 15, max = 90, init = GetConVar("mv_timelimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_MV_TIMELIMIT"))
+		PHX.UI:CreateVGUIType("mv_mapbeforerevote", "slider", 	{min = 1, max = 10, init = GetConVar("mv_mapbeforerevote"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_MV_MAPBEFOREREVOTE"))
+		PHX.UI:CreateVGUIType("mv_rtvcount", "slider", 	{min = 2, max = game.MaxPlayers(), init = GetConVar("mv_rtvcount"):GetInt(), dec = 0, kind = "SERVER"}, grid, PHX:FTranslate("PHXM_MV_RTVCOUNT"))
+		PHX.UI:CreateVGUIType("s1","spacer",nil,grid,"" )
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_MV_EXPLANATION1"))
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_MV_EXPLANATION2"))
+		PHX.UI:CreateVGUIType("s2","spacer",nil,grid,"" )
+		PHX.UI:CreateVGUIType("", "label", false, grid, PHX:FTranslate("PHXM_MV_EXPLANATION3"))
+		
+		PHX.UI:CreateVGUIType("", "btn", {max = 2, textdata = {
+			[1] = {PHX:FTranslate("PHXM_MV_START"), function(self) 
+				if (ulx and ulx ~= nil) then
+					LocalPlayer():ConCommand("map_vote")
+				else
+					LocalPlayer():ConCommand("mv_start")
+				end
 			end
 			},
-			[2] = {PHE.LANG.PHEMENU.MAPVOTE.STOP, function(self)
-				LocalPlayer():ConCommand("unmap_vote")
+			[2] = {PHX:FTranslate("PHXM_MV_STOP"), function(self)
+				if (ulx and ulx ~= nil) then
+					LocalPlayer():ConCommand("unmap_vote")
+				else
+					LocalPlayer():ConCommand("mv_stop")
+				end
 			end}
 			}
 		},grid,"")
-
-	tab:AddSheet("MapVote", panel, "icon16/map.png")
+	
+		local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_map.png")
+		PHX.UI.PaintTabButton(PanelModify, PHX:FTranslate("PHXM_TAB_MAPVOTE"))
 	end
-
-	-- if Current User is Admin then check their user as security measure in the server.
+	
+	-- //////////////// Call the rest of the created Menus \\\\\\\\\\\\\\\\\\
+	-- Note: Admin tab must have a validity and verification check from serverside before accessing for security reason.
+	PHX.UI:DonationPanel()
+	PHX.UI:HelpSelections()
+	PHX.UI:PlayerMute()
+	PHX.UI:PlayerOption()
+	PHX.UI:PlayerModelSelections()
+	
+	-- Custom Hook Menu here. Give 1 second for better "safe-calling"...
+	timer.Simple(1, function() 
+		hook.Call("PH_CustomTabMenu", nil, PHX.UI.PnlTab, 
+		function(cmd,typ,data,panel,text) 
+			PHX.UI:CreateVGUIType(cmd,typ,data,panel,text)
+		end,
+		function(panel, text)
+			PHX.UI.PaintTabButton(panel, text)
+		end)
+	end)
+	
+	-- Verify if current player is Admin or not.
 	if ply:IsAdmin() then
 		net.Start("CheckAdminFirst")
 		net.SendToServer()
 	end
-
-	-- if Current User Passes the admin check, shows the admin tab.
-	net.Receive("CheckAdminResult", function(len, pln)
-		Ph:ShowAdminMenu()
-		Ph:MapVoteMenu()
+	
+	-- If verification success, Call the special admin menus.
+	net.Receive("CheckAdminResult", function(len)
+		PHX.UI:ShowAdminMenu()
+		PHX.UI:MapVoteMenu()
 	end)
+	
+	-- This was a test for painting vertical tab. I'll just leave it here for reference.
+	--local Btns = PHX.UI.PnlTab.Navigation:GetChildren()[1]:GetChildren()
+	--[[ local dTabItems = PHX.UI.PnlTab.Items
+	for _,item in pairs(dTabItems) do
+		item.Button:SetSize(item.Button:GetParent():GetWide(), 60)
+		item.Button:SetText("")
+		item.Button:SetStretchToFit( false )
+		item.Button.Paint = function(self)
+			surface.SetDrawColor(20,20,20,200)
+			surface.DrawRect(0,0,self:GetWide(),60)
+		end
+	end ]]
 end
-concommand.Add("ph_enhanced_show_help", ph_BaseMainWindow, nil, "Show Prop Hunt: Enhanced Main and Help menus." )
+concommand.Add("ph_x_menu", PHX.UI.BaseMainMenu, nil, "Open Prop Hunt X Advanced Menu window." )

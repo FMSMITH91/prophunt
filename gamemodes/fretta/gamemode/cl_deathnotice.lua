@@ -1,6 +1,3 @@
--- di gamemodes\fretta\gamemode\cl_deathnotice.lua
--- Copy semuanya
-
 /*
 	Start of the death message stuff.
 */
@@ -122,8 +119,6 @@ net.Receive( "NPCKilledNPC", RecvNPCKilledNPC )
 --function GM:AddDeathNotice( victim, inflictor, attacker )
 function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	
-	local stringtext = table.Random( PHE.LANG.DEATHNOTICE.SUICIDE )
-	
 	if ( !IsValid( g_DeathNotify ) ) then return end
 
 	local pnl = vgui.Create( "GameNotice", g_DeathNotify )
@@ -139,7 +134,7 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	
 	if Victim == Attacker then
 		pnl:AddText( Attacker, color1)
-		pnl:AddText( stringtext )
+		pnl:AddText( PHX:GetRandomTranslated("SUICIDEMSG") or "is ded." )
 	else
 		pnl:AddText( Attacker, color1)
 		pnl:AddIcon( Inflictor )

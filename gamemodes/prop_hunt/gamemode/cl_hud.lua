@@ -1,4 +1,4 @@
-surface.CreateFont("PHE.HealthFont",
+surface.CreateFont("PHX.HealthFont", 
 {
 	font = "Roboto",
 	size = 56,
@@ -7,7 +7,7 @@ surface.CreateFont("PHE.HealthFont",
 	shadow = true
 })
 
-surface.CreateFont("PHE.AmmoFont",
+surface.CreateFont("PHX.AmmoFont", 
 {
 	font = "Roboto",
 	size = 86,
@@ -16,7 +16,7 @@ surface.CreateFont("PHE.AmmoFont",
 	shadow = true
 })
 
-surface.CreateFont("PHE.ArmorFont",
+surface.CreateFont("PHX.ArmorFont", 
 {
 	font = "Roboto",
 	size = 32,
@@ -25,7 +25,7 @@ surface.CreateFont("PHE.ArmorFont",
 	shadow = true
 })
 
-surface.CreateFont("PHE.TopBarFont",
+surface.CreateFont("PHX.TopBarFont", 
 {
 	font = "Roboto",
 	size = 20,
@@ -33,7 +33,7 @@ surface.CreateFont("PHE.TopBarFont",
 	antialias = true,
 	shadow = true
 })
-surface.CreateFont("PHE.TopBarFontTeam",
+surface.CreateFont("PHX.TopBarFontTeam", 
 {
 	font = "Roboto",
 	size = 60,
@@ -41,14 +41,8 @@ surface.CreateFont("PHE.TopBarFontTeam",
 	antialias = true,
 	shadow = true
 })
-surface.CreateFont("PHE.Trebuchet",
-{
-	font = "Trebuchet MS",
-	size = 24,
-	weight = 900,
-	antialias = true,
-	shadow = true
-})
+
+-- // WARNING: The section below may NOT be optimised and very unclean. I'm currently working on this as a Temporary solution. \\ --
 
 -- Hides HUD
 local hide = {
@@ -57,17 +51,21 @@ local hide = {
 	["CHudAmmo"]	= true,
 	["CHudSecondaryAmmo"] = true
 }
-
 local curteam
 local mat = {
-	[1] = 	Material("vgui/phehud/res_hp_1"),
-	[2] = 	Material("vgui/phehud/res_hp_2"),
+	[1] = 	Material("vgui/phehud/hud_hunter"),
+	[2] = 	Material("vgui/phehud/hud_prop"),
 }
 local indic = {
 	rotate 	= { mat = Material("vgui/phehud/i_rotate"), [0]	= Color(190,190,190,255), [1] = Color(255,255,0,255) },
 	halo 	= { mat = Material("vgui/phehud/i_halo"), 	[0]	= Color(190,190,190,255), [1] = Color(0,255,0,255) },
 	light 	= { mat = Material("vgui/phehud/i_light"), 	[0]	= Color(190,190,190,255), [1] = Color(255,255,0,255) },
 	armor	= { mat = Material("vgui/phehud/i_shield"),	[0] = Color(190,190,190,255), [1] = Color(80,190,255,255) }
+}
+local hindic = {
+	clip	= Material("vgui/phehud/i_clip"),
+	mag		= Material("vgui/phehud/i_mag1"),
+	mag2	= Material("vgui/phehud/i_mag2")
 }
 local hudtopbar = {
 	mat = Material("vgui/phehud/hud_topbar"),
@@ -76,196 +74,294 @@ local hudtopbar = {
 }
 local matw = Material("vgui/phehud/res_wep")
 
-local ava
-	if (IsValid(ava)) then ava:Remove() ava = nil end
-local pos = { x = 0, y = ScrH() - 130 }
-local posw = { x = ScrW() - 480, y = ScrH() - 130 }
+PHX.HUD = {}
+PHX.HUD.ava = nil
+
+local pos = { x = 0, y = ScrH()-230 }
+local posw = { x = ScrW() - 480, y = ScrH()-130 }
 local hp
 local armor
 local hpcolor
+local AmmoColor = Color( 225,180,15,255 )
 
 local bar = {
-	hp = { h = 5, col = Color(250,40,10,240) },
-	am = { h = 5, col = Color(80,190,255,220) }
+	hp = { h = 15, col = Color(250,40,10,240) },
+	am = { h = 5, col = Color(80,255,80,240) }
 }
 
-hook.Add("HUDShouldDraw", "PHE.ShouldHideHUD", function(hudname)
-	if GetConVar("ph_hud_use_new"):GetBool() && !matw:IsError () && hide[hudname] then
-		return false
-	end
-end)
-
 local Rstate = 0
-net.Receive("PHE.rotateState", function() Rstate = net.ReadInt(2) end)
+net.Receive("PHX.rotateState", function() Rstate = net.ReadInt(2) end)
 
 local function PopulateAliveTeam(tm)
 	local tim = team.GetPlayers(tm)
-	local liveply = liveply || 0
-
+	local liveply = liveply or 0
+	
 	for _,pl in pairs(tim) do
 		if IsValid(pl) && pl:Alive() then liveply = liveply + 1 end
 	end
-
+	
 	return liveply
 end
 
 local state = false
 local disabledcolor = Color(100,100,100,255)
 
-hook.Add("HUDPaint", "PHE.MainHUD", function()
+local xAdd = pos.x + 165
+local yAdd = pos.y + 142.5
+local tbl = {}
 
-	if GetConVar("ph_hud_use_new"):GetBool() then state = true else state = false end;
+-- todo: do a better math next time. Also hey, Paralellogram!
+tbl.hp = {
+	{ x = xAdd,			y = yAdd + 30 },	-- a
+	{ x = xAdd + 15,	y = yAdd + 15 },	-- b
+	{ x = xAdd,			y = yAdd + 15 },	-- c end
+	{ x = xAdd,			y = yAdd + 30 }		-- d end
+}
 
-	-- Don't draw if materials didn't load correctly
-	if matw:IsError () && state then
-		state = false
+yArmorAdd = yAdd + 22.5
+tbl.Armor = {
+	{ x = xAdd - 10,	y = yArmorAdd + 20 },
+	{ x = xAdd - 5,		y = yArmorAdd + 15 },
+	{ x = xAdd,			y = yArmorAdd + 15 },
+	{ x = xAdd,			y = yArmorAdd + 20 }
+}
+
+local hpx	= 0
+local armx	= 0
+
+local GUICondition = false
+
+local function TranslateMe(text, ...)
+	return PHX:FTranslate(text, ...)
+end
+
+-- Hook sections
+hook.Add("HUDShouldDraw", "PHX.ShouldHideHUD", function(hudname)
+	-- make sure matw is already installed, otherwise don't use new HUD.
+	if PHX.CLCVAR.NewHUD:GetBool() and (not matw:IsError()) then
+		if (hide[hudname]) then return false end
 	end
+end)
 
-	if IsValid(LocalPlayer()) && LocalPlayer():Alive() && state && (LocalPlayer():Team() == TEAM_HUNTERS || LocalPlayer():Team() == TEAM_PROPS) then
-		-- Begin Player Info
-		if !IsValid(ava) then
-			ava = vgui.Create("AvatarMask")
-			ava:SetPos(16, pos.y + 18)
-			ava:SetSize(86,86)
-			ava:SetPlayer(LocalPlayer(),128)
-			ava:SetVisible(true)
+hook.Add("Think", "PHX.GUIAvatarUI_Think", function()
+	state = PHX.CLCVAR.NewHUD:GetBool()
+
+	-- Avatar will behave strangely enough on HUDPaint so We'll use Think for now. Because it's a PANEL, not an HUD element.
+	if IsValid(LocalPlayer()) && LocalPlayer():Alive() && state && (LocalPlayer():Team() == TEAM_HUNTERS or LocalPlayer():Team() == TEAM_PROPS) then
+		if not IsValid(PHX.HUD.ava) then
+			PHX.HUD.ava = vgui.Create("AvatarMask")
+			PHX.HUD.ava:SetPos(35, pos.y+85)
+			PHX.HUD.ava:SetSize(100,100)
+			PHX.HUD.ava:SetPlayer(LocalPlayer(),128)
+			PHX.HUD.ava:SetVisible(true)
 		end
+	
+		GUICondition = gui.IsGameUIVisible()
+		
+		if PHX.HUD.ava and IsValid(PHX.HUD.ava) then
+			PHX.HUD.ava:SetVisible( not GUICondition )
+		end
+	
+	end
+	
+	if IsValid(LocalPlayer()) and (!LocalPlayer():Alive() or !state or (LocalPlayer():Team() == TEAM_SPECTATOR or LocalPlayer():Team() == TEAM_UNASSIGNED)) then
+		if IsValid(PHX.HUD.ava) then
+			PHX.HUD.ava:SetVisible(false)
+			PHX.HUD.ava:Remove()
+		end
+	end
+	
+end)
 
-		-- Player Info
-		curteam = LocalPlayer():Team()
-		hp = LocalPlayer():Health()
-		armor = LocalPlayer():Armor()
-
+hook.Add("HUDPaint", "PHX.MainHUD", function()
+	
+	if IsValid(LocalPlayer()) && LocalPlayer():Alive() && state && (LocalPlayer():Team() == TEAM_HUNTERS or LocalPlayer():Team() == TEAM_PROPS) then
+		-- Get Player Info
+		curteam		= LocalPlayer():Team()
+		hp			= LocalPlayer():Health()
+		armor		= LocalPlayer():Armor()
+		
 		surface.SetDrawColor( 255, 255, 255, 255 )
 		surface.SetMaterial( mat[curteam] )
-		surface.DrawTexturedRect( pos.x, pos.y, 480, 120 )
-
-		draw.DrawText( PHE.LANG.HUD.HEALTH, "PHE.Trebuchet", pos.x + 175, pos.y + 14, color_white, TEXT_ALIGN_LEFT )
-
-		if hp < 0 then hp = 0 end
-		if armor < 0 then armor = 0 end
-
+		surface.DrawTexturedRect( pos.x, pos.y, 440, 220 )
+		
+		if hp > 100 then hpx = 100 elseif hp < 1 then hpx = 0 else hpx = hp end
+		if armor > 100 then armx = 100 elseif armor < 1 then armx = 0 else armx = armor end
+		
 		if hp < 30 then
-			hpcolor = Color( 255, 1 * (hp * 8), 1 * (hp * 8), 255 )
+			hpcolor = Color( 255, 1 * (hp*8), 1 * (hp*8), 255 )
 		else
 			hpcolor = Color( 255, 255, 255, 255 )
 		end
-
-		-- hp bar
-		if hp > 100 then hpx = 100 else hpx = hp end
-		if armor > 100 then armx = 100 else armx = armor end
-
-		surface.SetDrawColor(bar.hp.col)
-		surface.DrawRect(pos.x + 175, pos.y + 57, 1 * (hpx * 2.9), bar.hp.h)
-
-		surface.SetDrawColor(bar.am.col)
-		surface.DrawRect(pos.x + 175, pos.y + 62, 1 * (armx * 2.9), bar.am.h)
-
-		draw.DrawText( hp, "PHE.HealthFont", pos.x + 350, pos.y - 4, hpcolor, TEXT_ALIGN_RIGHT )
-		draw.DrawText( " / " .. armor, "PHE.ArmorFont", pos.x + 350, pos.y + 14, Color( 255,255,255,255 ), TEXT_ALIGN_LEFT )
-
+		
+		-- HP and Armor Bar
+		local percent = xAdd + hpx * 2
+		local armorpct = xAdd + armx * 2
+		
+		surface.SetDrawColor( 255, 0, 0, 245 )
+		draw.NoTexture()
+		tbl.hp[3].x = percent + 15
+		tbl.hp[4].x = percent
+		surface.DrawPoly( tbl.hp )
+		
+		-- these are only background
+		local bgA = tbl.Armor
+		
+		surface.SetDrawColor( 0,100,0, 150 )
+		draw.NoTexture()
+		bgA[3].x = (xAdd + 200) - 5
+		bgA[4].x = (xAdd + 200) - 10
+		surface.DrawPoly( bgA )
+		-- end of backgrounds
+		
+		surface.SetDrawColor( 80,255,80, 255 )
+		draw.NoTexture()
+		tbl.Armor[3].x = armorpct - 5
+		tbl.Armor[4].x = armorpct - 10
+		surface.DrawPoly( tbl.Armor )
+		
+		draw.DrawText( TranslateMe("HUD_HP"), "Trebuchet24", pos.x + 215, pos.y + 110, color_white, TEXT_ALIGN_LEFT )
+		draw.DrawText( hp, "PHX.HealthFont", pos.x + 370, pos.y + 86, hpcolor, TEXT_ALIGN_RIGHT )
+		draw.DrawText( " / "..armor, "PHX.ArmorFont", pos.x + 370, pos.y + 104, Color( 255,255,255,255 ), TEXT_ALIGN_LEFT )
+		
+		-- Indicators
 		if LocalPlayer():Team() == TEAM_HUNTERS then
-			surface.SetDrawColor(disabledcolor)
+			surface.SetDrawColor( disabledcolor )
 		else
 			surface.SetDrawColor( indic.rotate[Rstate] )
 		end
 		surface.SetMaterial( indic.rotate.mat )
-		surface.DrawTexturedRect( pos.x + 168, pos.y + 74, 32, 32 )
-
+		surface.DrawTexturedRect( pos.x + (172), pos.y + 82, 32, 32 )
+		
 		if LocalPlayer():Team() == TEAM_HUNTERS then
-			surface.SetDrawColor(indic.light[LocalPlayer ():FlashlightIsOn () && 1 || 0])
+			if LocalPlayer():FlashlightIsOn() then
+				surface.SetDrawColor( indic.light[1] )
+			else
+				surface.SetDrawColor( indic.light[0] )
+			end
 		else
 			surface.SetDrawColor( indic.light[CL_GLOBAL_LIGHT_STATE] )
 		end
 		surface.SetMaterial( indic.light.mat )
-		surface.DrawTexturedRect( pos.x + 216, pos.y + 74, 32, 32 )
-
+		surface.DrawTexturedRect( pos.x + (140), pos.y + 28, 32, 32 )
+		
 		if LocalPlayer():Team() == TEAM_HUNTERS then
 			surface.SetDrawColor(disabledcolor)
 		else
-			surface.SetDrawColor( indic.halo[tonumber(GetConVar("ph_cl_halos"):GetInt())])
+			surface.SetDrawColor( indic.halo[tonumber(PHX.CLCVAR.PropHalos:GetInt())])
 		end
 		surface.SetMaterial( indic.halo.mat )
-		surface.DrawTexturedRect( pos.x + 264, pos.y + 74, 32, 32 )
-
+		surface.DrawTexturedRect( pos.x + (82), pos.y + 7, 32, 32 )
+		
 		if LocalPlayer():Armor() < 10 then
 			surface.SetDrawColor( indic.armor[0] )
 		else
 			surface.SetDrawColor( indic.armor[1] )
 		end
 		surface.SetMaterial( indic.armor.mat )
-		surface.DrawTexturedRect (pos.x + 312, pos.y + (2 * 37), 32, 32 )
+		surface.DrawTexturedRect (pos.x + (22), pos.y + 18, 32, 32 )
 	end
-
+	
 	-- Weapon HUD
 	if IsValid(LocalPlayer()) && LocalPlayer():Alive() && state && LocalPlayer():Team() == TEAM_HUNTERS then
 		surface.SetDrawColor( 255, 255, 255, 255 )
 		surface.SetMaterial( matw )
 		surface.DrawTexturedRect( posw.x, posw.y, 480, 120 )
-
+		
 		local curWep = LocalPlayer():GetActiveWeapon()
-
+		
 		local clip
 		local maxclip
 		local mag
 		local mag2
 		local name
 		local percent
-
-		draw.DrawText( PHE.LANG.HUD.AMMO, "PHE.Trebuchet", posw.x + 318, posw.y + 14, color_white, TEXT_ALIGN_RIGHT )
-
+		local LiteralString
+		local LiteralStringSec
+		
 		if IsValid(curWep) then
 			clip 	= curWep:Clip1()
 			maxclip = curWep:GetMaxClip1()
 			mag 	= LocalPlayer():GetAmmoCount(curWep:GetPrimaryAmmoType())
 			mag2	= LocalPlayer():GetAmmoCount(curWep:GetSecondaryAmmoType())
 			name	= language.GetPhrase(curWep:GetPrintName())
-
-			if clip < 0 then clip = 0 end
+			
+			if mag > 999 then mag = 999 end
+			
+			LiteralString = tostring(clip)
+			LiteralStringSec = tostring(mag)
+		
+			if clip <= -1 then
+				if mag > 0 then
+					LiteralString = tostring(mag)
+					LiteralStringSec = "-"
+				else
+					LiteralString = "0"
+					LiteralStringSec = "-"
+				end
+				clip = 0
+			end
+			
+			if mag2 > 99 then -- we'll reduce it as it sound looks ridiculous
+				mag2 = 99
+			end
+			
 			if maxclip < 0 then maxclip = 0 end
-
+			
 			if (clip < 0 || maxclip < 0) then
 				percent = 0
 			else
-				percent = math.Round(clip / maxclip * 300)
+				--percent = math.Round(clip / maxclip * 260)
+				percent = clip / maxclip
 			end
-
-			surface.SetDrawColor(255,200,15,255)
-			surface.DrawRect(posw.x + 8, posw.y + 58, percent, 8)
-
-			draw.DrawText( clip, "PHE.HealthFont", posw.x + 136, posw.y -4, color_white, TEXT_ALIGN_RIGHT )
-			draw.DrawText( " / " .. mag, "PHE.ArmorFont", posw.x + 136, posw.y + 14, color_white, TEXT_ALIGN_LEFT )
-			draw.DrawText( mag2, "PHE.AmmoFont", ScrW() - 58, posw.y + 14, 		color_white, TEXT_ALIGN_CENTER )
-			draw.DrawText( name, "PHE.TopBarFont", posw.x + 136, posw.y + 80, 	color_white, TEXT_ALIGN_LEFT )
-
+			
+			surface.SetDrawColor(150,90,0,180)
+			surface.DrawRect(posw.x + 22, posw.y + 58, 260, 4)
+			
+			surface.SetDrawColor( AmmoColor )
+			surface.DrawRect(posw.x + 22, posw.y + 58, percent * 260, 4)
+		
+			surface.SetDrawColor( AmmoColor )
+			draw.NoTexture()
+			draw.Circle( ScrW()-58, posw.y + 60, percent * 45, 24 )
+			
+			-- PHX.AmmoFont -- deprecated
+			draw.DrawText( TranslateMe("HUD_MAGSEC"), "PHX.AmmoFont", posw.x + 70, posw.y + 5, color_white, TEXT_ALIGN_LEFT )
+			draw.DrawText( LiteralStringSec, "PHX.TopBarFont", posw.x + 94, posw.y + 28, color_white, TEXT_ALIGN_LEFT )
+			draw.DrawText( mag2, "PHX.ArmorFont", posw.x + 175, posw.y + 22, color_white, TEXT_ALIGN_LEFT )
+			draw.DrawText( LiteralString, "PHX.HealthFont", ScrW()-195, posw.y + 2, Color( 255,255,180,255 ), TEXT_ALIGN_RIGHT )
+			draw.DrawText( name, "PHX.TopBarFont", ScrW() - 170, posw.y + 83, color_white, TEXT_ALIGN_RIGHT )
+			
+			-- Icons
+			surface.SetDrawColor( 255, 255, 255, 240 )
+			surface.SetMaterial( hindic.clip )
+			surface.DrawTexturedRect( ScrW() - 90, posw.y + 28, 64, 64 )
+			
+			surface.SetDrawColor( 255, 255, 255, 240 )
+			surface.SetMaterial( hindic.mag )
+			surface.DrawTexturedRect( posw.x + 56, posw.y + 22, 32, 32 )
+			
+			surface.SetDrawColor( 255, 255, 255, 240 )
+			surface.SetMaterial( hindic.mag2 )
+			surface.DrawTexturedRect( posw.x + 132, posw.y + 14, 42, 42 )
+			
 		end
 	end
-
-	if IsValid(LocalPlayer()) && !LocalPlayer():Alive() && IsValid(ava) then
-		ava:SetVisible(false)
-		ava:Remove()
-	end
-	if IsValid(LocalPlayer()) && !state && IsValid(ava) then
-		ava:SetVisible(false)
-		ava:Remove()
-	end
-	if IsValid(LocalPlayer()) && (LocalPlayer():Team() == TEAM_SPECTATOR || LocalPlayer():Team() == TEAM_UNASSIGNED) && IsValid(ava) then
-		ava:SetVisible(false)
-		ava:Remove()
-	end
-
+	
 	-- the Team Bar. This requires at least 4 players to get this displayed.
-	if GetConVar("ph_show_team_topbar"):GetBool() && ((player.GetCount() >= 4 && LocalPlayer():Alive()) && (LocalPlayer():Team() != TEAM_UNASSIGNED && LocalPlayer():Team() != TEAM_SPECTATOR)) then
-		surface.SetDrawColor( 255, 255, 255, 255 )
-		surface.SetMaterial( hudtopbar.mat )
-		surface.DrawTexturedRect( hudtopbar.x, hudtopbar.y, 400, 50 )
-
-		-- Draw Props
-		draw.DrawText( "Props", "PHE.TopBarFont", 4, hudtopbar.y + 2, Color(255,255,255,255), TEXT_ALIGN_LEFT )
-		draw.DrawText( tostring(PopulateAliveTeam(TEAM_PROPS)), "PHE.TopBarFontTeam", 96, hudtopbar.y - 8, Color(255,255,255,255), TEXT_ALIGN_LEFT )
-
-		-- Draw Hunters
-		draw.DrawText( "Hunter", "PHE.TopBarFont", 300, hudtopbar.y + 22, Color(255,255,255,255), TEXT_ALIGN_LEFT )
-		draw.DrawText( tostring(PopulateAliveTeam(TEAM_HUNTERS)), "PHE.TopBarFontTeam", 220, hudtopbar.y - 8, Color(255,255,255,255), TEXT_ALIGN_LEFT )
+	if PHX.CLCVAR.TeamTopBar:GetBool() then
+		if ((player.GetCount() >= 4 && LocalPlayer():Alive()) && (LocalPlayer():Team() != TEAM_UNASSIGNED && LocalPlayer():Team() != TEAM_SPECTATOR)) then
+			surface.SetDrawColor( 255, 255, 255, 255 )
+			surface.SetMaterial( hudtopbar.mat )
+			surface.DrawTexturedRect( hudtopbar.x, hudtopbar.y, 400, 50 )
+			
+			-- Draw Props
+			draw.DrawText( TranslateMe("TEAM_PROPS"), "PHX.TopBarFont", 4, hudtopbar.y + 2, Color(255,255,255,255), TEXT_ALIGN_LEFT )
+			draw.DrawText( tostring(PopulateAliveTeam(TEAM_PROPS)), "PHX.TopBarFontTeam", 120, hudtopbar.y - 7, Color(255,255,255,255), TEXT_ALIGN_LEFT )
+			
+			-- Draw Hunters
+			draw.DrawText( TranslateMe("TEAM_HUNTERS"), "PHX.TopBarFont", 350, hudtopbar.y + 22, Color(255,255,255,255), TEXT_ALIGN_RIGHT )
+			draw.DrawText( tostring(PopulateAliveTeam(TEAM_HUNTERS)), "PHX.TopBarFontTeam", 210, hudtopbar.y - 7, Color(255,255,255,255), TEXT_ALIGN_LEFT )
+		end
 	end
 end)

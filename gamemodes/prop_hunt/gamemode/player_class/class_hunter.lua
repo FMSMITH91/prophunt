@@ -14,27 +14,31 @@ CLASS.DrawTeamRing			= false
 
 -- Called by spawn and sets loadout
 function CLASS:Loadout(pl)
-	pl:GiveAmmo(32, "Buckshot")
-	pl:GiveAmmo(255, "SMG1")
-	pl:GiveAmmo(12, "357")
-	pl:GiveAmmo(12, "XBowBolt")
-
-	pl:Give("weapon_crowbar")
-	pl:Give("weapon_shotgun")
-	pl:Give("weapon_smg1")
-	pl:Give("weapon_357")
-	pl:Give("weapon_crossbow")
-
-	-- Grenades are an item, so ge have to loop to give multiple times
-	for i = 1, math.min (GetConVar ("ph_hunter_smg_grenades"):GetInt (), 50) do
-		pl:Give("item_ar2_grenade")
-	end
-
-	local cl_defaultweapon = pl:GetInfo("cl_defaultweapon")
-
-	if pl:HasWeapon(cl_defaultweapon) then
-		pl:SelectWeapon(cl_defaultweapon)
-	end
+    pl:GiveAmmo(32, "Buckshot")
+    pl:GiveAmmo(255, "SMG1")
+    pl:GiveAmmo(12, "357")
+    pl:GiveAmmo(12, "XBowBolt")
+    
+    pl:Give("weapon_crowbar")
+    pl:Give("weapon_shotgun")
+    pl:Give("weapon_smg1")
+    pl:Give("weapon_357")
+    pl:Give("weapon_crossbow")
+	
+	--pl:Give("item_ar2_grenade")
+	local numGrenade = PHX:GetCVar( "ph_smggrenadecounts" ) or 1
+	pl:SetAmmo(numGrenade, "SMG1_Grenade")
+	
+	local cl_defaultweapon = pl:GetInfo("cl_defaultweapon") 
+ 	 
+ 	if pl:HasWeapon(cl_defaultweapon) then 
+ 		pl:SelectWeapon(cl_defaultweapon)
+	else
+		-- Return to weapon_smg1. For some reason like ph_underwataaa, weapon might be removed soo....
+		if pl:HasWeapon("weapon_smg1") then
+			pl:SelectWeapon("weapon_smg1")
+		end
+ 	end 
 end
 
 -- Called when player spawns with this class
@@ -45,12 +49,14 @@ function CLASS:OnSpawn(pl)
 	pl:SetCustomCollisionCheck(true)
 	pl:SetAvoidPlayers(false)
 	pl:CrosshairEnable()
-
+	
 	pl:SetViewOffset(Vector(0,0,64))
 	pl:SetViewOffsetDucked(Vector(0,0,28))
 
-	local unlock_time = math.Clamp(GetConVar("ph_hunter_blindlock_time"):GetInt() - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, GetConVar("ph_hunter_blindlock_time"):GetInt())
-
+	--local unlock_time = math.Clamp(PHX:GetCVar( "ph_hunter_blindlock_time" ) - (CurTime() - GetGlobalFloat("RoundStartTime", 0)), 0, PHX:GetCVar( "ph_hunter_blindlock_time" ))
+	
+	local unlock_time = GetGlobalInt("unBlind_Time", 0)
+	
 	local unblindfunc = function()
 		if pl:IsValid() then
 			pl:Blind(false)
@@ -66,22 +72,22 @@ function CLASS:OnSpawn(pl)
 			pl.UnLock(pl)
 		end
 	end
-
+	
 	if unlock_time > 2 then
 		pl:Blind(true)
-
+		
 		timer.Simple(unlock_time, unblindfunc)
-
+		
 		timer.Simple(2, lockfunc)
 		timer.Simple(unlock_time, unlockfunc)
 	end
-
+	
 end
 
 
 -- Hands
 function CLASS:GetHandsModel()
-	if !GetConVar("ph_use_custom_plmodel"):GetBool() then
+	if !PHX:GetCVar( "ph_use_custom_plmodel" ) then
 		return { model = "models/weapons/c_arms_combine.mdl", skin = 1, body = "0100000" }
 	end
 end
@@ -91,20 +97,20 @@ end
 function CLASS:OnDeath(pl, attacker, dmginfo)
 	pl:CreateRagdoll()
 	pl:UnLock()
-
+	
 	-- Always Reset the ViewOffset
 	pl:SetViewOffset(Vector(0,0,64))
 	pl:SetViewOffsetDucked(Vector(0,0,28))
-
+	
 	-- Spawn Devil Ball
 	local pos = pl:GetPos()
-	if GetConVar("ph_enable_devil_balls"):GetBool() then
-		if math.random() < 0.7 then --70% chance.
+	if PHX:GetCVar( "ph_enable_devil_balls" ) then
+		--if math.random() < 0.7 then --70% chance.
 			local dropent = ents.Create("ph_devilball")
-			dropent:SetPos(Vector(pos.x, pos.y, pos.z + 16)) -- to make sure the Devil Ball didn't fall underground.
+			dropent:SetPos(Vector(pos.x, pos.y, pos.z + 16)) -- to make sure the Devil Ball didn't spawn underground.
 			dropent:SetAngles(Angle(0,0,0))
 			dropent:Spawn()
-		end
+		--end
 	end
 end
 

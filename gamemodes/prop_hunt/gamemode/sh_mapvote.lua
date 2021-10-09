@@ -1,19 +1,19 @@
 -- Credits & Original code: https://github.com/tyrantelf/gmod-mapvote
--- This is modified as for ease use of MapVote in Prop Hunt Enhanced, to avoid users having difficulties to edit their mapvote config file instead through ConVars.
+-- This is modified as for ease use of MapVote in Prop Hunt X, to avoid users having difficulties to edit their mapvote config file instead through ConVars.
 
 MapVote = {}
 MapVote.Config = {}
 
 --Default Config
 MapVoteConfigDefault = {
-	MapLimit = 24,
-	TimeLimit = 30,
-	AllowCurrentMap = false,
-	EnableCooldown = true,
-	MapsBeforeRevote = 2,
-	RTVPlayerCount = 2,
-	MapPrefixes = {"ph_"}
-	}
+    MapLimit = 24,
+    TimeLimit = 30,
+    AllowCurrentMap = false,
+    EnableCooldown = true,
+    MapsBeforeRevote = 2,
+    RTVPlayerCount = 2,
+    MapPrefixes = {"ph_"}
+    }
 --Default Config
 
 local convarlist = {
@@ -29,7 +29,7 @@ local convarlist = {
 }
 
 if !ConVarExists("mv_maplimit") then
-	printVerbose("[MapVote] ConVars initialized!")
+	PHX.VerboseMsg("[MapVote] ConVars initialized!")
 	for _,convars in pairs(convarlist) do
 		CreateConVar(convars[1], convars[2], convars[3], convars[4])
 	end
@@ -46,3 +46,22 @@ MapVote.Allow = false
 
 MapVote.UPDATE_VOTE = 1
 MapVote.UPDATE_WIN = 3
+
+if SERVER then
+	concommand.Add("mv_start", function(ply, _, args)
+		if (ply:IsAdmin() or ply:CheckUserGroup()) then
+			local time = args[1] or 25
+			MapVote.Start(time, nil, nil, nil)
+		else
+			ply:PHXChatInfo("ERROR", "MISC_ACCESSDENIED")
+		end
+	end, nil, "Start MapVote (without ULX)")
+
+	concommand.Add("mv_stop", function(ply)
+		if (ply:IsAdmin() or ply:CheckUserGroup()) then
+			MapVote.Cancel()
+		else
+			ply:PHXChatInfo("ERROR", "MISC_ACCESSDENIED")
+		end
+	end, nil, "Stop MapVote (without ULX)")
+end

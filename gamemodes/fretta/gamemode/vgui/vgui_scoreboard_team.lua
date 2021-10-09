@@ -27,7 +27,7 @@ function PANEL:Think()
 	local Count = #team.GetPlayers( self.iTeamID )
 	if ( self.PlayerCount != Count ) then
 		self.PlayerCount = Count
-		self.TeamName:SetText( team.GetName( self.iTeamID ) .. " " .. string.format(PHE.LANG.DERMA[Count == 1 && "PLAYER" || "PLAYERS"], self.PlayerCount) )
+		self.TeamName:SetText( team.GetName( self.iTeamID ) .. " (" .. self.PlayerCount .. " Players)" )
 	end
 	
 	self.TeamScore:SetText( team.GetScore( self.iTeamID ) )
@@ -104,8 +104,10 @@ function PANEL:AddColumn( col )
 	end
 
 	-- Credits to dhantasmic on GitHub for this fix
-	pnlCol:GetChildren()[1]:SetVisible( false )
-	pnlCol:GetChildren()[2]:SetVisible( false )
+	local header1 = pnlCol:GetChildren()[1] --DLabel
+	local header2 = pnlCol:GetChildren()[2] --DListView_DraggerBar, the [ | ] or seperator drag
+	header1:SetVisible( true )
+	header2:SetVisible( false )
 	
 	Derma_Hook( pnlCol, 	"Paint", 				"Paint", 	"ScorePanelHeader" )
 	

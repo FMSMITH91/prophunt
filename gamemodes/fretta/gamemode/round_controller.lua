@@ -72,7 +72,7 @@ end
 function GM:OnPreRoundStart( num )
 
 	game.CleanUpMap()
-
+	
 	UTIL_StripAllPlayers()
 	UTIL_SpawnAllPlayers()
 	UTIL_FreezeAllPlayers()
@@ -257,6 +257,9 @@ function GM:RoundEndWithResult( result, resulttext )
 		GAMEMODE:OnRoundWinner( result, resulttext )
 	
 	end
+	
+	-- PH:X2Z: Added RoundEndResult
+	hook.Call("PH_RoundEndResult", nil, result, resulttext)
 	
 end
 

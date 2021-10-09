@@ -97,7 +97,7 @@ Please note that you might have to create a custom serverside lua with full of f
 		-- code...
 	end)
 	
-Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with printVerbose!
+Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with PHX.VerboseMsg!
 ]]
 balls.funclists = {
 	function(pl)
@@ -119,8 +119,12 @@ balls.funclists = {
 	end,
 	function(pl)
 		local rand = math.random(1,20)
-		pl:SetHealth(pl:Health() - rand)
-		pl:ChatPrint("[Lucky Ball] Aww Snap! Your health reduced by -"..rand.." HP, better luck next time!")
+		if pl:Health() > 1 then	-- prevent any substraction below 0.
+			pl:SetHealth(pl:Health() - rand)
+			pl:ChatPrint("[Lucky Ball] Aww Snap! Your health reduced by -"..rand.." HP. Better luck next time!")
+		else
+			pl:ChatPrint("[Lucky Ball] I'm was trying to reduce your health but it was already too low. Better luck next time :(")
+		end
 	end,
 	function(pl)
 		pl:Give("item_battery")
@@ -212,13 +216,13 @@ balls.funclists = {
 
 function balls:AddMoreLuckyEvents()
 	local t = list.Get("LuckyBallsAddition")
-	if table.Count(t) > 0 then
+	if !table.IsEmpty(t) then
 		for name,tab in pairs(t) do
-			printVerbose("[ Lucky Ball :: Add Event ] Adding new Lucky Balls events : "..name)
+			PHX.VerboseMsg("[PHX: Lucky Ball] Adding new events : "..name)
 			table.insert(balls.funclists, tab)
 		end
 	else
-		printVerbose("[ Lucky Ball :: Add Event ] There is no additional Lucky Balls events detected, ignoring...")
+		PHX.VerboseMsg("[PHX: Lucky Ball] There is no additional events detected, skipping...")
 	end
 end
 
@@ -247,3 +251,13 @@ function ENT:Use(activator)
 		end
 	end
 end
+
+-- Destroy all lucky balls after Round End with Result. (New Hook)
+hook.Add("PH_RoundEndResult", "PHX.DestroyLuckys", function(r,rt)
+	timer.Simple(0.1, function()
+		for _,lb in pairs(ents.FindByClass("ph_luckyball")) do
+			lb:ShowEffects(lb, "cball_explode", lb:GetPos(), lb:GetPos())
+			lb:Remove()
+		end
+	end)
+end)

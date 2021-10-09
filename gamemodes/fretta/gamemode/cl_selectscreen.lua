@@ -12,6 +12,8 @@ function PANEL:Init()
 	self.BottomButtons = {}
 	self:SetSkin( GAMEMODE.HudSkin )
 	
+	self.IsForHelp = false
+	
 	self.pnlButtons = vgui.Create( "DPanelList", self )
 	self.pnlButtons:SetPadding( 10 )
 	self.pnlButtons:SetSpacing( 10 )
@@ -29,7 +31,8 @@ function PANEL:Init()
 		self.pnlMain:EnableVerticalScrollbar()
 		
 	self.btnCancel = vgui.Create( "DButton", self )
-		self.btnCancel:SetText( PHE.LANG.MISC.CLOSE )
+		--self.btnCancel:SetText( "#Close" )
+		self.btnCancel:SetText( PHX:FTranslate("MISC_CLOSE") or "#Close" )
 		self.btnCancel:SetSize( 100, 30 )
 		self.btnCancel:SetFGColor( Color( 0, 0, 0, 200 ) )
 		self.btnCancel:SetFont( "FRETTA_SMALL" )
@@ -137,6 +140,12 @@ end
 function PANEL:SetHeaderText( strName )
 
 	self.lblMain:SetText( strName )
+
+end
+
+function PANEL:SetForHelp( strHelpText )
+	
+	self.lblHoverText:SetText( PHX:FTranslate("HELP_F1") or "Error: No Help found." )
 
 end
 
@@ -271,7 +280,7 @@ function GM:ShowTeam()
 	if ( !IsValid( TeamPanel ) ) then 
 	
 		TeamPanel = vgui.CreateFromTable( vgui_Splash )
-		TeamPanel:SetHeaderText( PHE.LANG.DERMA.TEAMSELECT )
+		TeamPanel:SetHeaderText( PHX:FTranslate("DERMA_TEAMSELECT") or "Choose Team" )
 
 		local AllTeams = team.GetAllTeams()
 		for ID, TeamInfo in SortedPairs ( AllTeams ) do
@@ -289,7 +298,9 @@ function GM:ShowTeam()
 				btn.m_colBackground = TeamInfo.Color
 				btn.Think = function( self ) 
 								self:SetText( Format( "%s (%i)", strName, team.NumPlayers( ID ) ))
-								self:SetDisabled( GAMEMODE:TeamHasEnoughPlayers( ID ) ) 
+								if ID ~= TEAM_SPECTATOR then -- skip player ammount check
+									self:SetDisabled( GAMEMODE:TeamHasEnoughPlayers( ID ) ) 
+								end
 							end
 				
 				if (  IsValid( LocalPlayer() ) && LocalPlayer():Team() == ID ) then

@@ -1,4 +1,6 @@
-surface.CreateFont("PHE.TauntFont",
+local window = {}
+
+surface.CreateFont("PHX.TauntFont", 
 {
 	font = "Roboto",
 	size = 16,
@@ -7,105 +9,111 @@ surface.CreateFont("PHE.TauntFont",
 	shadow = false
 })
 
-local isplayed = false
-local isopened = false
-local isforcedclose = false
 local hastaunt = false
 
+window.state = false
+window.CurrentlyOpen = false
+
 net.Receive("PH_ForceCloseTauntWindow", function()
-	isforcedclose = true
+	if window.CurrentlyOpen then
+		window.frame:Close()
+	end
+	window.state = false
 end)
 
 net.Receive("PH_AllowTauntWindow", function()
-	isforcedclose = false
+	window.state = true
 end)
 
 local function MainFrame()
-	if GetConVar("ph_enable_custom_taunts"):GetInt() < 1 then
-		chat.AddText(Color(220,0,0),"[PH:E - Taunts] Warning: This server has custom taunts disabled.")
+	if PHX:GetCVar( "ph_custom_taunt_mode" ) < 1 then
+		PHX:ChatInfo(PHX:Translate("TM_WARNING_CT_DISABLE"), "WARNING")
 		return
 	end
+	
+	window.CurrentlyOpen = true
 
-	isopened = true
-
-	local frame = vgui.Create("DFrame")
-	frame:SetSize(400,600)
-	frame:SetTitle("Prop Hunt | Taunt Menu")
-	frame:Center()
-	frame:SetVisible(true)
-	frame:ShowCloseButton(true)
-	-- Make sure they have Mouse & Keyboard interactions.
-	frame:SetMouseInputEnabled(true)
-	frame:SetKeyboardInputEnabled(true)
-
-	frame.Paint = function(self,w,h)
+	window.frame = vgui.Create("DFrame")
+	window.frame:SetSize(490,680)
+	window.frame:SetTitle( PHX:FTranslate("TM_WINDOW_TITLE") )
+	window.frame:SetVisible(true)
+	window.frame:ShowCloseButton(true)
+	window.frame:Center()
+	window.frame:SetMouseInputEnabled(true)
+	window.frame:SetKeyboardInputEnabled(true)
+	
+	window.frame.Paint = function(self,w,h)
 		surface.SetDrawColor(Color(40,40,40,180))
 		surface.DrawRect(0,0,w,h)
 	end
-
-	frame.OnClose = function()
-		isopened = false
+	
+	window.frame.OnClose = function()
+		window.CurrentlyOpen = false
 		hastaunt = false
 	end
-
-	local function frame_Think_Force()
-		if isforcedclose == true && isopened == true then
-			isopened = false
-			hastaunt = false
-			frame:Close()
+	
+	window.list = vgui.Create("DListView", window.frame)
+	
+	window.list:SetMultiSelect(false)
+	window.list:AddColumn("soundlist") -- does nothing because header is invisible.
+	window.list.m_bHideHeaders = true
+	window.list:SetPos(10,52)
+	window.list:SetSize(0,505)
+	window.list:Dock(BOTTOM)
+	
+	window.comb = vgui.Create("DComboBox", window.frame)
+	window.comb:Dock(TOP)
+	window.comb:SetSize(0, 20)
+	window.comb:SetValue( PHX.DEFAULT_CATEGORY )
+	
+	window.input = vgui.Create("DTextEntry", window.frame)
+	window.input:Dock(TOP)
+	window.input:SetSize(0, 20)
+	window.input:DockMargin(0,5,0,0)
+	window.input:SetPlaceholderText( PHX:FTranslate("TM_SEARCH_PLACEHOLDER") )
+	
+	window.input.OnGetFocus = function()
+		window.frame:SetKeyboardInputEnabled(true)
+	end
+	
+	window.input.OnLoseFocus = function(self)
+		window.frame:SetKeyboardInputEnabled(false)
+	end
+	
+	-- Let's Initialize the window.list.
+	local defaultList = PHX.TAUNTS[PHX.DEFAULT_CATEGORY]
+	
+	-- Make sure each category isn't empty and has lines.
+	local hasLines = false
+	
+	-- add default list
+	for name,_ in pairs( defaultList[LocalPlayer():Team()] ) do window.list:AddLine( name ) end
+	hasLines = true
+	
+	-- add category list
+	for category,_ in pairs( PHX.TAUNTS ) do
+		-- don't add if team taunt data is empty!
+		if PHX.TAUNTS[category][LocalPlayer():Team()] and PHX.TAUNTS[category][LocalPlayer():Team()] ~= nil then
+			window.comb:AddChoice( category )
 		end
 	end
-	hook.Add("Think", "CloseWindowFrame_Force", frame_Think_Force)
-
-	local list = vgui.Create("DListView", frame)
-
-	list:SetMultiSelect(false)
-	list:AddColumn("soundlist") -- because header is gone.
-	list.m_bHideHeaders = true
-	list:SetPos(10,52)
-	list:SetSize(0,450)
-	list:Dock(BOTTOM)
-
-	local TEAM_TAUNTS = {}
-	local WHOLE_TEAM_TAUNTS = {}
-
-	-- Determine if prop or hunter taunt list to be used	
-	if (LocalPlayer():Team() == TEAM_HUNTERS) then
-		TEAM_TAUNTS = PHE:GetTeamTaunt(TEAM_HUNTERS,false)
-		WHOLE_TEAM_TAUNTS = PHE:GetAllTeamTaunt(TEAM_HUNTERS)
-	else
-		TEAM_TAUNTS = PHE:GetTeamTaunt(TEAM_PROPS,false)
-		WHOLE_TEAM_TAUNTS = PHE:GetAllTeamTaunt(TEAM_PROPS)
-	end
-
-	for name,_ in pairs(TEAM_TAUNTS) do
-		list:AddLine(name)
-	end
-
-	local comb = vgui.Create("DComboBox", frame)
-
-	comb:Dock(TOP)
-	comb:SetSize(0, 20)
-	comb:SetValue("Original Taunts")
-	comb:AddChoice("Original Taunts")
-	comb:AddChoice("PH:E/Custom Taunts")
-
-	function comb:SortAndStyle(pnl)
+	
+	function window.comb:SortAndStyle( pnl )
 		pnl:SortByColumn(1,false)
-
+		
 		pnl.Paint = function(self,w,h)
 			surface.SetDrawColor(Color(50,50,50,180))
 			surface.DrawRect(0,0,w,h)
 		end
-
-		local color =
+		
+		local color = 
 		{
 			hover 	= Color(80,80,80,200),
 			select 	= Color(120,120,120,255),
 			alt		= Color(60,60,60,180),
 			normal 	= Color(50,50,50,180)
 		}
-
+		
 		for _,line in pairs( pnl:GetLines() ) do
 			function line:Paint( w, h )
 				if ( self:IsHovered() ) then
@@ -120,63 +128,94 @@ local function MainFrame()
 				surface.DrawRect(0,0,w,h)
 			end
 			for _,col in pairs(line["Columns"]) do
-				col:SetFont("PHE.TauntFont")
+				col:SetFont("PHX.TauntFont")
 				col:SetTextColor(color_white)
 			end
 		end
 	end
-
-	comb.OnSelect = function(pnl, idx, val)
-		if val == "Original Taunts" then
-			list:Clear()
-			hastaunt = false
-			if TEAM_TAUNTS then
-				for name,val in pairs(TEAM_TAUNTS) do
-					list:AddLine(name)
-				end
+	
+	function window:ResetList( ls )
+		if !table.IsEmpty(ls) then
+			for name,_ in pairs( ls ) do
+				self.list:AddLine( name )
 			end
-			pnl:SortAndStyle(list)
-		elseif val == "PH:E/Custom Taunts" then
-			list:Clear()
-			hastaunt = false
-			if LocalPlayer():Team() == TEAM_PROPS then
-				if PHE:GetTeamTaunt(TEAM_PROPS,true) != false then
-					for name,val in pairs(PHE:GetTeamTaunt(TEAM_PROPS,true)) do
-						list:AddLine(name)
-					end
-				else
-					list:AddLine("<< WARNING: NO TAUNTS DETECTED! >>")
-				end
-			else
-				if PHE:GetTeamTaunt(TEAM_HUNTERS,true) != false then
-					for name,val in pairs(PHE:GetTeamTaunt(TEAM_HUNTERS,true)) do
-						list:AddLine(name)
-					end
-				else
-					list:AddLine("<< WARNING: NO TAUNTS DETECTED! >>")
-				end
-			end
-			pnl:SortAndStyle(list)
+			hasLines = true
+		else
+			self.list:AddLine( PHX:FTranslate("TM_NO_TAUNTS") )
+			hasLines = false
 		end
 	end
-
-	comb:SortAndStyle(list)
-
-	-- I know, this one is fixed style.
-	local btnpanel = vgui.Create("DPanel", frame)
+	
+	function window:DoSearch( ls, strToFind )
+		local tTemp = {}
+		
+		if !table.IsEmpty(ls) then
+			for name,_ in pairs( ls ) do
+				if string.find(string.lower(name), strToFind) then -- just accept upper case too.
+					table.insert(tTemp, name)
+				end
+			end
+			
+			if !table.IsEmpty(tTemp) then
+				for _,v in pairs(tTemp) do
+					self.list:AddLine( v )
+				end
+				hasLines = true
+			else
+				self.list:AddLine( PHX:FTranslate("TM_TAUNTS_SEARCH_NOTHING", strToFind) )
+				hasLines = false
+			end
+			
+		else
+			self.list:AddLine( PHX:FTranslate("TM_NO_TAUNTS") )
+			hasLines = false
+		end
+	end
+	
+	function window.input:OnEnter( val )
+		window.list:Clear()
+		hastaunt = false
+		
+		local t = PHX.TAUNTS[window.CurrentCategory][LocalPlayer():Team()]
+		
+		if (val == "" or !val or val == nil) then
+			window:ResetList( t )
+		else
+			window:DoSearch( t, val )
+		end
+		
+		window.comb:SortAndStyle(window.list)
+	end
+	
+	function window.comb:OnSelect(_, val)
+		window.list:Clear()
+		hastaunt = false
+		window.CurrentCategory = val
+		window.input:SetText("")
+			
+		local t = PHX.TAUNTS[val][LocalPlayer():Team()]
+		window:ResetList( t )
+			
+		self:SortAndStyle(window.list)
+	end
+	
+	window.CurrentCategory = PHX.DEFAULT_CATEGORY
+	window.comb:SortAndStyle(window.list)
+	
+	local btnpanel = vgui.Create("DPanel", window.frame)
 	btnpanel:Dock(FILL)
 	btnpanel:SetBackgroundColor(Color(20,20,20,200))
-
-	local function CreateStyledButton(dock,size,ttip,margin,texture,imagedock, btnfunction)
+	
+	local function CreateStyledButton(dock, size, ttip, margin, texture, imagedock, btnfunction)
 		local left,top,right,bottom = margin[1],margin[2],margin[3],margin[4]
-
+		
 		local button = vgui.Create("DButton", btnpanel)
 		button:Dock(dock)
 		button:SetSize(size,0)
 		button:DockMargin(left,top,right,bottom)
 		button:SetText("")
 		button:SetTooltip(ttip)
-
+		
 		button.Paint = function(self,w,h)
 			if self:IsHovered() then
 				surface.SetDrawColor(Color(90,90,90,200))
@@ -185,94 +224,100 @@ local function MainFrame()
 			end
 			surface.DrawRect(0,0,w,h)
 		end
-
+		
 		button.DoClick = btnfunction
-
+		
 		local image = vgui.Create("DImage", button)
 		image:SetImage(texture)
 		image:Dock(imagedock)
 	end
-
-	local function TranslateTaunt(linename)
-		return WHOLE_TEAM_TAUNTS[linename]
+	
+	local function TranslateTaunt(category, linename)
+		local tm = LocalPlayer():Team()
+		return PHX.TAUNTS[category][tm][linename]
 	end
-
+	
 	local function SendToServer(snd)
-		if !isplayed then
+		local lastTauntTime = LocalPlayer():GetNWFloat("localLastTauntTime", 0)
+		local delay = lastTauntTime + PHX:GetCVar( "ph_customtaunts_delay" )
+	
+		if (delay <= CurTime()) then
 			net.Start("CL2SV_PlayThisTaunt"); net.WriteString(tostring(snd)); net.SendToServer();
-			isplayed = true
-			timer.Simple(GetConVar("ph_customtaunts_delay"):GetInt(), function() isplayed = false; end)
+			LocalPlayer():SetNWFloat( "localLastTauntTime", CurTime() + PHX:GetCVar( "ph_customtaunts_delay" ) )
 		else
-			chat.AddText(Color(220,40,0),"[PH:E - Taunts] Warning: ",Color(220,220,220),"Please wait in " .. GetConVar("ph_customtaunts_delay"):GetInt() .. " seconds...!")
+			PHX:ChatInfo( PHX:Translate("TM_NOTICE_PLSWAIT", tostring(math.Round(delay - CurTime()))) , "WARNING" )
 		end
 	end
-
-	CreateStyledButton(LEFT,86,"Play Taunt Locally",{5,5,5,5},"vgui/phehud/btn_play.vmt",FILL, function()
-		if hastaunt then
-			local getline = TranslateTaunt(list:GetLine(list:GetSelectedLine()):GetValue(1))
+	
+	CreateStyledButton(LEFT,86,PHX:FTranslate("TM_TOOLTIP_PLAYTAUNT"),{5,5,5,5},"vgui/phehud/btn_playpub.vmt",FILL, function()
+		if hastaunt and hasLines then
+			local getline = TranslateTaunt(window.CurrentCategory, window.list:GetLine(window.list:GetSelectedLine()):GetValue(1))
+			SendToServer(getline)
+		end
+	end)
+	CreateStyledButton(LEFT,86,PHX:FTranslate("TM_TOOLTIP_PREVIEW"),{5,5,5,5}, "vgui/phehud/btn_play.vmt",FILL, function()
+		if hastaunt and hasLines then
+			local getline = TranslateTaunt(window.CurrentCategory, window.list:GetLine(window.list:GetSelectedLine()):GetValue(1))
 			surface.PlaySound(getline)
+			PHX:AddChat(PHX:Translate("TM_NOTICE_PLAYPREVIEW", getline), Color(20,220,0))
 		end
 	end)
-	CreateStyledButton(LEFT,86,"Play Taunt Globally",{5,5,5,5}, "vgui/phehud/btn_playpub.vmt",FILL, function()
-		if hastaunt then
-			local getline = TranslateTaunt(list:GetLine(list:GetSelectedLine()):GetValue(1))
+	CreateStyledButton(LEFT,86,PHX:FTranslate("TM_TOOLTIP_PLAYCLOSE"),{5,5,5,5},"vgui/phehud/btn_playx.vmt",FILL, function()
+		if hastaunt and hasLines then
+			local getline = TranslateTaunt(window.CurrentCategory, window.list:GetLine(window.list:GetSelectedLine()):GetValue(1))
+		
+			SendToServer(getline)
+			window.frame:Close()
+		end
+	end)
+	CreateStyledButton(LEFT,86,PHX:FTranslate("TM_TOOLTIP_PLAYRANDOM"),{5,5,5,5},"vgui/phehud/btn_playrandom.vmt",FILL, function()
+		if hasLines then
+			local getRandom = table.Random(window.list:GetLines())
+			local getline = TranslateTaunt(window.CurrentCategory, getRandom:GetValue(1))
 			SendToServer(getline)
 		end
 	end)
-	CreateStyledButton(LEFT,86,"Play Taunt Globally and Close",{5,5,5,5},"vgui/phehud/btn_playx.vmt",FILL, function()
-		if hastaunt then
-			local getline = TranslateTaunt(list:GetLine(list:GetSelectedLine()):GetValue(1))
-
-			SendToServer(getline)
-			frame:Close()
+	CreateStyledButton(FILL,86,PHX:FTranslate("TM_TOOLTIP_CLOSE"),{5,5,5,5},"vgui/phehud/btn_close.vmt",FILL, function()
+		window.frame:Close()
+	end)
+	
+	window.list.OnRowRightClick = function(panel,line)
+		if !PHX:GetCVar( "ph_prop_right_mouse_taunt" ) then -- don't show menu if Prop Taunt Right Click is enabled!
+			hastaunt = true
+			local getline = TranslateTaunt(window.CurrentCategory, window.list:GetLine(window.list:GetSelectedLine()):GetValue(1))
+			
+			local menu = DermaMenu()
+			menu:AddOption(PHX:FTranslate("TM_TOOLTIP_PREVIEW"), function() if hasLines then surface.PlaySound(getline); PHX:AddChat(PHX:Translate("TM_NOTICE_PLAYPREVIEW", getline), Color(20,220,0)); end end):SetIcon("icon16/control_play.png")
+			menu:AddOption(PHX:FTranslate("TM_TOOLTIP_PLAYTAUNT"), function() if hasLines then SendToServer(getline); end end):SetIcon("icon16/sound.png")
+			menu:AddOption(PHX:FTranslate("TM_TOOLTIP_PLAYCLOSE"), function() if hasLines then SendToServer(getline); window.frame:Close(); end end):SetIcon("icon16/sound_delete.png")
+			menu:AddSpacer()
+			menu:AddOption(PHX:FTranslate("TM_MENU_CLOSE"), function() window.frame:Close(); end):SetIcon("icon16/cross.png")
+			menu:Open()
 		end
-	end)
-	CreateStyledButton(FILL,86,"Close the Window",{5,5,5,5},"vgui/phehud/btn_close.vmt",FILL, function()
-		frame:Close()
-	end)
-
-	list.OnRowRightClick = function(panel,line)
-		hastaunt = true
-		local getline = TranslateTaunt(list:GetLine(list:GetSelectedLine()):GetValue(1))
-
-		local menu = DermaMenu()
-		menu:AddOption("Play (Local)", function() surface.PlaySound(getline); print("Playing: " .. getline); end):SetIcon("icon16/control_play.png")
-		menu:AddOption("Play (Global)", function() SendToServer(getline); end):SetIcon("icon16/sound.png")
-		menu:AddOption("Play and Close (Global)", function() SendToServer(getline); frame:Close(); end):SetIcon("icon16/sound_delete.png")
-		menu:AddSpacer()
-		menu:AddOption("Close Menu", function() frame:Close(); end):SetIcon("icon16/cross.png")
-		menu:Open()
 	end
-
-	list.OnRowSelected = function()
+	
+	window.list.OnRowSelected = function()
 		hastaunt = true
 	end
-
-	list.DoDoubleClick = function(id,line)
+	
+	window.list.DoDoubleClick = function(id,line)
 		hastaunt = true
-		local getline = TranslateTaunt(list:GetLine(list:GetSelectedLine()):GetValue(1))
+		local getline = TranslateTaunt(window.CurrentCategory, window.list:GetLine(window.list:GetSelectedLine()):GetValue(1))
 		SendToServer(getline)
-
-		if GetConVar("ph_cl_autoclose_taunt"):GetBool() then frame:Close(); end
+		
+		if PHX.CLCVAR.AutoCloseTaunt:GetBool() then window.frame:Close(); end
 	end
-
-	frame:MakePopup()
-	frame:SetKeyboardInputEnabled(false)
+	
+	window.frame:MakePopup()
+	window.frame:SetKeyboardInputEnabled(false)
 end
 
-concommand.Add("ph_showtaunts", function()
-if LocalPlayer():Alive() && isforcedclose != true && LocalPlayer():GetObserverMode() == OBS_MODE_NONE then
-	if isopened != true then
+concommand.Add("ph_showtaunts", function(ply)
+if ply:Alive() and window.state and ply:GetObserverMode() == OBS_MODE_NONE then
+	if !window.CurrentlyOpen then
 		MainFrame()
 	end
 else
-	chat.AddText(Color(220,40,0),"[PH:E Taunts] Notice: ",Color(220,220,220), "You can only play custom taunts when you\'re alive as prop/hunter!")
+	PHX:ChatInfo( PHX:Translate("TM_PLAY_ONLY_ALIVE"), "WARNING" )
 end
-end, nil, "Show Prop Hunt taunt list, so you can select and play for self or play as a taunt.")
-
-local function BindPress(ply, bind, pressed)
-	if string.find(bind, "+menu_context") && pressed then
-		RunConsoleCommand("ph_showtaunts")
-	end
-end
-hook.Add("PlayerBindPress", "PlayerBindPress_menuContext", BindPress)
+end, nil, "Show Prop Hunt taunt menu")
