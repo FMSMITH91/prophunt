@@ -163,26 +163,32 @@ function GM:InputMouseApply( cmd, x, y, angle )
 	
 end
 
-function GM:TeamChangeNotification( ply, oldteam, newteam )
-
-	if( ply && ply:IsValid() ) then
+-- this = GM
+local function TeamChangeNotification( this, ply, oldteam, newteam )
+	if( ply && IsValid(ply) ) then
 		local nick = ply:Nick();
 		local oldTeamColor = team.GetColor( oldteam );
 		local newTeamName = team.GetName( newteam );
 		local newTeamColor = team.GetColor( newteam );
 		
-		local txtjoinedTo	= PHX:FTranslate("CHAT_JOINEDTHE") or " joined the "
-		local txtjoined 	= PHX:FTranslate("CHAT_JOINED") or " joined "
-		
 		if( newteam == TEAM_SPECTATOR ) then
-			chat.AddText( oldTeamColor, nick, color_white, txtjoinedTo, newTeamColor, newTeamName , color_white, " "..PHX:GetRandomTranslated("RANDOM_SPECTATORS"));
+			chat.AddText( oldTeamColor, nick, color_white, PHE.LANG.CHAT.JOINEDTHE, newTeamColor, newTeamName , color_white, " " .. table.Random(PHE.LANG.CHAT.RANDOM_SPECTATORS));
 		else
-			chat.AddText( oldTeamColor, nick, color_white, txtjoined, newTeamColor, newTeamName );
+			chat.AddText( oldTeamColor, nick, color_white, PHE.LANG.CHAT.JOINED, newTeamColor, newTeamName );
 		end
 		
 		surface.PlaySound("buttons/lightswitch2.wav")
 	end
 end
+
+-- To prevent lua errors
+GM.TeamChangeNotification = TeamChangeNotification
+
+-- Something overrides this function, making it not use the translated version
+hook.Add("InitPostEntity", "PHE.JoinedMessageFix", function()
+	GAMEMODE.TeamChangeNotification = TeamChangeNotification
+end)
+
 net.Receive("fretta_teamchange", function()
 	local ply  = net.ReadEntity()
 	local oldt = net.ReadInt(12)

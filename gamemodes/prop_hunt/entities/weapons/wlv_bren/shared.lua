@@ -156,9 +156,7 @@ else
 	end
 	
 	if SERVER then
-		if PHX and PHX.VerboseMsg then
-			PHX.VerboseMsg("[ Bren MK ] Server has no default M9K Base, Reverting to normal sandbox base!")
-		end
+		printVerbose("[ Lucky Ball :: Bren MK ] Server has no default M9K Base, Reverting to normal sandbox base!")
 	end
 
 	SWEP.Category 				= "Wolvindra-Vinzuerio"

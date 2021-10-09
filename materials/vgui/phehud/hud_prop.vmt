@@ -1,6 +1,0 @@
-"UnlitGeneric"
-{
-	"$basetexture" "vgui\phehud\hud_prop"
-	"$vertexcolor" "1"
-	"$translucent" "1"
-}

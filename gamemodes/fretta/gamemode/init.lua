@@ -57,11 +57,6 @@ function GM:Initialize()
 	if ( GAMEMODE.RoundBased ) then
 		timer.Simple( 3, function() GAMEMODE:StartRoundBasedGame() end )
 	end
-	
-	if ( GAMEMODE.AutomaticTeamBalance ) then
-		timer.Create( "CheckTeamBalance", 30, 0, function() GAMEMODE:CheckTeamBalance() end )
-	end
-	
 end
 
 function GM:Think()
@@ -381,7 +376,7 @@ function GM:OnPlayerChangedTeam( ply, oldteam, newteam )
 	// change to a spectator or something while dead.
 	if ( newteam == TEAM_SPECTATOR ) then
 	
-		// If we changed to spectator mode, respawn where we are		
+		// If we changed to spectator mode, respawn where we are
 		local Pos = ply:EyePos()
 		ply:Spawn()
 		ply:SetPos( Pos )
@@ -404,9 +399,7 @@ function GM:OnPlayerChangedTeam( ply, oldteam, newteam )
 		//  team that we chose
 		
 	end
-	
-	//PrintMessage( HUD_PRINTTALK, Format( "%s joined '%s'", ply:Nick(), team.GetName( newteam ) ) )
-	
+		
 	// Send net for team change
 	
 	net.Start("fretta_teamchange")
@@ -417,7 +410,7 @@ function GM:OnPlayerChangedTeam( ply, oldteam, newteam )
 	
 end
 
-function GM:CheckTeamBalance( bDontKillPlayer )
+function GM:CheckTeamBalance()
 
 	local highest
 
@@ -434,35 +427,25 @@ function GM:CheckTeamBalance( bDontKillPlayer )
 	if not highest then return end
 
 	for id, tm in pairs( team.GetAllTeams() ) do
-		if ( id ~= highest and id > 0 && id < 1000 && team.Joinable( id ) ) then
-			if team.NumPlayers( id ) < team.NumPlayers( highest ) then
-				while team.NumPlayers( id ) < team.NumPlayers( highest ) - 1 do
-				
-					local ply = GAMEMODE:FindLeastCommittedPlayerOnTeam( highest )
-					
-					if !bDontKillPlayer then
-						ply:Kill()
-					end
-					
-					ply:SetTeam( id )
+		if ( id ~= highest and id > 0 && id < 1000 && team.Joinable( id ) ) and team.NumPlayers( id ) < team.NumPlayers( highest ) then
+			while team.NumPlayers( id ) < team.NumPlayers( highest ) - 1 do
 
-					--PrintMessage(HUD_PRINTTALK, ply:Name().." has been changed to "..team.GetName( id ).." for team balance." )
-					
-					if (PHX and PHX ~= nil) then
-						for _, listener in ipairs(player.GetAll()) do
-							if listener == ply then
-								listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCEYOU")
-							else
-								listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCE", ply:Name(), team.GetName( id ))
-							end
-						end
+				local ply = GAMEMODE:FindLeastCommittedPlayerOnTeam( highest )
+
+				ply:Kill()
+				ply:SetTeam( id )
+
+				// Advert
+				for _, listener in ipairs(player.GetAll()) do
+					if listener == ply then
+						listener:ChatPrint(PHE.LANG.CHAT.SWAPBALANCEYOU)
+					else
+						listener:ChatPrint(string.format(PHE.LANG.CHAT.SWAPBALANCE, ply:Name(), team.GetName(id)))
 					end
-					
 				end
 			end
 		end
 	end
-	
 end
 
 function GM:FindLeastCommittedPlayerOnTeam( teamid )
@@ -517,19 +500,10 @@ function GM:EndOfGame( bGamemodeVote )
 	gamemode.Call("OnEndOfGame", bGamemodeVote);
 	
 	if ( bGamemodeVote ) then
-		
-		for _,ply in pairs(player.GetAll()) do
-			ply:PHXChatInfo("NOTICE", "CHAT_STARTING_MAPVOTE")
-		end
-		
-		timer.Simple( GAMEMODE.VotingDelay, function()
-			if PHX.CVAR.UseCustomMapVote:GetBool() then
-				local f = PHX.CVAR.CustomMapVoteCall:GetString()
-				RunString(f, "MapVote_CVAR")
-			else
-				MapVote.Start()
-			end
-		end )
+	
+		MsgN( "Starting map voting..." )
+		PrintMessage( HUD_PRINTTALK, "Starting map voting..." );
+		timer.Simple( GAMEMODE.VotingDelay, function() MapVote.Start() end )
 		
 	end
 

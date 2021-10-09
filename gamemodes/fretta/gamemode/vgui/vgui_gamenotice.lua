@@ -83,7 +83,7 @@ function PANEL:AddIcon( txt )
 	
 	else
 	
-		self:AddText( PHX:FTranslate("HUD_KILLED") or "killed" )
+		self:AddText( PHE.LANG.DEATHNOTICE.KILLED )
 	
 	end
 	

@@ -97,7 +97,7 @@ Please note that you might have to create a custom serverside lua with full of f
 		-- code...
 	end)
 	
-Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with PHX.VerboseMsg!
+Keep in note that UniqueName should be unique and different. Otherwise will cause some confusion with printVerbose!
 ]]
 balls.funclists = {
 	function(pl)
@@ -212,13 +212,13 @@ balls.funclists = {
 
 function balls:AddMoreLuckyEvents()
 	local t = list.Get("LuckyBallsAddition")
-	if !table.IsEmpty(t) then
+	if table.Count(t) > 0 then
 		for name,tab in pairs(t) do
-			PHX.VerboseMsg("[PHX: Lucky Ball] Adding new events : "..name)
+			printVerbose("[ Lucky Ball :: Add Event ] Adding new Lucky Balls events : "..name)
 			table.insert(balls.funclists, tab)
 		end
 	else
-		PHX.VerboseMsg("[PHX: Lucky Ball] There is no additional events detected, skipping...")
+		printVerbose("[ Lucky Ball :: Add Event ] There is no additional Lucky Balls events detected, ignoring...")
 	end
 end
 

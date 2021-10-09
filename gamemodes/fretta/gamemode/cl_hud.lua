@@ -96,9 +96,7 @@ function GM:UpdateHUD_WaitForPlayers( InRound )
 	
 		local WaitText = vgui.Create( "DHudElement" );
 			WaitText:SizeToContents()
-			WaitText.Think = function(self)
-				self:SetText( PHX:FTranslate("HUD_WAITPLY") or "Waiting for players..." )
-			end
+			WaitText:SetText( PHE.LANG.HUD.WAIT )
 		GAMEMODE:AddHUDItem( WaitText, 8 )
 	
 	end
@@ -109,19 +107,16 @@ function GM:UpdateHUD_RoundResult( RoundResult, Alive )
 
 	local txt = GetGlobalString( "RRText" )
 	
-	--hax
-	local propTeam = GetGlobalInt( "RoundResult", 0 )
-	
 	if ( type( RoundResult ) == "number" ) && ( team.GetAllTeams()[ RoundResult ] && txt == "" ) then
 		local TeamName = team.GetName( RoundResult )
-		if ( TeamName ) then txt = TeamName .. " Wins!" end
+		if ( TeamName ) then txt = string.format(PHE.LANG.HUD.WIN, TeamName) end
 	elseif ( type( RoundResult ) == "Player" && IsValid( RoundResult ) && txt == "" ) then
 		txt = RoundResult:Name() .. " Wins!"
 	end
 
 	local RespawnText = vgui.Create( "DHudElement" );
 		RespawnText:SizeToContents()
-		RespawnText:SetText( PHX:FTranslate(txt, team.GetName(propTeam)) or txt )
+		RespawnText:SetText( txt )
 	GAMEMODE:AddHUDItem( RespawnText, 8 )
 
 end
@@ -133,13 +128,13 @@ function GM:UpdateHUD_Observer( bWaitingToSpawn, InRound, ObserveMode, ObserveTa
 	local col = Color( 255, 255, 255 );
 
 	if ( IsValid( ObserveTarget ) && ObserveTarget:IsPlayer() && ObserveTarget != LocalPlayer() && ObserveMode != OBS_MODE_ROAMING ) then
-		lbl = PHX:FTranslate("HUD_SPECTATING") or "SPECTATING"
+		lbl = "SPECTATING"
 		txt = ObserveTarget:Nick()
 		col = team.GetColor( ObserveTarget:Team() );
 	end
 	
 	if ( ObserveMode == OBS_MODE_DEATHCAM || ObserveMode == OBS_MODE_FREEZECAM ) then
-		txt = PHX:FTranslate("HUD_YOUDIED") or "You Died!"
+		txt = "You Died!" // were killed by?
 	end
 	
 	if ( txt ) then
@@ -162,7 +157,7 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 	
 		local RespawnText = vgui.Create( "DHudElement" );
 			RespawnText:SizeToContents()
-			RespawnText:SetText( "Waiting for round start" )
+			RespawnText:SetText( PHE.LANG.HUD.WAIT )
 		GAMEMODE:AddHUDItem( RespawnText, 8 )
 		return
 		
@@ -197,11 +192,11 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 	local Bar = vgui.Create( "DHudBar" )
 	GAMEMODE:AddHUDItem( Bar, 8 )
 	
-	-- This should show on dead players too	
+	-- This should show on dead players too
 	
 	if ( InRound ) then 
 	
-		local TeamIndicator_Name_AddString = PHX:FTranslate("HUD_DEAD") or "(DEAD) "
+		local TeamIndicator_Name_AddString = "(DEAD) "
 		if ( LocalPlayer():Team() == TEAM_SPECTATOR ) then TeamIndicator_Name_AddString = "" end
 	
 		local TeamIndicator = vgui.Create( "DHudUpdater" );
@@ -218,7 +213,7 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 		local RoundNumber = vgui.Create( "DHudUpdater" );
 			RoundNumber:SizeToContents()
 			RoundNumber:SetValueFunction( function() return GetGlobalInt( "RoundNumber", 0 ) end )
-			RoundNumber:SetLabel( PHX:FTranslate("HUD_ROUND") or "ROUND" )
+			RoundNumber:SetLabel( PHE.LANG.HUD.ROUND )
 		Bar:AddItem( RoundNumber )
 		
 		local RoundTimer = vgui.Create( "DHudCountdown" );
@@ -226,7 +221,7 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 			RoundTimer:SetValueFunction( function() 
 											if ( GetGlobalFloat( "RoundStartTime", 0 ) > CurTime() ) then return GetGlobalFloat( "RoundStartTime", 0 )  end 
 											return GetGlobalFloat( "RoundEndTime" ) end )
-			RoundTimer:SetLabel( PHX:FTranslate("HUD_TIME") or "TIME" )
+			RoundTimer:SetLabel( PHE.LANG.HUD.TIME )
 		Bar:AddItem( RoundTimer )
 
 	end
@@ -269,15 +264,15 @@ function GM:UpdateHUD_Alive( InRound )
 			local RoundNumber = vgui.Create( "DHudUpdater" );
 				RoundNumber:SizeToContents()
 				RoundNumber:SetValueFunction( function() return GetGlobalInt( "RoundNumber", 0 ) end )
-				RoundNumber:SetLabel( PHX:FTranslate("HUD_ROUND") or "ROUND" )
+				RoundNumber:SetLabel( PHE.LANG.HUD.ROUND )
 			Bar:AddItem( RoundNumber )
 			
 			local RoundTimer = vgui.Create( "DHudCountdown" );
 				RoundTimer:SizeToContents()
-				RoundTimer:SetValueFunction( function() 
+				RoundTimer:SetValueFunction( function()
 												if ( GetGlobalFloat( "RoundStartTime", 0 ) > CurTime() ) then return GetGlobalFloat( "RoundStartTime", 0 )  end 
 												return GetGlobalFloat( "RoundEndTime" ) end )
-				RoundTimer:SetLabel( PHX:FTranslate("HUD_TIME") or "TIME" )
+				RoundTimer:SetLabel( PHE.LANG.HUD.TIME )
 			Bar:AddItem( RoundTimer )
 
 		end
