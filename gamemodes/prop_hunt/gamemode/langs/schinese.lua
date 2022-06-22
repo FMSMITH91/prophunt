@@ -8,19 +8,28 @@ LANG.code = "zh-CN"
 
 LANG.Name 		 	= "简体中文"
 LANG.NameEnglish	= "Simplified Chinese"
-LANG.Author			= "辣雞 | LaGi"
+LANG.Author			= "辣雞 | LaGi, Ph.X"
 -- Can Accept: String, and Table.
-LANG.AuthorURL		= {"http://steamcommunity.com/profiles/76561198057744616"}
+LANG.AuthorURL		= {
+     "http://steamcommunity.com/profiles/76561198057744616",
+     "https://steamcommunity.com/profiles/76561198034356313"
+}
 
 -- Special Section that isn't String-based
-LANG.SUICIDEMSG = { --> FRETTA
+LANG.SUICIDEMSG = {  -- Fix me: there was addition text here but feel free to add more.
 	"自杀!", -- i believe this was from 9gag joke.
 	"神秘的死亡.",
 	"离奇的消失.",
 	"盲狙自己.",
 	"愤怒的弹出去了.",
 	"醉倒了.",
-	"阵亡... 祝下次好运!",
+	"阵亡. 祝下次好运!",
+	"为杀害无辜物品而后悔.",
+	"穿越到暗房.",
+	"正在努力灭绝.",
+	"挂了.",
+	"惊慌失措并试图杀死所有物品.",
+	"停手, 找人帮忙.",
 	"把自己给拍没了.",
 	"被棍子绊倒了.",
 	"死于力量之下.",
@@ -33,6 +42,12 @@ LANG.RANDOM_SPECTATORS = { --> FRETTA
 	"看一些东西.",
 	" ",
 }
+
+LANG["PHX_TEAM_CONNECTING"] = "正在连接"
+LANG["PHX_TEAM_PROPS"]		= "物品"
+LANG["PHX_TEAM_HUNTERS"] 	= "猎人"
+LANG["PHX_TEAM_UNASSIGNED"]	= "未分配"
+LANG["PHX_TEAM_SPECTATOR"] 	= "观众"
 
 -- List of string-based translation
 
@@ -66,20 +81,28 @@ LANG["DERMA_NAME"]				= "名称"
 LANG["DERMA_KILLS"]				= "击杀"
 LANG["DERMA_DEATHS"]			= "死亡"
 LANG["DERMA_PING"]				= "Ping"
+LANG["DERMA_SERVER_TAG"]		= "SV" --Fix Me
+LANG["DERMA_BOT_TAG"]			= "BOT" -- Fix Me
+LANG["DERMA_GAMEMODE_CREDITS"]	= "%s | Version: %s - Rev. %s" -- Fix Me
 
 LANG["CHAT_JOINED"]				= " 已加入 "
 LANG["CHAT_JOINEDTHE"]			= " 加入了 "
 
 LANG["CHAT_SWAPBALANCE"]		= "为了平衡队伍，将 %s 送到 %s 了."
-LANG["CHAT_SWAPBALANCEYOU"]		= "你被调过来达到完美的游戏平衡." -- Smile... for even in death, you have become children of Thanos
+LANG["CHAT_SWAPBALANCEYOU"]		= "你被换队以实现完美的游戏平衡." -- Smile... for even in death, you have become children of Thanos
+
+-- FRETTA: Splash Starting Screen
+LANG["SPASHSCREEN_BY_X"]		= "by %s"	--Fix Me
+-- RichTextBox
+LANG["HELP_DONATORS_AND_CONTRIBUTORS"]  = "\n\nDonators & Contributors:\n- %s" --Fix Me
 -- // END OF FRETTA SECTION \\
 
-LANG["HELP_F1"] 				= [[物品猎杀 (代号) X 专案.
+LANG["HELP_F1"] 				= [[物品猎杀 X 项目.
 
-本专案制作现代化与可定制的物品猎杀 X.
+本项目旨在让物品猎杀更加现代化与可定制.
 
-更多信息可在以下位置找到:
-https://wolvindra.xyz/prophuntx
+详情请访问:
+https://gmodgameservers.com/prophuntx
 
 要查看更多信息、帮助和指南，请按[F1]键，然后点击[物品猎杀菜单]按钮.
 
@@ -106,19 +129,19 @@ LANG["HUD_MAGSEC"]				= "弹匣. / 次要." --Magazine Counts (separator) Second
 
 -- !!WEAPON NAMES CANNOT BE TRANSLATED, THEY USE FROM language.GetPhrase THEREFORE IT'S IMPOSSIBLE TO DO.
 
-LANG["TEAM_PROPS"]				= "物品"
-LANG["TEAM_HUNTERS"]			= "猎人"
+LANG["TEAM_PROPS"]				= LANG["PHX_TEAM_PROPS"]
+LANG["TEAM_HUNTERS"]			= LANG["PHX_TEAM_HUNTERS"]
 
 LANG["HUD_ROTLOCK"]				= "物品旋转: 锁定"
 LANG["HUD_ROTFREE"]				= "物品旋转: 自由"
 LANG["HUD_KILLEDBY"]			= "你被 %s 击杀"
 
 LANG["HUD_AUTOTAUNT"]			= "在 %d 秒后自动嘲讽"
-LANG["HUD_AUTOTAUNT_ALT"]		= "在 %d 中自动嘲讽"
+LANG["HUD_AUTOTAUNT_ALT"]		= "在 %d 后自动嘲讽"
 
 LANG["HUD_TargetID"]			= "玩家: %s (%d%%)" -- Player: <NAME> (<HEALTH>%)
 
-LANG["HUD_BLINDED"]				= "猎人将在 %s 秒后行动"
+LANG["HUD_BLINDED"]				= "%s 将在 %s 秒后复明并开始行动"
 LANG["HUD_UNBLINDED"]			= "准备好了吗，咱们来喽!"
 
 LANG["BLIND_RESPAWN_TEAM"]		= "失明时间内，你在 %d 秒后在 %s队伍中复活."
@@ -132,25 +155,25 @@ LANG["MISC_NEXT"]				= "后页 >"
 LANG["MISC_ACCESSDENIED"]		= "拒绝访问"
 
 -- Chat messages
-LANG["CHAT_NOPLAYERS"]			= "没有足够的玩家使游戏开始!"
+LANG["CHAT_NOPLAYERS"]			= "没有足够的玩家来开始游戏!"
 LANG["CHAT_SWAP"]				= "队伍已交换!"
 
-LANG["CHAT_SWAPTEAM_WARNING"]   = "你已经变更队伍 %dx (最多 %dx). 之后，不能在变更队伍。"
+LANG["CHAT_SWAPTEAM_WARNING"]   = "你已经变更队伍 %dx (最多 %dx). 之后将无法再变更队伍。"
 LANG["CHAT_SWAPTEAM_REVERT"]	= "不能变更到 %s 队伍，因为你超出变更次数."
 
-LANG["CHAT_PROP_NO_ROOM"] 		= "没有足够的空间变更物品!"
+LANG["CHAT_PROP_NO_ROOM"] 		= "没有足够的空间变形该物品!"
 
 -- Notification
-LANG["NOTIFY_IN_PROP_TEAM"]		= "你在物品队伍中获得旋转能力! 你可以移动滑鼠来旋转."
+LANG["NOTIFY_IN_PROP_TEAM"]		= "你在物品队伍中获得旋转能力! 你可以移动鼠标来旋转."
 LANG["NOTIFY_ROTATE_NOTICE"]	= "你可以按下(默认)[R]键来切换锁定旋转!"
 
 -- Custom Taunt Window
-LANG["TM_WARNING_CT_DISABLE"]	= "[PHX - 嘲讽] 警告: 本服务器禁用自订嘲讽."
+LANG["TM_WARNING_CT_DISABLE"]	= "[PHX - 嘲讽] 警告: 本服务器禁用自定义嘲讽."
 LANG["TM_NO_TAUNTS"]			= "警告: 在此类别中未找到嘲讽."
-LANG["TM_PLAY_ONLY_ALIVE"] 		= "仅能在活着的时候使用自订嘲讽."
+LANG["TM_PLAY_ONLY_ALIVE"] 		= "仅能在活着的时候使用自定义嘲讽."
 
 LANG["TM_WINDOW_TITLE"]			= "物品猎杀自订嘲讽窗口"
-LANG["TM_NOTICE_PLSWAIT"]		= "请稍等 %s 秒!"
+LANG["TM_NOTICE_PLSWAIT"]		= "随机嘲讽种,请稍等 %s 秒!"
 LANG["TM_NOTICE_PLAYPREVIEW"]	= "预览嘲讽: %s"
 
 LANG["TM_TOOLTIP_PLAYTAUNT"] 	= "播放嘲讽"
@@ -183,7 +206,7 @@ LANG["PHXM_CVAR_CHANGED"]		= "[设置] CVar %q 已更改为 %q"
 --[[
 	Player Mute Settings
 ]]
-LANG["PHXM_MUTE_SELECT"]		= "选择你想要禁音的玩家."
+LANG["PHXM_MUTE_SELECT"]		= "选择你想要禁言的玩家."
 
 --[[ 
 	Player Settings
@@ -205,9 +228,9 @@ LANG["PHXM_PLAYER_SEE_HUNTER_LINE"]		= "在猎人身上画线，在旁观模式�
 LANG["PHXM_PLAYER_SEE_LBALL_ICONS"]		= "生成 '幸运球' 图标后将其显示"
 LANG["PHXM_PLAYER_SEE_CRYSTAL_ICONS"]	= "生成 '恶魔球' 图标后将其显示"
 
-LANG["PHXM_PLAYER_USE_NEW_HUD"]			= "使用新PH: 增强HUD"
-LANG["PHXM_PLAYER_SHOW_TUTOR"]			= "显示教程弹出视窗 (每个物品生程仅显是2x)"
-LANG["PHXM_PLAYER_USE_NEW_CROSSHAIR"]	= "开启自订准心"
+LANG["PHXM_PLAYER_USE_NEW_HUD"]			= "使用新 PH: 增强 HUD"
+LANG["PHXM_PLAYER_SHOW_TUTOR"]			= "显示教程弹出视窗 (在每个物品生成时只显示2次)"
+LANG["PHXM_PLAYER_USE_NEW_CROSSHAIR"]	= "开启自定义准心"
 LANG["PHXM_PLAYER_SHOW_TEAM_TOPBAR"]	= "左上角显示还活着的玩家栏(至少显示4位玩家)"
 
 --[[
@@ -223,7 +246,7 @@ LANG["MDL_MENU_MODELINFO"] 		= "模组信息"
 
 LANG["MISC_APPLYMDL"] 			= "应用模型"
 
-LANG["PHXM_MODEL_DISABLED"] 	= "抱歉喽，本服务器已禁用自订玩家模型"
+LANG["PHXM_MODEL_DISABLED"] 	= "抱歉喽，本服务器已禁用自定义玩家模型"
 LANG["PHXM_PLAYERMODEL_SETFOV"]	= "模型视距(FOV)"
 
 --[[
@@ -242,9 +265,9 @@ LANG["PHXM_ADMIN_LANGTOUSE"]				= "强制语言使用"
 LANG["PHXM_ADMIN_PLAYERDEFAULTLANG"] 		= "首次加入游玩时玩家的默认语言"
 
 -- Gameplay settings
-LANG["PHXM_ADMIN_CUSTOM_MODEL"]				= "开启猎人自订模型"
-LANG["PHXM_ADMIN_CUSTOM_MODEL_PROP"]		= "开启物品自订模型 - 确认也开启猎人自订模型"
-LANG["PHXM_ADMIN_TAUNT_DELAY_CUSTOM"]		= "自订嘲讽"
+LANG["PHXM_ADMIN_CUSTOM_MODEL"]				= "开启自定义猎人模型"
+LANG["PHXM_ADMIN_CUSTOM_MODEL_PROP"]		= "开启自定义物品模型 - 别忘了同时开启自定义猎人模型"
+LANG["PHXM_ADMIN_TAUNT_DELAY_CUSTOM"]		= "自定义嘲讽"
 LANG["PHXM_ADMIN_TAUNT_DELAY_RANDOM"]		= "一般嘲讽延迟(秒)"
 LANG["PHXM_ADMIN_TAUNT_DELAY_AUTO"]			= "自动嘲讽延迟(秒)"
 LANG["PHXM_ADMIN_AUTOTAUNT_ENABLE"]			= "开启自动嘲讽功能"
@@ -269,7 +292,7 @@ LANG["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 		= "要开启玩家加入或离开的聊�
 
 LANG["PHXM_ADMIN_FORCEJOINBALANCE"]			= "强迫玩家加入后平衡队伍"
 LANG["PHXM_ADMIN_ENABLETEAMBALANCE"]		= "在回合开始时自动平衡队伍(队伍平衡)"
-LANG["PHXM_ADMIN_PICKUP_PROPS"] 			= "允许捡起小道具吗? 0:不允许; 1:仅猎人 2:仅物品 3:允许所有人"
+LANG["PHXM_ADMIN_PICKUP_PROPS"] 			= "允许捡起小物品吗? 0:不允许; 1:仅猎人 2:仅物品 3:允许所有人"
 
 LANG["PHXM_ADMIN_TAUNTMODES"]			= "嘲讽模式"
 LANG["PHXM_ADMIN_TAUNTMODE_MODE"]		= "--[当前嘲讽模式为: %d ]--"
@@ -289,9 +312,9 @@ LANG["PHXM_MODE3"]						= "模式 [3]: 允许拾取"
 ]]
 LANG["PHXM_ADMIN_DEVSECTION"]		= "开发人员选项/实验功能"
 LANG["PHXM_ADMIN_ROOMCHECK"]		= "开启边界检查? 能防止你卡在物体/墙上"
-LANG["PHXM_ADMIN_USENEWMKBREN"]		= "对Bren MK II奖励武器使用新模型(需要重启地图)"
+LANG["PHXM_ADMIN_USENEWMKBREN"]		= "布伦 MK II 奖励武器使用新模型(需要重启地图)"
 LANG["PHXM_ADMIN_BEVERBOSE"]		= "开发人员: 详细 - 开启打印PH:X详细信息和事件吗?"
-LANG["PHXM_ADMIN_SHOWPLNAMEHEAD"]	= "开启队伍玩家名称显示在萤幕上."
+LANG["PHXM_ADMIN_SHOWPLNAMEHEAD"]	= "显示玩家队伍名称."
 LANG["PHXM_ADMIN_USESINGLE_FZCAM"]	= "使用单个死亡特写的声音，而不是声音列表(使用'ph_fc_cue_path'来确认定格镜头的声音路径)"
 LANG["PHXM_ADMIN_MODELLISTINGTYPE"] = "使用旧版模型清单: 0 = 所有玩家模型(AddValidModel), 1 = 使用旧版: list.Get('PlayerOptionsModel')"
 LANG["PHXM_ADMIN_JUMPPOWER"]		= "物品额外弹跳力倍数"
@@ -301,9 +324,9 @@ LANG["PHXM_ADMIN_RELOAD_OBB"]		= "开发人员: 每次重新启动时刷新OBB�
 --[[
 	Experimental & PH:X Features
 ]]
-LANG["PHXM_ADMIN_EXPERIMENTALPHX"]			= "新的PHX实验部分"
+LANG["PHXM_ADMIN_EXPERIMENTALPHX"]			= "新的 PHX 实验部分"
 
-LANG["PHXM_ADMIN_HLA_COMBINE"]				= "新增支持半条命:爱莉克斯联合军模型"
+LANG["PHXM_ADMIN_HLA_COMBINE"]				= "新增支持半衰期: 爱莉克斯的联合军模型"
 LANG["PHXM_ADMIN_TEAMBALANCE"]				= "开启队伍平衡功能"
 LANG["PHXM_ADMIN_CHANGETEAM_LIMIT"]			= "使用队伍切换限制器. 设置-1为禁用"
 LANG["PHXM_ADMIN_USENEWCHAT"]				= "使用新聊天框(eChat) - 这是临时替换. 如果你有新的聊天框,请取消选取."
@@ -325,7 +348,7 @@ LANG["PHXM_MV_USE_ULX_VOTEMAPS"]	= "使用ULX地图投票的地图列表? 否则
 LANG["PHXM_MV_MAPLIMIT"]			= "在地图投票中显示的地图数量"
 LANG["PHXM_MV_TIMELIMIT"]			= "投票时作为默认的地图投票时间(秒)."
 LANG["PHXM_MV_MAPBEFOREREVOTE"]		= "重新出现地图所需的地图更改数"
-LANG["PHXM_MV_RTVCOUNT"]			= "需要多少人才能使用RTV(投票表决)"
+LANG["PHXM_MV_RTVCOUNT"]			= "需要多少人才能发起撼动投票(Rock the Vote)"
 
 LANG["PHXM_MV_EXPLANATION1"]		= "要设置列出相对应的地图，请在控制台中使用(举例)[ mv_mapprefix 'ph_,cs_,de_' ]."
 LANG["PHXM_MV_EXPLANATION2"]		= "如果你使用ULX，请使用map_vote. 若不是，请使用mv_start."
@@ -343,33 +366,45 @@ LANG["PHXM_ABOUT_VERSIONING"]		= "版本: %s - 修订版: %s"
 LANG["PHXM_ABOUT_AUTHOR"]			= "By: %s"
 LANG["PHXM_ABOUT_ENJOYING"]			= "如果您喜欢此游戏，请考虑捐赠我们!"
 LANG["PHXM_ABOUT_UPDATE"]			= "物品猎杀 X 更新"
-LANG["PHXM_ABOUT_LINKS"]			= "连结和名单"
+-- [[ FIX ME ]] --
+LANG["PHXM_VIEW_UPDATE_INFO"]		= "View update info"
+LANG["PHXM_CHECK_FOR_UPDATES"]		= "Check for Updates"
+LANG["PHXM_UPDATE_FOUND_TEXT"]		= "Update has been checked. Please check on the Console for more information.\n\nWould you like to view update what's new?"
+LANG["PHXM_UPDATE_FOUND_TITLE"]   	= "Update Information"
+LANG["PHXM_UPDATE_FOUND_BUTTON"]   	= "View Updates"
+LANG["UPDATE_NOTIFY_MSG_NOTFOUND"]	= "No update was found. Please click on 'Check for Updates' button first!"
+LANG["UPDATE_NOTIFY_MSG_TITLE"]		= "No updates found"
+LANG["UPDATE_NOTIFY_WINDOW_TITLE"]	= "Update Notice"
+LANG["UPDATE_RTBOX_APPEND"]			= "\n\nFor your information:\nCurrently you are using version: %s with Revision: %s"
+LANG["UPDATE_BTN_SEEFULL"]			= "See Full Changes"
+-- [[ FIX ME ]] --
+LANG["PHXM_ABOUT_LINKS"]			= "链接和名单"
 LANG["PHXM_ABOUT_THANKS"]			= "特别感谢支持、建议与贡献:\n %s"
 LANG["PHXM_ABOUT_BTN_DONATE"]		= "捐款支持PH:X"
 LANG["PHXM_ABOUT_BTN_HOME"]			= "PHX 主页"
-LANG["PHXM_ABOUT_BTN_GITHUB"]		= "PHX GitHub 资料库"
-LANG["PHXM_ABOUT_BTN_PLUGINS"]		= "PHX 插件/外挂"
-LANG["PHXM_ABOUT_BTN_CHANGELOGS"]	= "PHX 变更日志"
+LANG["PHXM_ABOUT_BTN_GITHUB"]		= "PHX GitHub 库"
+LANG["PHXM_ABOUT_BTN_PLUGINS"]		= "PHX 扩展/插件"
+LANG["PHXM_ABOUT_BTN_CHANGELOGS"]	= "PHX 更新日志"
 
 --[[
 	Late Additionals
 ]]
 -- fretta
-LANG["HUD_SPECTATING"]	= "旁观"
+LANG["HUD_SPECTATING"]	= "正在旁观"
 LANG["HUD_YOUDIED"]		= "你死了!"
 
 LANG["CHAT_STARTING_MAPVOTE"] = "回合结束. 正在开始地图投票..."
 
 -- This used for HUD Taunt Timer
 LANG["HUD_PROP_TAUNT_TIME"]	= "随机嘲讽"
-LANG["HUD_PROP_CTAUNT_TIME"] = "自订嘲讽"
+LANG["HUD_PROP_CTAUNT_TIME"] = "自定义嘲讽"
 
-LANG["PHXM_TAB_PLUGINS"]				= "插件 & 外挂"
+LANG["PHXM_TAB_PLUGINS"]				= "扩展/插件"
 
 -- Plugins Section
-LANG["PLUGINS_NO_PLUGINS"]				= "没有安装插件. 此处浏览更多插件!"
+LANG["PLUGINS_NO_PLUGINS"]				= "没有安装插件. 点击此处浏览更多插件!"
 LANG["PLUGINS_BROWSE_MORE"]				= "浏览更多插件!"
-LANG["PLUGINS_SERVER_HAS_NO_PLUGINS"]	= "抱歉,本服务器没有自订插件/外挂安装"
+LANG["PLUGINS_SERVER_HAS_NO_PLUGINS"]	= "抱歉,本服务器不支持自定义扩展/插件"
 LANG["PLUGINS_SERVER_SETTINGS"]			= "-- 服务器设置 --"
 LANG["PLUGINS_CLIENT_SETTINGS"]			= "-- 客户端设置 --"
 
@@ -377,78 +412,82 @@ LANG["PLUGINS_CLIENT_SETTINGS"]			= "-- 客户端设置 --"
 LANG["TEXTENTRY_FZ_SINGLE"] = "死亡特写单个声音路径" -- this one is for ph_fc_cue_path command
 LANG["TEXTENTRY_MV_PREFIX"] = "地图投票的地图前缀"			 -- the map previx for mv_mapprefix
 
---============= LATE ADDITION OF 16.09.21/X2Z. Please Improve your Language Here! =============--
+--============= LATE ADDITION OF 29.10.21/X2Z. Please Improve your Language Here! =============--
+
+LANG["MISC_GAME_ENDED"]		= "游戏已结束."
+
+--============= LATE ADDITION OF 16.09.21/X2Z. =============--
 
 --[[
 	Credits: Late Addition: Revision: 16.09.21/X2Z
 ]]
 
-LANG["PHXM_ABOUT_BTN_WIKI"]			= "PHX Wiki & Manuals"
+LANG["PHXM_ABOUT_BTN_WIKI"]			= "PHX 维基 & 手册"
 
 --[[
 	Auto Taunt: Late Addition: Revision: 16.09.21/X2Z
 ]]
 
-LANG["HUD_AUTOTAUNT_DISABLED"]		= 	"Auto Taunting is disabled."
-LANG["HUD_AUTOTAUNT_WAITFORUPDATE"]	=	"Auto Taunt is Synchronizing..."
+LANG["HUD_AUTOTAUNT_DISABLED"]		= 	"自动嘲讽已禁用."
+LANG["HUD_AUTOTAUNT_WAITFORUPDATE"]	=	"正在同步自动嘲讽..."
 
 --[[
 	MapVote: Late Addition: Revision: 16.09.21/X2Z
 ]]
-LANG["PHXM_MV_VOTEROCKED"]				= " The vote has been rocked, map vote will begin on round end"
-LANG["PHXM_MV_VOTEROCKED_IMMINENT"]		= "The vote has been rocked, map vote imminent"
-LANG["PHXM_MV_VOTEROCKED_PLY_TOTAL"]	= "%s has voted to Rock the Vote. ( %d / %d )"
+LANG["PHXM_MV_VOTEROCKED"]				= " 投票已撼动,本轮结束后将开始地图投票"
+LANG["PHXM_MV_VOTEROCKED_IMMINENT"]		= "投票已撼动,即将开始地图投票"
+LANG["PHXM_MV_VOTEROCKED_PLY_TOTAL"]	= "%s 支持撼动投票. ( %d / %d )"
 
-LANG["PHXM_MV_MUST_WAIT"]				= "You must wait a bit before voting!"
-LANG["PHXM_MV_VOTEINPROG"]				= "There is currently a vote in progress!"
-LANG["PHXM_MV_HAS_VOTED"]				= "You have already voted to Rock the Vote!"
-LANG["PHXM_MV_ALR_IN_VOTE"]				= "There has already been a vote, the map is going to change!"
-LANG["PHXM_MV_NEED_MORE_PLY"]			= "You need more players before you can rock the vote!"
+LANG["PHXM_MV_MUST_WAIT"]				= "你必须在投票前等待一段时间!"
+LANG["PHXM_MV_VOTEINPROG"]				= "目前正在进行一项投票!"
+LANG["PHXM_MV_HAS_VOTED"]				= "你已支持撼动投票!"
+LANG["PHXM_MV_ALR_IN_VOTE"]				= "已经通过一项投票,即将更换地图!"
+LANG["PHXM_MV_NEED_MORE_PLY"]			= "你需要更多的玩家来发起撼动投票!"
 
 --[[
 	Late Addition: Revision: 16.09.21/X2Z
 ]]
-LANG["PROP_PLAYERMDL_BANNED"]	= "Your custom Prop Player Model was banned from the server."
+LANG["PROP_PLAYERMDL_BANNED"]	= "你的自定义物品玩家模型被该服务器封禁."
 
 --[[
 	Prop Menu/Prop Chooser, Revision: 16.09.21/X2Z
 ]]
 
-LANG["PCR_USAGE_UNLIMIT"]		= "[Prop Menu] You have **unlimitted** usage left!"
-LANG["PCR_USAGE_COUNT"]			= "[Prop Menu] You have %d usage left!"
-LANG["PCR_PLS_WAIT"]			= "[Prop Menu] Please wait in %d seconds."
-LANG["PCR_NOROOM"]				= "[Prop Menu] There is no room to change the prop!"
-LANG["PCR_PROPBANNED"]			= "[Prop Menu] This prop was banned by the server."
-LANG["PCR_PROPBANNED_BYPCR"]	= "[Prop Menu] You cannot use this prop because it was banned by Prop Menu."
-LANG["PCR_REACHED_LIMIT"]		= "[Prop Menu] You have reached the limit!"
-LANG["PCR_STAY_ON_GROUND"]		= "[Prop Menu] You need to stay on the ground and not crouching!"
-LANG["PCR_ONLY_GROUP"]			= "[Prop Menu] Only certain groups can open this menu!"
-LANG["PCR_NOT_EXIST_COUNT"]		= "That prop you have selected does not exists in this map! ( %s / 4 )"
-LANG["PCR_NOT_EXIST"]			= "That prop you have selected does not exists in this map!"
+LANG["PCR_USAGE_UNLIMIT"]		= "[物品菜单] 你还有 **无限次** 使用权!"
+LANG["PCR_USAGE_COUNT"]			= "[物品菜单] 你还有 %d 次使用权!"
+LANG["PCR_PLS_WAIT"]			= "[物品菜单] 请等待 %d 秒."
+LANG["PCR_NOROOM"]				= "[物品菜单] 没有足够的空间变形该物品!"
+LANG["PCR_PROPBANNED"]			= "[物品菜单] 该物品已被服务器封禁."
+LANG["PCR_PROPBANNED_BYPCR"]	= "[物品菜单] 你不能使用该物品因为其被物品菜单禁用."
+LANG["PCR_REACHED_LIMIT"]		= "[物品菜单] 你已达到限制!"
+LANG["PCR_STAY_ON_GROUND"]		= "[物品菜单] 你需要站在地上且不能蹲下!"
+LANG["PCR_ONLY_GROUP"]			= "[物品菜单] 只有特定组别可以打开这个菜单!"
+LANG["PCR_NOT_EXIST_COUNT"]		= "你选择的那个物品不存在于这张地图中! ( %s / 4 )"
+LANG["PCR_NOT_EXIST"]			= "你选择的那个物品不存在于这张地图中!"
 
 -- PCR Client section, reason why there is a space because of chat.AddText between args.
-LANG["PCR_NOTIFY_1"]			= " This server use Prop Menu version %s! Type "
-LANG["PCR_NOTIFY_2"]			= " in console or use F1 -> [PropChooser Help] menu."
-LANG["PCR_CL_DISABLED"]			= " This feature is disabled."
-LANG["PCR_CL_GROUP"]			= " Only certain groups can open this menu!"
-LANG["PCR_CL_LIMIT"]			= " You have reached the limit!"
-LANG["PCR_UNLIMIT_TEXT"]		= "Unlimited"
-LANG["PCR_WINDOW_TITLE"]		= "PHX Prop Menu"
-LANG["PCR_HEADER_TOP"]			= "Choose any prop you want. You have"
-LANG["PCR_HEADER_MID"]			= "%s usage limit"
-LANG["PCR_HEADER_BOTTOM"]		= "to use this prop chooser!"
-LANG["PCR_CL_TOOLTIP_BANNED"]	= "You cannot use this model."
-LANG["PCR_CL_TOOLTIP_MODEL"]	= "Model: %s"
-LANG["PCR_CL_MENU_NOTREADY"]	= " This feature is not available at the moment."
-LANG["PCR_WINDOW_GUIDE_TTL"]	= "Quick Guide: Prop Menu 101"
-LANG["PCR_BTN_HELP_MENU"]		= "Prop Menu Help"
+LANG["PCR_NOTIFY_1"]			= " 本服务器使用物品菜单版本 %s! 类型 "
+LANG["PCR_NOTIFY_2"]			= " 在命令行或使用 F1 -> [物品选择帮助] 菜单."
+LANG["PCR_CL_DISABLED"]			= " 该功能已禁用."
+LANG["PCR_CL_GROUP"]			= " 只有特定组别可以打开这个菜单!"
+LANG["PCR_CL_LIMIT"]			= " 你已达到限制!"
+LANG["PCR_UNLIMIT_TEXT"]		= "无限"
+LANG["PCR_WINDOW_TITLE"]		= "PHX 物品菜单"
+LANG["PCR_HEADER_TOP"]			= "选择你想要的物品."
+LANG["PCR_HEADER_MID"]			= "你还有 %s 次"
+LANG["PCR_HEADER_BOTTOM"]		= "物品选择使用权!"
+LANG["PCR_CL_TOOLTIP_BANNED"]	= "你不能使用这个模型."
+LANG["PCR_CL_TOOLTIP_MODEL"]	= "模型: %s"
+LANG["PCR_CL_MENU_NOTREADY"]	= " 该功能当前不可用."
+LANG["PCR_WINDOW_GUIDE_TTL"]	= "快速指南: 物品菜单 101"
+LANG["PCR_BTN_HELP_MENU"]		= "物品菜单帮助"
 
-LANG["PCR_CL_CMDUSEULX"]		= " This command is disabled. Use 'ulx propmenu' instead!"
-LANG["PCR_CMD_ULX_DISABLED"]	= "Command ulx propmenu is disabled. Press your [Prop Menu Bind] to open."	--input.GetKeyName is impossible to access.
+LANG["PCR_CL_CMDUSEULX"]		= " 该指令已禁用. 请使用 'ulx propmenu'!"
+LANG["PCR_CMD_ULX_DISABLED"]	= "指令 ulx propmenu 已禁用. 按下 [物品菜单键] 来开启."	--input.GetKeyName is impossible to access.
 
-LANG["PCR_EDT_IN_USE"]			= "An admin is still editing the prop data. Please Wait!"
-LANG["PCR_EDT_ERROR_DISABLED"]	= "[Prop Menu] Error: Custom Prop Addition is Disabled!"
-LANG["PCR_EDT_NO_RIGHTS"]		= "You have no rights to access this feature."
+LANG["PCR_EDT_IN_USE"]			= "一名管理员仍在编辑物品数据. 请稍候!"
+LANG["PCR_EDT_ERROR_DISABLED"]	= "[物品菜单] 错误: 自定义物品添加已被禁用!"
+LANG["PCR_EDT_NO_RIGHTS"]		= "你无权访问该功能."
 
 -- I'm actually exhausted and feel so burned out, but I'll update this in future, or in PH:Zero I guess.
 -- Section: Custom Prop Editor File Browser and stuff...
@@ -458,27 +497,214 @@ LANG["PCR_EDT_NO_RIGHTS"]		= "You have no rights to access this feature."
 --[[
 	Admin Section, Revision: 16.09.21/X2Z
 ]]
-LANG["PHXM_PLAYER_PROP_CHOOSER_KEY"]	= "Default Key to open Prop Menu (Prop Chooser)."
-LANG["PHXM_PROP_FREEZE_MIDAIR"]			= "Default Key to toogle Freeze movement during on midair as a Prop."
-LANG["PHXM_ADMIN_PROP_RIGHT_CLICK"]		= "Should Props also able to Taunt by pressing Right Click?"
-LANG["PHXM_ADMIN_TAUNT_SCANNER"]		= "(Require Map Restart) Enable Taunt Scanner?"
-LANG["PHXM_ADMLBL_USABLE_ENTS"]			= "Usable Prop Entities Types"
-LANG["PHXM_ADMLBL_USABLE_ENTS_REF"]		= "Types can be: 1: Physics Only, 2: Physics & Dynamics, 3: Almost Anything inc. Ragdolls, 4: Custom Entities."
-LANG["PHXM_ADMIN_USABLE_ENT_TYPE"]		= "Type of Entities to use for Prop to Replicate"
-LANG["PHXM_ADMIN_NOTIFY_ENT_TYPE"]		= "Notify Props about entities that cannot be replicated by pressing E. Only works if 'ph_usable_prop_type' is set to 3 or 4."
-LANG["NOTIFY_PROP_ENTTYPE"]				= "Press [E] to interact, [Click] to replicate object."
-LANG["NOTIFY_CUST_ENT_TYPE_IS_ON"]		= "[PHX] Notice: Press [E] to interact object, Press [Click] to Replicate the object."
+LANG["PHXM_PLAYER_PROP_CHOOSER_KEY"]	= "打开物品菜单 (物品选择器) 的默认键."
+LANG["PHXM_PROP_FREEZE_MIDAIR"]			= "作为物品在空中静止的默认键."
+LANG["PHXM_ADMIN_PROP_RIGHT_CLICK"]		= "作为物品时是否能用右键嘲讽?"
+LANG["PHXM_ADMIN_TAUNT_SCANNER"]		= "(需要重启地图) 启用嘲讽扫描器?"
+LANG["PHXM_ADMLBL_USABLE_ENTS"]			= "可用的物品实体类型"
+LANG["PHXM_ADMLBL_USABLE_ENTS_REF"]		= "类型可以为: 1: 仅物理, 2: 物理 & 动态, 3: 几乎所有包括布娃娃, 4: 自定义实体."
+LANG["PHXM_ADMIN_USABLE_ENT_TYPE"]		= "用于复制的物品实体类型"
+LANG["PHXM_ADMIN_NOTIFY_ENT_TYPE"]		= "按 E 时告知物品玩家无法复制的实体. 仅档'ph_usable_prop_type' 设置为 3 或 4 时有效."
+LANG["NOTIFY_PROP_ENTTYPE"]				= "按 [E] 来互动, [左键] 来复制目标."
+LANG["NOTIFY_CUST_ENT_TYPE_IS_ON"]		= "[PHX] 通知: 按 [E] 来互动目标, [左键] 来复制目标.."
 
 --[[
 	Custom Taunts, Revision: 16.09.21/X2Z
 ]]
-LANG["TM_TAUNTS_SEARCH_NOTHING"]		= "Taunt containing '%s' was not found..."
-LANG["TM_SEARCH_PLACEHOLDER"]			= "Search in this category: Enter word, lowercase & no wildcards. Empty=Show All."
+LANG["TM_TAUNTS_SEARCH_NOTHING"]		= "未找到包含 '%s' 的嘲讽..."
+LANG["TM_SEARCH_PLACEHOLDER"]			= "在该类别种查找: 输入名字, 小写且无通配符. 留空=展示所有."
 
 --[[
 	Freeze Cam, Revision: 23.09.21/X2Z
 ]]
-LANG["PHXM_ADMIN_FREEZECAM_HUNTER"]			= "Enable Freeze Cam features for team hunters"	-- Todo: Translate Me
+LANG["PHXM_ADMIN_FREEZECAM_HUNTER"]			= "开启猎人队伍的死亡特写"
 
--- Add to Language Table.
+
+--============= LATE ADDITION OF 10.06.2022/X2Z. =============--
+
+LANG["PHXM_MSG_INPUT_IS_EMPTY"]			= "文本为空或你没有按回车键."
+LANG["MISC_SET"]						= "设置"
+LANG["MISC_APPLY"]						= "应用"
+LANG["MISC_NO"]							= "否"
+LANG["MISC_YES"]						= "是"
+LANG["MISC_WARN"]						= "警告"
+LANG["MISC_ERROR"]						= "错误"
+LANG["MISC_INFO"]						= "信息"
+LANG["MISC_NOTICE"]						= "通知"
+LANG["MISC_IDK"]						= "未知"
+LANG["MISC_NA"]							= "N/A"
+
+-- HUD
+LANG["HUD_DECOY_ACTIVE"]                = "按 [%s]"
+LANG["HUD_FAKETAUNT_COUNT"]             = "剩余 %ix"
+LANG["HUD_FAKETAUNT_UNLI"]              = "无限"
+LANG["NOTICE_GRENADE_SMG_GIVEN"]        = "你现在获得了一些 SMG 手雷."
+
+--[[
+	ADMIN PANEL, Revision 10.06/2022/X2Z
+]]--
+LANG["PHXM_TAUNT_SETTINGS"]				= "嘲讽设置"
+LANG["PHXM_GENERAL_SETTINGS"]			= "常规设置"
+LANG["PHXM_FAKE_TAUNT_SETTINGS"]		= "假嘲讽设置"
+LANG["PHXM_FAKE_TAUNT_ENABLE"]			= "允许地图上的随机物品进行假嘲讽. 只能通过自定义嘲讽菜单使用."
+LANG["PHXM_FAKE_TAUNT_MAXUSAGE"]		= "假嘲讽的最多使用次数; -1 为无限制."
+LANG["PHXM_TAUNT_RIGHT_CLICK"]		    = "右键嘲讽. 这会禁用右键自定义菜单!"
+
+LANG["PHXM_TAUNT_PITCH_SETTINGS"]		= "嘲讽音调设置"
+LANG["PHXM_TAUNT_PITCH_ENABLE"]			= "启用嘲讽音调"
+LANG["PHXM_TAUNT_PITCH_RANGE_MIN"]		= "嘲讽音调的最低阈值. 1 到 99."
+LANG["PHXM_TAUNT_PITCH_RANGE_MAX"]		= "嘲讽音调的最高阈值. 100 到 255."
+
+LANG["PHXM_DECOY_SETTINGS"]				= "诱饵设置"
+LANG["PHXM_DECOY_ENABLE"]				= "启用诱饵奖励? 对活到回合结束的物品仅奖励一次. 一旦放置就不会增加只会减少."
+
+LANG["PHXM_DISABLE_FOOTSTEP"]           = "切换静音物品组的脚步声"
+
+LANG["PHXM_ADMIN_CHATSETTING"]			= "聊天窗口设置"
+LANG["PHXM_ADMIN_HUNTERBLIND"]			= "猎人失明控制"
+
+LANG["PHXM_ADMIN_GIVEGRENADE_NEAREND"]  = "是否在回合结束前提供手雷? 若是, 请查看 'ph_give_grenade_roundend_before_time'"
+LANG["PHXM_ADMIN_GIVEGRENADE_TIME"]     = "回合结束前提供手雷的秒数. 通常设置为 10 到 30 秒"
+
+--[[
+	Plugins in sh_init.lua, Revision 10.06/2022/X2Z
+]]--
+LANG["PLUG_NAME_VER"]					= "插件: %s | v.%s"
+LANG["PLUG_DESCRIPTION"]				= "描述: %s"
+
+--[[
+	Taunt Pitch, Revision 10.06/2022/X2Z
+]]--
+LANG["PHX_CTAUNT_USE_PITCH"]			= "对自定义嘲讽使用音调"
+LANG["PHX_CTAUNT_RANDOM_PITCH"]			= "使用嘲讽时随机音调"
+LANG["PHX_RTAUNT_USE_PITCH"]			= "对随机嘲讽使用音调 [%s]"
+LANG["PHX_RTAUNT_RANDOMIZE"]			= "使用随机嘲讽时随机音调 [%s]"
+LANG["PHX_CTAUNT_PITCH_FOR_FAKE"]		= "对假嘲讽使用音调"
+LANG["PHX_CTAUNT_RANDPITCH_FOR_FAKE"]	= "使用假嘲讽时随机音调"
+LANG["PHX_CTAUNT_SLIDER_PITCH"]			= "嘲讽音调滑块."
+LANG["TM_TOOLTIP_FAKETAUNT"]			= "在随机物品上播放假嘲讽"
+LANG["TM_PREFERRED_PITCH"]              = "偏好的嘲讽音调"
+
+--[[
+	Fake Taunt, Revision 10.06/2022/X2Z
+	Description: Play fake taunts on random props in the map (Not Players)
+]]--
+LANG["PHX_CTAUNT_ON_RAND_PROPS"]		= "在随机物品上播放 (%ix)"
+LANG["PHX_CTAUNT_ON_RAND_PROPS_UNLI"]	= "在随机物品上播放"
+LANG["PHX_CTAUNT_PLAYED_ON_RANDPROP"]	= "你在随机物品上播放了一个嘲讽."
+LANG["PHX_CTAUNT_RAND_PROPS_LIMIT"]		= "你已达到使用上限!"
+LANG["PHX_CTAUNT_RAND_PROPS_NOT_PROP"]  = "当前不可用."
+LANG["PHX_CTAUNT_RANDPROP_DISABLED"]	= "假嘲讽目前已被禁用."
+
+--[[
+	PH:Z Simple Decoy, Revision 10.06/2022/X2Z
+]]--
+LANG.DECOY_PROP	= {
+	"击杀了假人!",
+	"后悔击杀了假人.",
+	"击杀了诱饵.",
+	"击杀了一个无辜假人.",
+	"尴尬于击杀了一个假人."
+}
+
+LANG["DECOY_PUT_SUCC"]					= "诱饵已放置."
+LANG["DECOY_CANT_PUT_HERE"]				= "不能把诱饵放在这里."
+LANG["DECOY_GET_REWARD"]				= "恭喜! 你获得了 ['物品诱饵'] 来活过本轮!"
+LANG["DECOY_REMINDER_GET"]              = "你有一个诱饵/假人物品! 放在某处来迷惑猎人吧!"
+LANG["DECOY_FRAGS_RECEIVED"]			= "上钩了: 你从 %s 窃取了一分!"
+LANG["DECOY_DISABLED"]					= "诱饵当前不可用."
+LANG["PHXM_CL_DECOY_KEYBIND"]			= "放置诱饵的默认键. 默认为 1 (不是小键盘 1)."
+
+LANG["DECOY_INDICATOR_INVALID"]         = "坡度太陡!"
+LANG["DECOY_INDICATOR_TOOFAR"]          = "距离太远!"
+LANG["DECOY_INDICATOR_OK"]              = "放置诱饵 [按 %s]"
+
+LANG["PHXM_DECOY_HEALTH"]				= "诱饵的血量. 默认为 10."
+LANG["PHXM_PLAYER_SHOW_DECOY_HELPER"]   = "是否展示诱饵摆放助手? 这会在你的准星旁边展示一个带文字的白点."
+LANG["PHXM_PLAYER_SHOW_DECOY_MARKER"]   = "是否展示诱饵标记?"
+
+--[[
+	Revision 10.06/2022/X2Z
+    Prop Menu Update: Menu, Editor, Browser
+]]--
+LANG["PCR_MODEL_DONT_EXISTS"]   = "对不起, 该模型当前不可用!"
+
+LANG["PCR_PLUG_WARN_MSG"]		= "警告: 自定义物品添加 (pcr_allow_custom) 设置为 0.\n必须启用此功能才能编辑你的自定义物品!\n更改此设置需要更改地图."
+LANG["PCR_PLUG_LBL_BINDKEY"]	= "改变绑定的按键, 切换至 '[玩家] 标签页."
+LANG["PCR_PLUG_LBL_EDITOR"]		= "自定义物品菜单编辑器"
+LANG["PCR_PLUG_BTN_OPEN_EDT"]	= "打开编辑器"
+LANG["PCR_PLUG_LBL_COMSET"]		= "常见设置"
+LANG["PCR_PLUG_LBL_TECHSET"]	= "技术设置"
+LANG["PCR_PLUG_LBL_EXPSET"]		= "实验性"
+LANG["PCR_PLUG_LBL_PLAYERSET"]	= "玩家设置"
+
+LANG["PCR_PLUG_ENABLE"]			= "启用 '物品菜单' 功能"
+LANG["PCR_PLUG_ALLOW_CUSTOM"]	= "(需要重启地图) 允许在物品菜单列表中添加自定义物品?"
+LANG["PCR_PLUG_PROP_BAN"]		= "(需要重启地图) 不将被封禁的物品纳入物品菜单列表中?"
+LANG["PCR_PLUG_USAGE_LIMIT"]	= "玩家使用的最大使用限制. -1 代表无限制."
+LANG["PCR_PLUG_PROP_LIMIT"]		= "(需要重启地图) 限制物品菜单列表中增加的物品数量"
+LANG["PCR_PLUG_PROP_LIMITMAX"]	= "可添加到物品菜单列表中的最大数量. 注意: 该数值会随机增加!"
+LANG["PCR_PLUG_USE_ULXMENU"]	= "物品菜单可否通过控制台 (0) 或 ULX (1) 打开? 绑定的按键将遵从此设置"
+LANG["PCR_PLUG_USE_DELAY"]		= "玩家在物品菜单中使用另一个物品前的延迟秒数"
+LANG["PCR_PLUG_KICK_INVALID"]	= "踢掉任何试图访问无效模型的用户 (4x 最大阈值)"
+LANG["PCR_PLUG_SPACE_CHECK"]	= "在玩家使用另一个物品之前，检查房间的空间，以防卡住"
+LANG["PCR_PLUG_X_BBOX"]			= "(需要重启地图) 在添加到物品菜单列表前检查实体的 BBox 限制"
+LANG["PCR_PLUG_X_BBOX_MAX"]		= "BBox 碰撞的最大高度限制. 最小值将自动计算."
+LANG["PCR_PLUG_X_BBOX_MIN"]		= "BBox 碰撞的最大宽度限制. 最小值将自动计算."
+LANG["PCR_PLUG_ONLY_GROUPS"]	= "物品菜单是否只能由某些组别访问例如捐助者?"
+LANG["PCR_PLUG_NOTIFYMSG"]		= "在每轮开始时通知玩家如何使用物品菜单"
+
+LANG["PCR_EDITOR_MSG_ERROR"]	= "你的更改由于错误而未被保存.\n请检查你的服务器控制台!"
+LANG["PCR_EDITOR_MSG_SUCC"]		= "您的更改和自定义物品数据已成功保存和更新."
+
+LANG["PHZ_generic_title"]		= "自定义物品收录编辑"
+LANG["PHZ_generic_helptext"]	= [[[使用方法:
+[左侧面板]
+← 选择一个游戏内容
+← 点击图标，将模型添加到右侧
+← 右击打开上下文菜单
+
+[右侧面板]
+→ 点击 '标记' 想要删除的物品
+→ 点击 '移除选中' 来删除模型
+→ 点击 '应用筛选' 来完成改动
+
+[信息]
+- 你至多能添加 2048 个模型.
+- 所有的地图物品将被自动包括在内，所以你不必添加.
+- 点击 [关闭] 按钮将取消操作.
+- 并非所有模型都有有效的 VPhysics.
+- 不是所有的玩家 (包括你的服务器) 都有自定义模型. 若不存在模型，则其将在应用筛选后被删除.
+- 你的服务器内容可能与你不同. 如果你在下拉菜单中看到 "<game> [Not Mounted]", 这意味着你还没有安装/调试好游戏.
+- Addon 文件夹浏览尚未实现，所以你必须使用 '所有内容' 来代替.
+]]
+LANG["PHZ_generic_mdlinfo"] = [[模型信息:
+%s
+是否有物理: %s]]
+LANG["PHZ_generic_mdlinfoStart"] = "(先选择模型!)"
+
+LANG["PHZ_generic_no_ragdoll"]	= "否: 布娃娃"
+LANG["PHZ_generic_titlelabel"]	= "%s 预览 :"
+
+LANG["PHZ_mount_game_sel"]		= "选择安装的游戏 (默认: Garry's Mod)"
+LANG["PHZ_input_placeholder1"]	= "查找的文件夹: <文件夹名> or '*', 留空表示所有文件夹."
+LANG["PHZ_input_placeholder2"]  = "搜索的扩展: <名字> or '*', 留空表示所有文件夹."
+LANG["PHZ_msg_warn_close"]		= "你确定要关闭此窗口吗? 任何未保存的编辑都将丢失!"
+LANG["PHZ_msg_commit"] 			= "你确定要提交修改吗?"
+LANG["PHZ_msg_cant_empty"]		= "物品列表不能为空!"
+LANG["PHZ_msg_removesel"] 		= [[移除列表中的选定物品. 图例:
+红色 = 标记为选中
+黄色: 不存在于服务器且应被删除的物品.]]
+LANG["PHZ_msg_warn_mdlinlist"]  = "警告: 该模型已经在列表中!"
+LANG["PHZ_msg_invalid_mdl"] 	= "原因: 这是个无效模型"
+LANG["PHZ_apply_select"] 		= "应用 & 保存筛选"
+LANG["PHZ_menu_copy"] 		= "复制模型"
+LANG["PHZ_menu_refresh"] 	= "刷新模型"
+LANG["PHZ_tooltip_removesel"]	= "删除选中"
+LANG["PHZ_tooltip_wasmarked"] = [[该物品被标记是因为它不存在于服务器中.
+如果你关闭编辑器，它将被自动删除.]]
+
+LANG["PHZ_pcr_fb_allcontent"] = "所有内容 (不是所有的玩家/服务器都有与你相同的内容)"
+LANG["PHZ_pcr_fb_notmounted"] = "%s [未安装]"
+
 PHX.LANGUAGES[LANG.code] = LANG
