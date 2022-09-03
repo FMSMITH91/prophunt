@@ -148,6 +148,10 @@ function GM:AddScoreboardWantsChange( ScoreBoard )
 
 end
 
+function GM:AddScoreboardCustom( ScoreBoard, ... )
+	ScoreBoard:AddColumn( ... )
+end
+
 function GM:CreateScoreboard( ScoreBoard )
 
 	// This makes it so that it's behind chat & hides when you're in the menu
@@ -171,6 +175,11 @@ function GM:CreateScoreboard( ScoreBoard )
 	self:AddScoreboardVoice( ScoreBoard )		// 2
 	self:AddScoreboardWantsChange( ScoreBoard )	// 3
 	self:AddScoreboardName( ScoreBoard )		// 4
+	-- Include custom column externally. Set after Player's Name.
+	hook.Call("PH_AddColumnScoreboard", nil, ScoreBoard, function( Name, Fixed, Func, Rate, TeamID, HAlign, VAlign, Font )
+		GAMEMODE:AddScoreboardCustom( ScoreBoard, Name, Fixed, Func, Rate, TeamID, HAlign, VAlign, Font )
+	end)
+	-- Add the Rest.
 	self:AddScoreboardKills( ScoreBoard )		// 5
 	self:AddScoreboardDeaths( ScoreBoard )		// 6
 	self:AddScoreboardPing( ScoreBoard )		// 7
