@@ -1,6 +1,6 @@
 -- ph_hotel Configuration.
 -- if you found this exploitable by Players, Adjust the Prop's bounding box to your appropriate setting.
-PHX.VerboseMsg("[PHX Map Config] Loaded.")
+PHX.VerboseMsg("[PHX Map Config] Config for 'ph_hotel' has been loaded.")
 
 local mdls = {
 	"models/props_debris/wood_board05a.mdl",
@@ -24,13 +24,13 @@ local function FixTallModelHulls()
 				local bounds = {
 					min 	= Vector(-1.3, -4.3, 0),
 					max 	= Vector(1.3, 4.3, 96),
-					dmin 	= Vector(-1.3, -4.3, 0),
-					dmax 	= Vector(1.3, 4.3, 32)
+					--[[ dmin 	= Vector(-1.3, -4.3, 0),
+					dmax 	= Vector(1.3, 4.3, 32) ]]
 				}
 	
 				ent:SetNWBool("hasCustomHull", true)
 				ent.m_Hull 	= { bounds.min, bounds.max }
-				ent.m_dHull = { bounds.dmin, bounds.dmax }
+				-- ent.m_dHull = { bounds.dmin, bounds.dmax }
 			
 			end
 		
@@ -39,7 +39,4 @@ local function FixTallModelHulls()
 	end
 end
 
-local function PHX_phhotel_conf()
-	FixTallModelHulls()
-end
-hook.Add("PostCleanupMap", "PHX.ph_hotel.config", PHX_phhotel_conf)
+hook.Add("PostCleanupMap", "PHX.ph_hotel.config", FixTallModelHulls)
