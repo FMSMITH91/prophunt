@@ -218,7 +218,7 @@ local function DoPlayerCheck(ply)
                         
                         pl:PrintCenter( "LASTPROP_ANNOUNCE", Color(240,72,82) )
                         
-                        if PHX:GetCVar("lps_trail_enable") then
+                        if PHX:GetCVar("lps_trail_show") then
                             local TrailCol = PHX.LPS:TrailColorTranslate( PHX:GetCVar( "lps_trail_color" ) )
                             local TrailTex = PHX:GetCVar( "lps_trail_texture" )
                             
@@ -235,7 +235,8 @@ local function DoPlayerCheck(ply)
                 end
 				
 				SetGlobalBool("LPS.InLastPropStanding", true) -- for Think
-				hook.Call( "PHInLastPropStanding", nil, pl, PHX.LPS.WEAPON2.NAME, PHX.LPS.WEAPON2.DATA ) -- for Something you need to "hook.Add" it.
+				-- FIX 01/30/2023: Replaced 'pl' to 'stand'. pl was nil.
+				hook.Call( "PHInLastPropStanding", nil, stand, PHX.LPS.WEAPON2.NAME, PHX.LPS.WEAPON2.DATA ) -- for Something you need to "hook.Add" it.
 
                 for _,p in pairs(player.GetAll()) do                    
                     if p:IsLastStanding() then

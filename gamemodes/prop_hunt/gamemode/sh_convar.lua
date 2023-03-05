@@ -103,8 +103,8 @@ CVAR["ph_enable_prop_player_color"]     =   { CTYPE_BOOL,   "0", CVAR_SERVER_ONL
 CVAR["ph_autotaunt_enabled"]			=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY_NO_NOTIFY, "(Only Apply on New Round has started) Should auto taunting be enabled" }
 CVAR["ph_autotaunt_delay"]				=	{ CTYPE_NUMBER, "45", CVAR_SERVER_ONLY_NO_NOTIFY, "Delay in seconds for auto taunt feature" }
 CVAR["ph_custom_taunt_mode"]			=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, "Enable custom taunts for prop teams by pressing C? (Default 2)\n  You must have a list of custom taunts to enable this.", { min = 0, max = 2 } }
-CVAR["ph_customtaunts_delay"]			=	{ CTYPE_NUMBER, "4", CVAR_SERVER_ONLY, "How many in seconds delay for props to play custom taunt again? (Default is 4)" }
-CVAR["ph_normal_taunt_delay"]			=	{ CTYPE_NUMBER, "4", CVAR_SERVER_ONLY, "How many in seconds delay for props to play normal [F3] taunt again? (Default is 4)" }
+CVAR["ph_customtaunts_delay"]			=	{ CTYPE_NUMBER, "4", CVAR_SERVER_ONLY, "How many in seconds delay for props to play custom taunt again? (Default is 6)" }
+CVAR["ph_normal_taunt_delay"]			=	{ CTYPE_NUMBER, "4", CVAR_SERVER_ONLY, "How many in seconds delay for props to play normal [F3] taunt again? (Default is 2)" }
 -- fake taunt & pitch
 CVAR["ph_randtaunt_map_prop_enable"]	=	{ CTYPE_BOOL,	"1", CVAR_SERVER_ONLY, "Allow fake taunts to be played on random props in the maps. Can be accessed only through Custom Taunt menu." }
 CVAR["ph_randtaunt_map_prop_max"]		=	{ CTYPE_NUMBER, "6", CVAR_SERVER_ONLY, "Maximum usage for fake taunts to be used. -1 is unlimited (Be warned though,I don't recommend to set this as unlimited!)" }
@@ -237,8 +237,13 @@ CVAR["ph_blindtime_respawn_percent"]		=	{ CTYPE_FLOAT, 	"0.75", CVAR_SERVER_ONLY
 CVAR["ph_allow_respawnonblind_teamchange"]	=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY, "Not recommended if allowed: Allow respawn during blind time FROM team changes (from props to hunters, vice versa).\nI don't recommend enabling this because players may able to use this to take advantage by sitting on Prop team everytime.\nEnable this ONLY if you know what you're doing!" }
 CVAR["ph_allow_pickup_object"]				=	{ CTYPE_NUMBER, "3", CVAR_SERVER_ONLY, "Allow pickup objects? 0=No, 1=Hunters Only, 2=Props Only, 3=Everyone", { min = 0, max = 3 } }
 
-CVAR["ph_use_custom_mapvote"]				=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY_NO_NOTIFY, "Use custom external Map votes system? Type help 'ph_custom_mv_func' for more info." }
-CVAR["ph_custom_mv_func"]					=	{ CTYPE_STRING, "MapVote.Start()", CVAR_SERVER_HIDDEN, "If 'ph_use_custom_mapvote' is set, Set to this map vote function to be called for Map Voting event.\nNOTE: 'Case Sensitive' & Local variable will not passed to the given code!" }
+-- MapVotes, these aren't listed on F1 Prop Hunt Menu, this needs to be set manually through your server.cfg!!
+CVAR["ph_enable_mapvote"]					=	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, "Enable/Disable Built-in PH:X Map votes system? Set this 0 to disable this and use from map vote addon and will call 'PH_OverrideMapVote' Hooks.\nIf 'ph_use_custom_mapvote' and 'ph_use_custom_mapvote_cmd' set to 1 they are still called however." }
+CVAR["ph_use_custom_mapvote"]				=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY_NO_NOTIFY, "Use custom external Map votes system? This will override built-in mapvote. See help 'ph_custom_mv_func' for more info." }
+CVAR["ph_use_custom_mapvote_cmd"]			=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY_NO_NOTIFY, "Use custom external Map votes by calling from Console Command instead? This will override built-in mapvote AND 'ph_use_custom_mapvote'. See help 'ph_custom_mv_concmd' for more info." }
+CVAR["ph_custom_mv_func"]					=	{ CTYPE_STRING, "MapVote.PHXStart()", CVAR_SERVER_ONLY_NO_NOTIFY, "If 'ph_use_custom_mapvote' is set, Use a function to call non-built-in Map Vote system (e.g: From Addons).\nNOTE: 'Case Sensitive' & Local variable will not passed to the given code!" }
+CVAR["ph_custom_mv_concmd"]					=	{ CTYPE_STRING, "mv_start", 		  CVAR_SERVER_ONLY_NO_NOTIFY, "If 'ph_use_custom_mapvote_cmd' is set, use this to call mapvote by using from their console command instead. Overrides 'ph_use_custom_mapvote'. If it has arguments, supply them as well. (e.g: start_mapvote 15 (15 by meaning in seconds))" }
+-- End of MapVotes
 
 CVAR["ph_exp_rot_pitch"]					=	{ CTYPE_BOOL, 	"0", 	CVAR_SERVER_ONLY_NO_NOTIFY, "[Experimental!] Allow use of pitch rotation on props." }
 CVAR["ph_enable_thirdperson"]               =   { CTYPE_BOOL,   "1", 	CVAR_SERVER_ONLY, "Enable thirdperson mode for hunters." }
