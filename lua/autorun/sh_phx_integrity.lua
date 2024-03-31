@@ -15,8 +15,8 @@ if engine.ActiveGamemode() ~= "prop_hunt" then return end
 
 local EnableChecker = false
 
-local CheckCVar = CreateConVar( "phx_enable_checker", "1", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Enable PH:X Integrity Checker.", 0, 1 )
-cvars.AddChangeCallback("phx_enable_checker", function(cvar,old,new)
+local CheckCVar = CreateConVar( "phx_integrity_check", "0", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Enable PH:X Integrity Checker.", 0, 1 )
+cvars.AddChangeCallback("phx_integrity_check", function(cvar,old,new)
 	if (new) && new ~= nil then
 		EnableChecker = tobool(new)
 	end
@@ -317,6 +317,32 @@ local function FETCH_CONFLICT_WSID()
 
 end
 
+local function CheckGamemodeTXT()
+	local FrettaInfo = file.Read( "gamemodes/fretta/fretta.txt", "THIRDPARTY" ) --"GAME"
+	local PropHuntInfo = file.Read( "gamemodes/prop_hunt/prop_hunt.txt", "THIRDPARTY" ) --"GAME"
+	local addErr = 0
+	
+	if (FrettaInfo) then
+		local t = util.KeyValuesToTable( FrettaInfo )
+		local isphx = tobool( t["isphx"] )
+		if !isphx then addErr = addErr+1; table.insert( ErrorList, "Found different fretta version, using different gamemode detected" ); end
+	else
+		addErr = addErr+1; table.insert( ErrorList, "Cannot read fretta's gamemode txt file, seems to be invalid!" );
+	end
+	
+	if (PropHuntInfo) then
+		local t = util.KeyValuesToTable( PropHuntInfo )
+		local isphx = tobool( t["isphx"] )
+		if !isphx then addErr = addErr+1; table.insert( ErrorList, "Found different prop_hunt version, using different gamemode detected" ); end
+	else
+		addErr = addErr+1; table.insert( ErrorList, "Cannot read prop_hunt's gamemode txt file, seems to be invalid!" );
+	end
+	
+	if addErr > 0 then return addErr end
+	
+	return 0
+end
+
 hook.Add("InitPostEntity", "PHX.CheckIntegrity", function()
 	-- Check Important Variables
 	
@@ -351,6 +377,11 @@ hook.Add("InitPostEntity", "PHX.CheckIntegrity", function()
 		if (not file.Exists( engine.ActiveGamemode() .. "/gamemode/enhancedplus/sh_enhancedplus.lua", "LUA" )) then
 			Errors = Errors + 1
 			table.insert(ErrorList, "An Essential PH:X Core File was not found!")
+		end
+		
+		if CheckGamemodeTXT() > 0 then
+			Errors = Errors + 1
+			table.insert(ErrorList, "Fretta/Prop Hunt gamemode files IS different! You're likely using different gamemode!")
 		end
 		
 		FETCH_CONFLICT_WSID()

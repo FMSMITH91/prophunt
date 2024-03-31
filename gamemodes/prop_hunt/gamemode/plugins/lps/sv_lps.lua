@@ -167,7 +167,7 @@ local function DoPlayerCheck(ply)
 				local RN = GetGlobalInt( "RoundNumber", 0 )
 				local XR = PHX:GetCVar( "lps_start_every_x_rounds" )
 				
-				if PHX:GetCVar( "lps_start_random" ) then
+				if PHX:GetCVar( "lps_start_random_round" ) then
 					if math.random(0,1) == 0 then 
 						return
 					end
@@ -223,7 +223,7 @@ local function DoPlayerCheck(ply)
                             local TrailTex = PHX:GetCVar( "lps_trail_texture" )
                             
                             if !file.Exists("materials/" .. TrailTex .. ".vmt", "GAME") then
-                                print("Texture file for creating Trail: '" .. TrailTex .. "' was not found! Reverting back to default!!")
+                                print("[LPS] Texture file for creating Trail: '" .. TrailTex .. "' was not found! Reverting back to default!!")
                                 TrailTex = "trails/laser"
                             end
                             
