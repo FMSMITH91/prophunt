@@ -184,13 +184,11 @@ AddCSLuaFile("cl_lang.lua")
 AddCSLuaFile("config/sh_init.lua")
 AddCSLuaFile("sh_config.lua")
 AddCSLuaFile("sh_player.lua")
-AddCSLuaFile("sh_chatbox.lua")
 AddCSLuaFile("sh_tauntscanner.lua")
 include("enhancedplus/sh_enhancedplus.lua")
 include("config/sh_init.lua")
 include("sh_config.lua")
 include("sh_player.lua")
---include("sh_chatbox.lua")
 include("sh_tauntscanner.lua")
 
 -- MapVote
