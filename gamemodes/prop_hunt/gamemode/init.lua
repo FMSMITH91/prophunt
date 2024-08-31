@@ -610,8 +610,8 @@ function GM:PlayerExchangeProp(pl, ent)
 			pl:PHXChatInfo("ERROR", "PHX_PROP_IS_BANNED")
 		elseif IsValid(ent:GetPhysicsObject()) && (pl.ph_prop:GetModel() != ent:GetModel() || pl.ph_prop:GetSkin() != ent:GetSkin()) then
         
-            -- Disallow props that has maximum bounding box's less than 1 units.
-            if math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y) <= 1 then
+            -- Disallow props that has maximum bounding box's less than 0.5 units (originally 1 but because we have "ph_tmp_accurate_hull" convar )
+            if math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y) <= 0.5 then
                 pl:PHXChatInfo("ERROR", "PHX_PROP_TOO_THIN")
                 return
             end
@@ -647,6 +647,7 @@ function GM:PlayerExchangeProp(pl, ent)
             pl:EnablePropPitchRot( true )
 			
 			local OffsetMult = PHX:GetCVar( "ph_prop_viewoffset_mult" )
+			local UseFullHull = PHX:GetCVar( "ph_tmp_accurate_hull" )
 			
 			if PHX:GetCVar( "ph_sv_enable_obb_modifier" ) && ent:GetNWBool("hasCustomHull",false) then
 				local hmin	= ent.m_Hull[1]
@@ -662,21 +663,27 @@ function GM:PlayerExchangeProp(pl, ent)
                 
                 pl:SetHull(hmin,hmax)
 				pl:SetHullDuck(hmin,hmax)
-                local xymax = math.Round(math.Max(hmax.x,hmax.y))
+				local vMax = math.Max(hmax.x,hmax.y)
+                local xymax = UseFullHull and vMax or math.Round(vMax)
                 pl:PHSendHullInfo( xymax*-1, xymax, hmax.z, new_health )
 			else
-                local hullxymax = math.Round(math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y))
+				local vMax = math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y)
+				local vMaxZ = ent:OBBMaxs().z-ent:OBBMins().z
+				
+                local hullxymax = UseFullHull and vMax or math.Round(vMax)
 				local hullxymin = hullxymax * -1
-				local hullz     = math.Round(ent:OBBMaxs().z-ent:OBBMins().z) * OffsetMult
+				local hullz     = (UseFullHull and vMaxZ or math.Round(vMaxZ)) * OffsetMult
                 
                 if ent:GetClass() == "prop_ragdoll" then -- Optional (but Better): Add 'PHX:GetCVar( "ph_usable_prop_type" ) >= 3' for extra checks.
                     -- We'll use GetModelBounds() instead of using CollisionBounds or OBBMins/Maxs.
                     -- Reason because is that ragdoll's Coll/OBBs bounds values are always changing when they move.
                     local mins,maxs = ent:GetModelBounds()
                     
-                    hullxymax   = math.Round( math.Max( maxs.x, maxs.y) )
+					local vRagMax = math.Max( maxs.x, maxs.y)
+					local vRagMaxZ = maxs.z-mins.z
+                    hullxymax   = UseFullHull and vRagMax or math.Round( vRagMax )
                     hullxymin   = hullxymax * -1
-                    hullz       = math.Round(maxs.z-mins.z) * OffsetMult
+                    hullz       = (UseFullHull and vRagMaxZ or math.Round(vRagMaxZ)) * OffsetMult
                     
                     -- Override health back to 100 and set their solid back to BBOX.
                     pl.ph_prop:SetSolid(SOLID_BBOX)
@@ -740,6 +747,12 @@ function GM:PlayerUse(pl, ent)
 	-- control who can pick up objects
 	if PHX:IsUsablePropEntity(ent:GetClass()) then
 		local state = PHX:GetCVar( "ph_allow_pickup_object" )
+		local cls = ent:GetClass()
+		
+		-- Fix where you cant open doors or use+ing any entities.
+		if PHX.EXPLOITABLE_DOORS[cls] then return end
+		if cls == "ph_luckyball" or cls == "ph_devilball" then return end
+		if ent:IsVehicle() then return end -- for ph_factory map
 	
 		if state <= 0 then
 			return false
@@ -1007,6 +1020,9 @@ function GM:OnPreRoundStart(num)
 		team.SetScore(TEAM_PROPS, huntscore)
 		team.SetScore(TEAM_HUNTERS, propscore)
 		for _, pl in pairs(player.GetAll()) do
+
+			-- Clear player's last_taunt
+			pl.last_taunt = nil
 		
 			if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
 			
@@ -1237,9 +1253,19 @@ hook.Add("KeyPress", "PlayerPressedKey", function( pl, key )
 	end
 end)
 
+-- DO NOT OVERRIDE.
+local SNDLVL_TAUNT_CHOICE = {75, 80, 85, 90, 95, 100}
 function PHX:PlayTaunt( pl, sndTaunt, bIsPitchEnabled, iPitchLevel, bIsRandomized, LastTauntTimeID )
 	if !pl or !IsValid(pl) then
-		print("[Taunt:PlayTaunt] Error: A 'Player' entity is required!")
+		print("[Taunt:PlayTaunt] Error: 'Player' entity argument on PHX:PlayTaunt is required!")
+		return
+	end
+
+	bIsPitchEnabled = bIsPitchEnabled or 0
+	iPitchLevel = iPitchLevel or 100
+	bIsRandomized = bIsRandomized or 0
+	if !LastTauntTimeID or LastTauntTimeID == "" then
+		print("[Taunt:PlayTaunt] Error: LastTauntTimeID argument on PHX:PlayTaunt is Required!")
 		return
 	end
 
@@ -1248,16 +1274,26 @@ function PHX:PlayTaunt( pl, sndTaunt, bIsPitchEnabled, iPitchLevel, bIsRandomize
 	if (pl:Team() == TEAM_PROPS or pl:Team() == TEAM_HUNTERS) then
 		-- sndTaunt can be either boolean or string.
 		local taunt
+		local cvSndLevel = SNDLVL_TAUNT_CHOICE[PHX:GetCVar( "ph_taunt_soundlevel" )]
+		local cvStopSound = PHX:GetCVar( "ph_overlap_taunt" )
+
+		if (not cvStopSound and (pl.last_taunt)) then
+			pl:StopSound( pl.last_taunt )
+		end
 		
 		if isbool(sndTaunt) and (sndTaunt) then
-			repeat
-				taunt = PHX:GetRandomTaunt( pl:Team() )
-			until taunt != pl.last_taunt
-			--pl.last_taunt_time  = CurTime()
-			pl.last_taunt = taunt
+			if (TAUNT_FALLBACK) then
+				taunt = "vo/coast/odessa/male01/nlo_cheer0"..math.random(1,4)..".wav"
+			else
+				repeat
+					taunt = PHX:GetRandomTaunt( pl:Team() )
+				until taunt != pl.last_taunt
+				pl.last_taunt = taunt
+			end
 			
 		elseif isstring(sndTaunt) then
 			taunt = sndTaunt
+			pl.last_taunt = taunt
 		end
 		
 		local pitch = 100
@@ -1268,7 +1304,7 @@ function PHX:PlayTaunt( pl, sndTaunt, bIsPitchEnabled, iPitchLevel, bIsRandomize
 				pitch = math.Clamp( iPitchLevel, PHX:GetCVar("ph_taunt_pitch_range_min"), PHX:GetCVar("ph_taunt_pitch_range_max") )
 			end
 		end
-		pl:EmitSound( taunt, 100, pitch )
+		pl:EmitSound( taunt, cvSndLevel, pitch )
 		pl:SetLastTauntTime( LastTauntTimeID, CurTime() )
 		
 	end
@@ -1278,7 +1314,7 @@ end
 hook.Add("PlayerButtonDown", "PlayerButton_ControlTaunts", function(pl, key)
 	if !GAMEMODE:InRound() then return end
 
-	local info 	 		= pl:GetInfoNum("ph_default_taunt_key", 0)
+	local TauntKey 		= pl:GetInfoNum("ph_default_taunt_key", 0)
 	local ctInfo 		= pl:GetInfoNum("ph_default_customtaunt_key", 0)
 	local lockInfo 		= pl:GetInfoNum("ph_default_rotation_lock_key", 0)
 	local freezePropKey = pl:GetInfoNum("ph_prop_midair_freeze_key", 0)
@@ -1290,23 +1326,26 @@ hook.Add("PlayerButtonDown", "PlayerButton_ControlTaunts", function(pl, key)
 	
 	local decoyKey		= pl:GetInfoNum("ph_cl_decoy_spawn_key", 0)			-- Used for spawning decoy
 	local unstuckKey	= pl:GetInfoNum("ph_cl_unstuck_key", 0)				-- The Unstuck Key
+
+	local plTeam = pl:Team()
 	
-	if IsValid(pl) and pl:Alive() and (pl:Team() == TEAM_PROPS or pl:Team() == TEAM_HUNTERS) then
+	if IsValid(pl) and pl:Alive() and (plTeam == TEAM_PROPS or plTeam == TEAM_HUNTERS) then
 		
 		-- Taunt Access
 		-- if you're excluding custom taunts not to be played on random taunts or use them *only* for specific 'groups', you're evil. jk it's good tho :)	
 		local tauntmode  = PHX:GetCVar( "ph_custom_taunt_mode" )
 		local tauntdelay = PHX:GetCVar( "ph_normal_taunt_delay" )
-		if (key == info or (pl:Team() == TEAM_PROPS and ( tobool(isRightClickMode) and key == MOUSE_RIGHT ) )) then
+		if (key == TauntKey or (plTeam == TEAM_PROPS and ( tobool(isRightClickMode) and key == MOUSE_RIGHT ) )) then
 			if tauntmode == 1 then
 				pl:ConCommand("ph_showtaunts")
-			elseif tauntmode == 0 or tauntmode == 2 and pl:GetLastTauntTime( "LastTauntTime" ) + tauntdelay <= CurTime() and
+			elseif tauntmode == 0 or tauntmode == 2 and pl:GetLastTauntTime( "LastTauntTime" ) + tauntdelay <= CurTime() then
 				-- Random taunts rules: Use Cached; includes range from: [custom, stock, externals]. That's it.
-				-- Make sure both team's cached taunts are not empty.
-					(!table.IsEmpty(PHX.CachedTaunts[TEAM_PROPS]) and !table.IsEmpty(PHX.CachedTaunts[TEAM_HUNTERS])) then
-				
-				PHX:PlayTaunt( pl, true, pitchApplyRand, plPitchLevel, isRandomPitch, "LastTauntTime" )
-				
+				local TauntPath = true
+				if ( table.IsEmpty(PHX.CachedTaunts[plTeam]) or TAUNT_FALLBACK ) then
+					TauntPath = "vo/coast/odessa/male01/nlo_cheer0"..math.random(1,4)..".wav"
+					pitchApplyRand = 0; plPitchLevel = 100; isRandomPitch = 0;
+				end
+				PHX:PlayTaunt( pl, TauntPath, pitchApplyRand, plPitchLevel, isRandomPitch, "LastTauntTime" )
 			end
 		end
 		
@@ -1320,7 +1359,7 @@ hook.Add("PlayerButtonDown", "PlayerButton_ControlTaunts", function(pl, key)
 		end
 	
 		-- Team Props
-		if pl:Team() == TEAM_PROPS then
+		if plTeam == TEAM_PROPS then
 	
 			-- Lock rotation
 			if (key == lockInfo) then
@@ -1346,7 +1385,7 @@ hook.Add("PlayerButtonDown", "PlayerButton_ControlTaunts", function(pl, key)
 			end
 			
 		-- Team Hunters
-		elseif pl:Team() == TEAM_HUNTERS then
+		elseif plTeam == TEAM_HUNTERS then
 			
 			-- Add Something here for hunters. Sometimes in future I think.
 			
