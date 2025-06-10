@@ -1,7 +1,7 @@
 -- cl_init.lua
 surface.CreateFont( "HunterBlindLockFont", {
 	font	= "Arial",
-	size	= 26,
+	size	= 14,
 	weight	= 1200,
 	antialias = true,
 	underline = false

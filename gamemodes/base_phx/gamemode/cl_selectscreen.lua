@@ -194,7 +194,7 @@ function PANEL:AddSelectButton( strName, fnFunction, txt )
 	local btn = vgui.Create( "DButton", self.pnlButtons )
 	btn:SetText( strName )
 	btn:SetSize( 200, 30 )
-	btn.DoClick = function() fnFunction() self:Remove() end
+	btn.DoClick = function() fnFunction() surface.PlaySound( Sound("buttons/lightswitch2.wav") ) self:Remove() end
 	
 	Derma_Hook( btn, "Paint", 				"Paint", 		"SelectButton" )
 	Derma_Hook( btn, "PaintOver",			"PaintOver", 	"SelectButton" )

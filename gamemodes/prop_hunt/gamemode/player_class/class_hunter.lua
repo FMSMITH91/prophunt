@@ -5,7 +5,6 @@ CLASS.WalkSpeed 			= 230
 CLASS.CrouchedWalkSpeed 	= 0.4
 CLASS.RunSpeed				= 290
 CLASS.DuckSpeed				= 0.2
-CLASS.JumpPower				= 200
 CLASS.DrawTeamRing			= false
 
 function CLASS:StartLoadOut( pl )
@@ -18,13 +17,11 @@ function CLASS:StartLoadOut( pl )
     pl:GiveAmmo(32, "Buckshot")
     pl:GiveAmmo(255, "SMG1")
     pl:GiveAmmo(12, "357")
-    pl:GiveAmmo(12, "XBowBolt")
     
     pl:Give("weapon_crowbar")
     pl:Give("weapon_shotgun")
     pl:Give("weapon_smg1")
     pl:Give("weapon_357")
-    pl:Give("weapon_crossbow")
 	
     -- Give grenades if "Give Grenade near round End time" feature is disabled
 	if (not PHX:GetCVar( "ph_give_grenade_near_roundend" )) then

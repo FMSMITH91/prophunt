@@ -184,11 +184,13 @@ AddCSLuaFile("cl_lang.lua")
 AddCSLuaFile("config/sh_init.lua")
 AddCSLuaFile("sh_config.lua")
 AddCSLuaFile("sh_player.lua")
+AddCSLuaFile("sh_chatbox.lua")
 AddCSLuaFile("sh_tauntscanner.lua")
 include("enhancedplus/sh_enhancedplus.lua")
 include("config/sh_init.lua")
 include("sh_config.lua")
 include("sh_player.lua")
+include("sh_chatbox.lua")
 include("sh_tauntscanner.lua")
 
 -- MapVote
@@ -346,7 +348,6 @@ end ]]
 
 --[[ END OF SHARED INIT HEADERS ]]--
 
---[[
 local getloadedgamemodes = engine.GetGamemodes()
 for _,data in ipairs(getloadedgamemodes) do
 	if (data.name) and (string.find(data.name, "fretta")) then
@@ -356,7 +357,6 @@ for _,data in ipairs(getloadedgamemodes) do
 		ErrorNoHalt("Prop Hunt X2Z Warning - Please check console for more info!")
 	end
 end
-]]--
 
 DeriveGamemode("base_phx")
 IncludePlayerClasses()

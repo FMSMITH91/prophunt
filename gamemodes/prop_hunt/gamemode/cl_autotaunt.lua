@@ -280,7 +280,7 @@ local function AutoTauntSpawn()
 	xEnd = ScrW() - 195
 	y = ScrH() - 65
 
-	if isEnabled && !CheckPlayer() then
+	if !CheckPlayer() then
 		timer.Create(teamCheckTimer, 0.1, 10, CheckPlayer)
 	end
 end
