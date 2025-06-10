@@ -181,7 +181,7 @@ function GM:TeamChangeNotification( ply, oldteam, newteam )
 			chat.AddText( oldTeamColor, nick, color_white, txtjoined, newTeamColor, newTeamName );
 		end
 		
-		surface.PlaySound("buttons/button17.wav")
+		surface.PlaySound("buttons/lightswitch2.wav")
 	end
 end
 net.Receive("fretta_teamchange", function()

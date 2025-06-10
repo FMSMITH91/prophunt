@@ -4,13 +4,13 @@
 -- Default Stock Config (Fall Back). DO NOT EDIT.
 PHX.MVConfigDefault = {
     MapLimit 	= 24,
-    TimeLimit 	= 28,
+    TimeLimit 	= 30,
     AllowCurrentMap = false,
 	ChangeMapNoPlayer = true,
-	UseULX 		= false,
+	UseULX 		= true,
     EnableCooldown = true,
     MapsBeforeRevote = 2,
-    RTVPlayerCount = 3,
+    RTVPlayerCount = 2,
     MapPrefixes = {"phx_", "ph_"}
 }
 
@@ -19,13 +19,13 @@ MapVote.PHXConfig = {}
 
 local convarlist = {
 	{"mv_maplimit", 		"24",		CVAR_SERVER_ONLY_NO_NOTIFY, "numbers of map that shown on mapvote.", 5 },
-	{"mv_timelimit",		"28",		CVAR_SERVER_ONLY, "time in second for default mapvotes time.", 10 },
+	{"mv_timelimit",		"30",		CVAR_SERVER_ONLY, "time in second for default mapvotes time.", 10 },
 	{"mv_change_when_no_player", "1", 	CVAR_SERVER_ONLY, "change the map after no players in the server?", 0, 1 },
 	{"mv_allowcurmap",		"0",		CVAR_SERVER_ONLY_NO_NOTIFY, "allow current map to be voted (1/0)", 0, 1 },
-	{"mv_use_ulx_votemaps", "0",		CVAR_SERVER_ONLY_NO_NOTIFY, "Use map listing from ULX Mapvote? 1 = use from ULX mapvote list (which you can whitelist them), 0 = use default maps/*.bsp directory listing.", 0, 1 },
+	{"mv_use_ulx_votemaps", "1",		CVAR_SERVER_ONLY_NO_NOTIFY, "Use map listing from ULX Mapvote? 1 = use from ULX mapvote list (which you can whitelist them), 0 = use default maps/*.bsp directory listing.", 0, 1 },
 	{"mv_cooldown",			"1",		CVAR_SERVER_ONLY, "enable cooldown for voting a map", 0, 1 },
 	{"mv_mapbeforerevote",	"2", 		CVAR_SERVER_ONLY, "how many times that the map which cooldown can be shown again?", 2, 20 }, -- We will clamp max to 20 maps instead.
-	{"mv_rtvcount",			"3", 		CVAR_SERVER_ONLY, "number of required players to use rtv mapvote.", 2, game.MaxPlayers() },
+	{"mv_rtvcount",			"2", 		CVAR_SERVER_ONLY, "number of required players to use rtv mapvote.", 2, game.MaxPlayers() },
 	{"mv_map_prefix",		"phx_,ph_",	CVAR_SERVER_ONLY_NO_NOTIFY, "Map Prefixes that will be shown under mapvote. Use the following example:\n  \"phx_,ph_\" (Dont forget to use quotation marks!)." }
 }
 

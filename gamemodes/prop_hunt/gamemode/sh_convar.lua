@@ -104,11 +104,11 @@ CVAR["ph_use_playermodeltype"]			=	{ CTYPE_NUMBER, "0", CVAR_SERVER_ONLY, "Which
 CVAR["ph_enable_hunter_player_color"]   =   { CTYPE_BOOL,   "0", CVAR_SERVER_ONLY, "Enable Player Color for team Hunters" }
 CVAR["ph_enable_prop_player_color"]     =   { CTYPE_BOOL,   "0", CVAR_SERVER_ONLY, "Enable Player Color for team Props" }
 
-CVAR["ph_autotaunt_enabled"]			=	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY_NO_NOTIFY, "(Only Apply on New Round has started) Should auto taunting be enabled" }
+CVAR["ph_autotaunt_enabled"]			=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY_NO_NOTIFY, "(Only Apply on New Round has started) Should auto taunting be enabled" }
 CVAR["ph_autotaunt_delay"]				=	{ CTYPE_NUMBER, "45", CVAR_SERVER_ONLY_NO_NOTIFY, "Delay in seconds for auto taunt feature" }
 CVAR["ph_custom_taunt_mode"]			=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, "Enable custom taunts for prop teams by pressing C? (Default 2)\n  You must have a list of custom taunts to enable this.", { min = 0, max = 2 } }
-CVAR["ph_customtaunts_delay"]			=	{ CTYPE_NUMBER, "6", CVAR_SERVER_ONLY, "How many in seconds delay for props to play custom taunt again? (Default is 6)" }
-CVAR["ph_normal_taunt_delay"]			=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, "How many in seconds delay for props to play normal [F3] taunt again? (Default is 2)" }
+CVAR["ph_customtaunts_delay"]			=	{ CTYPE_NUMBER, "4", CVAR_SERVER_ONLY, "How many in seconds delay for props to play custom taunt again? (Default is 4)" }
+CVAR["ph_normal_taunt_delay"]			=	{ CTYPE_NUMBER, "4", CVAR_SERVER_ONLY, "How many in seconds delay for props to play normal [F3] taunt again? (Default is 4)" }
 -- fake taunt & pitch
 CVAR["ph_randtaunt_map_prop_enable"]	=	{ CTYPE_BOOL,	"1", CVAR_SERVER_ONLY, "Allow fake taunts to be played on random props in the maps. Can be accessed only through Custom Taunt menu." }
 CVAR["ph_randtaunt_map_prop_max"]		=	{ CTYPE_NUMBER, "6", CVAR_SERVER_ONLY, "Maximum usage for fake taunts to be used. -1 is unlimited (Be warned though,I don't recommend to set this as unlimited!)" }
@@ -180,13 +180,13 @@ CVAR["ph_enable_devil_balls"]				=	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, "Spawn 
 
 CVAR["ph_prop_must_standing"]				=	{ CTYPE_BOOL,	"1", CVAR_SERVER_ONLY, "[Experimental] Restrict props replication only when they're standing. Disable this to allow replicating when ducking or jumping."}
 CVAR["ph_hunter_fire_penalty"]				=	{ CTYPE_NUMBER, "5", CVAR_SERVER_ONLY, "Health points removed from hunters when they shoot.", { min = 1, max = 500 } }
-CVAR["ph_hunter_kill_bonus"]				=	{ CTYPE_NUMBER, "100", CVAR_SERVER_ONLY, "How much health to give back to the Hunter after killing a prop.", { min = 0, max = 500 } }
+CVAR["ph_hunter_kill_bonus"]				=	{ CTYPE_NUMBER, "25", CVAR_SERVER_ONLY, "How much health to give back to the Hunter after killing a prop.", { min = 0, max = 500 } }
 CVAR["ph_game_time"]						=	{ CTYPE_NUMBER, "30", CVAR_SERVER_ONLY, "(Require Map Restart) Maximum Time Left (in minutes) - Default is 30 minutes." }
 CVAR["ph_hunter_blindlock_time"]			=	{ CTYPE_NUMBER, "30", CVAR_SERVER_ONLY, "How long hunters are blinded (in seconds)" }
 CVAR["ph_round_time"]						=	{ CTYPE_NUMBER, "300", CVAR_SERVER_ONLY, "(Require Map Restart) Time (in seconds) for each rounds." }
 CVAR["ph_rounds_per_map"]					=	{ CTYPE_NUMBER, "10", CVAR_SERVER_ONLY, "(Require Map Restart) Numbers of rounds played on a single map (Default: 10)" }
-CVAR["ph_waitforplayers"]					=	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, 	"Should we wait for players for proper round?" }
-CVAR["ph_min_waitforplayers"]				=	{ CTYPE_NUMBER, "1", CVAR_SERVER_ONLY, 	"Numbers of mininum players that we should wait for round start. Value must not contain less than 1.", { min = 1, max = game.MaxPlayers() }, 
+CVAR["ph_waitforplayers"]					=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY, 	"Should we wait for players for proper round?" }
+CVAR["ph_min_waitforplayers"]				=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, 	"Numbers of mininum players that we should wait for round start. Value must not contain less than 1.", { min = 1, max = game.MaxPlayers() }, 
 function(cvarname, value)
     cvars.AddChangeCallback(cvarname, function(_, _, new)
         if tonumber(new) < 1 then

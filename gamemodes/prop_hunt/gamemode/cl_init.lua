@@ -34,6 +34,8 @@ include("cl_tauntwindow.lua")
 include("cl_autotaunt.lua")
 include("cl_credits.lua") -- Credits and Contributors message
 
+overlaydraw = 0
+
 -- /!\ Convars are now moved on sh_convars.lua.
 
 -- Local Functions & Variables collection
@@ -431,6 +433,7 @@ local blindlock_time_left = 0
 local blindlock_time_left_msg = nil
 
 local function HUDPaint()
+local ply = LocalPlayer()
     if (game.SinglePlayer()) then
         draw.WordBox( 8, ScrW()/2, ScrH()/2, "[WARNING] Single Player Mode is not Supported! Please Host a Multiplayer to play!", "Trebuchet24",
         Color(0,0,0,250), Color(220,10,10), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
@@ -462,7 +465,13 @@ local function HUDPaint()
 		
 		if blindlock_time_left < 1 && blindlock_time_left > -6 then
 			blindlock_time_left_msg = PHX:FTranslate("HUD_UNBLINDED")
+			overlaydraw = 0
 		elseif blindlock_time_left > 0 then
+			if ply:Team() == TEAM_HUNTERS then
+				if ply:Alive() then
+					overlaydraw = 1
+				else end
+			end
 			blindlock_time_left_msg = PHX:FTranslate("HUD_BLINDED", PHX:TranslateName(TEAM_HUNTERS), string.ToMinutesSeconds(blindlock_time_left))
 		else
 			blindlock_time_left_msg = nil
@@ -567,6 +576,12 @@ local function HUDPaint()
 end
 hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
 
+function DrawMaterial()
+	if blind then
+		draw.RoundedBox( 0, 0, 0, ScrW(), ScrH(), Color( 50, 50, 50, 255 ) )
+	end
+end
+
 function GM:HUDDrawTargetID()
 	local tr = util.GetPlayerTrace(LocalPlayer())
 	local trace = util.TraceLine(tr)
@@ -618,6 +633,8 @@ function GM:HUDDrawTargetID()
 	draw.SimpleText(text, font, x + 2, y + 2, Color(0, 0, 0, 50))
 	draw.SimpleText(text, font, x, y, self:GetTeamColor(trace.Entity))
 end
+
+hook.Add( "HUDPaintBackground", "RenderBlindOverlay", DrawMaterial )
 
 -- After the player has been drawn
 local function PH_PostPlayerDraw(pl)

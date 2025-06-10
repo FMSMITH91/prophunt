@@ -780,6 +780,11 @@ function GM:PlayerUse(pl, ent)
 	return true
 end
 
+function GM:CanStartRound()
+	if #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= GetConVar("ph_min_waitforplayers"):GetInt() then return true end
+	return false
+end
+
 -- Called when a player leaves
 hook.Add("PlayerDisconnected", "PH_PlayerDisconnected", function( ply )
     ply:RemoveProp()
@@ -1010,6 +1015,10 @@ function GM:OnPreRoundStart(num)
 	game.CleanUpMap()
 	
 	if GetGlobalInt("RoundNumber") != 1 && (PHX:GetCVar( "ph_swap_teams_every_round" ) || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0)) then
+		local propscore = team.GetScore(TEAM_PROPS)
+		local huntscore = team.GetScore(TEAM_HUNTERS)
+		team.SetScore(TEAM_PROPS, huntscore)
+		team.SetScore(TEAM_HUNTERS, propscore)
 		for _, pl in pairs(player.GetAll()) do
 
 			-- Clear player's last_taunt
