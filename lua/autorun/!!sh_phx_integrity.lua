@@ -1,6 +1,6 @@
 --[=[
 
-You are free to use, modify, contribute, or distribute the Prop Hunt: X ("SOFTWARE") as long as it stated exclusively for Garry's Mod.
+You are free to use, modify, contribute, or distribute the Prop Hunt: X2Z ("SOFTWARE") as long as it stated exclusively for Garry's Mod.
 Any changes or modification you have made publicly on Steam Workshop must include this license and a link back to this page in your credits page.
 You are, however, not permitted to use for:
 - Commercial Purposes, including selling the source code.

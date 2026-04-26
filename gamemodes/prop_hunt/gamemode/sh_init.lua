@@ -1,6 +1,6 @@
 --[[
 
-( This License Applies to all files writen in "fretta" and "prop_hunt" gamemode directories )
+( This License Applies to all files writen in "base_phx" and "prop_hunt" PH:X2Z's gamemode directories )
 
 You are free to use, copy, modify, contribute, distribute, or make profit (server or community) when using the Prop Hunt: X/X2Z Gamemode ("SOFTWARE") as long as it stated exclusively and made only available for Garry's Mod.
 Any changes or modification you have made publicly on Steam Workshop must include this license OR a link back to this GitHub Repository Page/Official Website in your credits page.
@@ -22,7 +22,7 @@ IS_PHX		 	= true	-- an easy check if PHX is installed.
 
 PHX.ConfigPath 	= "phx_data"
 PHX.VERSION		= "X2Z"
-PHX.REVISION	= "31.07.24" --Format: dd/mm/yy.
+PHX.REVISION	= "21.03.25" --Format: dd/mm/yy.
 
 --Include Languages
 PHX.LANGUAGES = {}
@@ -303,50 +303,9 @@ function PHX:TranslateName( teamID, ply )
 		return teamID
 	end
 end
---[[ function PHX.TranslateName( self, teamID, ply )
-	local strID = strteam[teamID]
-	
-	if SERVER then	-- self:F/Translate() DON'T EXIST on Serverside!
-		-- Note: DO NOT use this on expensive operations on Think, PlayerTick, and other hooks.
-		-- You  have been warned!
-		if self:GetCVar( "ph_use_lang" ) then
-			local lang = self:GetCVar( "ph_force_lang" )			
-			if self.LANGUAGES[lang] and self.LANGUAGES[lang] ~= nil and
-				self.LANGUAGES[lang][ strID ] and 
-				self.LANGUAGES[lang][ strID ] ~= nil then
-				teamID = self.LANGUAGES[lang][ strID ]
-			else
-				teamID = self.LANGUAGES["en_us"][ strID ]
-			end
-		else
-			if ply and IsValid(ply) then
-				local clLang = ply:GetInfo("ph_cl_language")
-				if self.LANGUAGES[clLang] and self.LANGUAGES[clLang] ~= nil and
-					self.LANGUAGES[clLang][ strID ] and 
-					self.LANGUAGES[clLang][ strID ] ~= nil then
-					teamID = self.LANGUAGES[clLang][ strID ]
-				end
-			else
-				teamID = self.LANGUAGES["en_us"][ strID ]
-			end
-		end
-		
-		return teamID
-	else
-		local txt = self:FTranslate( strID )
-		if !txt or txt == nil then
-			teamID = team.GetName( teamID )
-		else
-			teamID = txt
-		end
-		
-		return teamID
-	end
-end ]]
 
 --[[ END OF SHARED INIT HEADERS ]]--
 
---[[
 local getloadedgamemodes = engine.GetGamemodes()
 for _,data in ipairs(getloadedgamemodes) do
 	if (data.name) and (string.find(data.name, "fretta")) then
@@ -356,7 +315,6 @@ for _,data in ipairs(getloadedgamemodes) do
 		ErrorNoHalt("Prop Hunt X2Z Warning - Please check console for more info!")
 	end
 end
-]]--
 
 DeriveGamemode("base_phx")
 IncludePlayerClasses()
@@ -413,7 +371,7 @@ GM.PHXContributors			= {
 	"Trigstur (Dutch Translation)",
 	"Galaxio, Haeiven, TR1NITY (French Translation)",
 	"Major Nick (German Translation)",
-	"KamFretoZ (Indonesian Translation)",
+	"KamFretoZ",
 	"So-chiru (Korean Translation)", 
 	"Pawelxxdd (Polish Translation)",
 	"Clã | BR | The Fire Fuchs (Portuguese/Brazil Translation)",
