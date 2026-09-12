@@ -1042,6 +1042,10 @@ end
 -- Language Preview Window
 function PHX:showLangPreview()
 	
+	-- Same as the main menu: clicking the language preview button twice would
+	-- leave the first window orphaned behind the second.
+	if IsValid( lgWind.frame ) then lgWind.frame:Remove() end
+	
 	lgWind.frame = vgui.Create("DFrame")
 	lgWind.frame:SetSize(600, ScrH()-200)
 	lgWind.frame:SetTitle("Language List & Preview")
