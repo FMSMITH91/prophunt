@@ -25,6 +25,10 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 	local mdlName = ply:GetInfo("cl_playermodel")
 	local mdlPath = player_manager.TranslatePlayerModel(mdlName)
 	
+	-- Running ph_x_menu again while it is open would stack a second fullscreen
+	-- popup over the first, with nothing left holding a reference to close it.
+	if IsValid( PHX.UI.MainForm ) then PHX.UI.MainForm:Remove() end
+	
 	PHX.UI.MainForm = vgui.Create("DFrame")
 	PHX.UI.MainForm:SetSize(ScrW(),ScrH())
 	PHX.UI.MainForm:SetTitle( PHX:FTranslate("PHXM_WINDOW_TITLE") )
