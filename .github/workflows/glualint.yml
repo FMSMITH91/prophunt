@@ -18,8 +18,15 @@ jobs:
   # glualint release and runs `glualint lint .` over the repo, annotating any
   # findings inline on the commit/PR.
   #
-  # Settings come from .glualint.json in the repo root. Style rules are off
+  # Settings come from glualint.json in the repo root. Style rules are off
   # there and lint_warningsAreErrors is false, so only genuine syntax/parse
   # errors fail the build - warnings are reported but do not block.
+  #
+  # The config is passed explicitly rather than left to glualint's own search:
+  # that search looks for "glualint.json" walking up from each linted file,
+  # while the dotted ".glualint.json" spelling is only honoured in the user's
+  # home folder. Passing --config removes the ambiguity entirely.
   Lint:
     uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
+    with:
+      config: "glualint.json"
