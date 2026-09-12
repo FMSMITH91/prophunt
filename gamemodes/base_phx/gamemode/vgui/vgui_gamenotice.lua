@@ -23,6 +23,9 @@ end
 
 function PANEL:AddEntityText( txt )
 
+	-- Nothing to draw, and txt:IsValid() below would error on it.
+	if ( txt == nil ) then return true end
+	
 	if ( type( txt ) == "string" ) then return false end
 	
 	if ( type( txt ) == "Player" ) then 
