@@ -4,7 +4,14 @@ function PHX:AddLanguage( tbl )
 		local code = tbl.code
 		local name = tbl.Name
 		
-		if PHX.LANGUAGES[code] ~= nil or (not table.IsEmpty(PHX.LANGUAGES[code])) then
+		-- table.IsEmpty(nil) errors, and the old condition reached it for every
+		-- genuinely new language, which is the case this branch exists to handle.
+		if (not code) or code == "" then
+			PHX:VerboseMsg("[LANG] Ignoring a language table with no 'code' field.", 3)
+			return
+		end
+		
+		if PHX.LANGUAGES[code] then
 			PHX:VerboseMsg("[LANG] It appears that Language " .. name .. " ("..code..") is already exist. Ignoring...")
 		else
 			PHX:VerboseMsg("[LANG] Adding External Language " .. name .. "(".. code ..")")
@@ -15,6 +22,12 @@ end
 
 function PHX:InsertToLanguage( tbl, code )
 	if (tbl and type(tbl) == "table" and tbl ~= nil) and (code and (code ~= nil or code ~= "")) then		
+		-- Inserting into a language that was never loaded indexes nil below.
+		if (not PHX.LANGUAGES[code]) then
+			PHX:VerboseMsg("[LANG] Cannot insert phrases into language '"..code.."': that language is not loaded.", 3)
+			return
+		end
+		
 		PHX:VerboseMsg("[LANG] Adding External insertion language code: (".. code ..")")
 		
 		for STRINGCODE, TRANSLATION in pairs(tbl) do

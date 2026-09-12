@@ -78,7 +78,7 @@ SoundTbl["NPC_Hunter.FlechetteHitWorld"] =
 	}
 }
 for k,v in pairs( SoundTbl ) do
-	v.name = k,
+	v.name = k
 	sound.Add(v)
 end
 
