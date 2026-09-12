@@ -14,7 +14,18 @@ function GM:GetScoreboard()
 	
 end
 
+// True while the map vote panel is on screen. The panel is removed when the
+// vote is cancelled or the map changes, so this cannot get stuck on.
+local function MapVoteOnScreen()
+	return PHX && PHX.MV && IsValid( PHX.MV.Panel )
+end
+
 function GM:ScoreboardShow()
+	
+	// Don't cover the map vote. GM:OnEndOfGame force-opens the scoreboard with
+	// +showscores moments before the vote appears, and players holding TAB
+	// during a vote would otherwise hide it behind the scoreboard.
+	if ( MapVoteOnScreen() ) then return end
 	
 	gui.EnableScreenClicker(true)
 	GAMEMODE:GetScoreboard():SetVisible( true )
@@ -24,8 +35,15 @@ end
 
 function GM:ScoreboardHide()
 	
-	gui.EnableScreenClicker(false)
 	GAMEMODE:GetScoreboard():SetVisible( false )
+	
+	// The vote panel drives the cursor through MakePopup; releasing the screen
+	// clicker here would leave it visible but unclickable. The -showscores that
+	// GM:OnEndOfGame schedules lands at the same moment the vote opens, so this
+	// race is the normal case rather than an edge case.
+	if ( MapVoteOnScreen() ) then return end
+	
+	gui.EnableScreenClicker(false)
 	
 end
 

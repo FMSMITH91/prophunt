@@ -88,20 +88,20 @@ end )
 function RTV.CanVote( ply )
 	local plyCount = player.GetCount()
 	
+	if !IsValid( ply ) then return false, "PHXM_MV_MUST_WAIT" end	-- console/server has no vote.
+	
 	if RTV._ActualWait >= CurTime() then
 		return false, "PHXM_MV_MUST_WAIT"
 	end
 
-	if GetGlobalBool( "In_Voting" ) then
+	-- MapVote.Allow is the real "a vote is running" flag; the old globals here
+	-- ("In_Voting" / RTV.ChangingMaps) were never set by anything.
+	if MapVote.Allow then
 		return false, "PHXM_MV_VOTEINPROG"
 	end
 
 	if ply.RTVoted then
 		return false, "PHXM_MV_HAS_VOTED"
-	end
-
-	if RTV.ChangingMaps then
-		return false, "PHXM_MV_ALR_IN_VOTE"
 	end
 	if plyCount < RTV.PlayerCount then
         return false, "PHXM_MV_NEED_MORE_PLY"

@@ -29,9 +29,11 @@ local convarlist = {
 	{"mv_map_prefix",		"phx_,ph_",	CVAR_SERVER_ONLY_NO_NOTIFY, "Map Prefixes that will be shown under mapvote. Use the following example:\n  \"phx_,ph_\" (Dont forget to use quotation marks!)." }
 }
 
-if !ConVarExists("mv_maplimit") then
-	PHX:VerboseMsg("[MapVote] ConVars initialized!")
-	for _,convars in ipairs(convarlist) do
+-- Check each ConVar on its own: another MapVote addon may already own some of
+-- these names, and creating only part of the set leaves the rest nil.
+for _,convars in ipairs(convarlist) do
+	if !ConVarExists(convars[1]) then
+		PHX:VerboseMsg("[MapVote] Creating ConVar: "..convars[1])
 		CreateConVar(convars[1], convars[2], convars[3], convars[4], convars[5], convars[6])
 	end
 end
@@ -58,7 +60,7 @@ if SERVER then
 				return
 			end
 			
-			local time = args[1] or MapVote.PHXConfig.TimeLimit or 28
+			local time = tonumber(args[1]) or MapVote.PHXConfig.TimeLimit or 28
 			MapVote.PHXStart(time, nil, nil, nil)
 		else
 			ply:PHXChatInfo("ERROR", "MISC_ACCESSDENIED")

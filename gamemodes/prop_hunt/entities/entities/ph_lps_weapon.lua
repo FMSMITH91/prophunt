@@ -22,12 +22,12 @@ function ENT:SetupDataTables()
 end
 
 function ENT:Initialize()
-	self.Entity:DrawShadow( false ) -- don't draw shadows.
+	self:DrawShadow( false ) -- don't draw shadows.
 end
 
 if CLIENT then
 	function ENT:Draw()
-		self.Entity:DrawModel()
+		self:DrawModel()
 	end
 end
 

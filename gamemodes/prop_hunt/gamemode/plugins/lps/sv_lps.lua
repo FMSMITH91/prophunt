@@ -68,6 +68,8 @@ function PHX.LPS:RandomizeMusic()
 end
 
 function PHX.LPS:GetAlertSound()
+    if table.IsEmpty( self.SOUND.ALERT ) then return end
+    
     local get   = self.SOUND.ALERT[math.random(1, #self.SOUND.ALERT)]
     return get
 end
@@ -76,9 +78,14 @@ function PHX.LPS:GetMusic()
 
     local get
     
-    repeat
+    if table.IsEmpty( self.SOUND.MUSIC ) then return end
+    
+    -- Give up after a few tries: with a single track this could never satisfy
+    -- the condition and would hang the server.
+    for _ = 1, 10 do
         get = self.SOUND.MUSIC[math.random(1, #self.SOUND.MUSIC)]
-    until get ~= self.SOUND.LASTMUSIC
+        if get ~= self.SOUND.LASTMUSIC then break end
+    end
     
     self.SOUND.LASTMUSIC = get
     return get

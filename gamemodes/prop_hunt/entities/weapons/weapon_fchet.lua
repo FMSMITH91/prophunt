@@ -59,7 +59,7 @@ end
 
 function SWEP:Reload()
 	if ( self:Clip1() < self:GetMaxClip1() ) then
-		self.Weapon:EmitSound( Sound( "wlv.guardgun_reload" ) )
+		self:EmitSound( Sound( "wlv.guardgun_reload" ) )
 	end
 	self:SetNextPrimaryFire( CurTime() + 3 )
 	self:SetNextSecondaryFire( CurTime() + 3 )
@@ -113,7 +113,7 @@ function SWEP:SecondaryAttack()
         
     if self:Ammo2() > 0 then
         
-        self.Weapon:EmitSound( Sound( "Weapon_IRifle.Single" ) )
+        self:EmitSound( Sound( "Weapon_IRifle.Single" ) )
 		
 		ply:ViewPunch( AngleRand(-7.5, 1.5) )
         
@@ -142,10 +142,10 @@ function SWEP:SecondaryAttack()
 		ply:SetVelocity( Angle(-90,0,0):Forward() * 255 )
 		self:DrawRing()
 
-		self.Weapon:SetNextPrimaryFire( CurTime() + 1 )
-        self.Weapon:SetNextSecondaryFire( CurTime() + 2 )
-        self.Weapon:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
-        ply:RemoveAmmo( 1, self.Weapon:GetSecondaryAmmoType() )
+		self:SetNextPrimaryFire( CurTime() + 1 )
+        self:SetNextSecondaryFire( CurTime() + 2 )
+        self:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
+        ply:RemoveAmmo( 1, self:GetSecondaryAmmoType() )
         
     else
     

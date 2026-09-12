@@ -30,7 +30,9 @@ local TeamName = {
 if SERVER then	
 	local function AddToTable( idTeam, tauntCat, data )
 		PHX:VerboseMsg("[TauntScanner] Adding to Taunt Table: Team[" .. TeamName[idTeam] .. "], Category:" .. tauntCat .. ", Total Taunt Data: " .. tostring(table.Count(data)))
-		Taunts[tauntCat] = {}
+		-- Keep any team already stored under this category, otherwise scanning team 2
+		-- wipes team 1's taunts whenever both teams share a category folder name.
+		Taunts[tauntCat] = Taunts[tauntCat] or {}
 		Taunts[tauntCat][idTeam] = data
 	end
 	
@@ -223,10 +225,10 @@ if SERVER then
     
 	net.Receive( netReq, function( len, ply )
 		if ply:IsListenServerHost() then
-            timer.Simple(2, function() SendTauntsInfo( ply ) end)
+            timer.Simple(2, function() if IsValid( ply ) then SendTauntsInfo( ply ) end end)
         else
             -- send after next frame
-            timer.Simple(0, function() SendTauntsInfo( ply ) end)
+            timer.Simple(0, function() if IsValid( ply ) then SendTauntsInfo( ply ) end end)
         end
 	end )
 end

@@ -32,7 +32,7 @@ end)
 
 local RecentMaps = {}
 if file.Exists( RecentMapsFile, "DATA" ) then
-    RecentMaps = util.JSONToTable(file.Read( RecentMapsFile, "DATA" ))
+    RecentMaps = util.JSONToTable(file.Read( RecentMapsFile, "DATA" ) or "") or {}
 else
     RecentMaps = {}
 end
@@ -52,7 +52,7 @@ if ConVarExists("mv_maplimit") then
 	}
 else
 	ErrorNoHaltWithStack( "[PH: X MapVote] Warning: ConVar `mv_maplimit` DOES NOT exist! Returning to default Values!!" )
-	MapVote.PHXConfig = MapVoteConfigDefault
+	MapVote.PHXConfig = table.Copy( PHX.MVConfigDefault )
 end
 
 local conv = {
@@ -269,6 +269,10 @@ function MapVote.PHXStart(length, current, limit, prefix)
         net.Broadcast()
         
         local map = MapVote.CurrentMaps[winner]
+        if !map then
+            ErrorNoHalt("[PH:X MapVote] No winning map to change to - the vote list was empty!\n")
+            return
+        end
 
         timer.Simple(4, function()
             hook.Run("MapVoteChange", map)

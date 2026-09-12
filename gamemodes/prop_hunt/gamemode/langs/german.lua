@@ -52,7 +52,7 @@ L["HUD_ROUND"]				= "Runde"
 L["HUD_WAITPLY"]			= "Es Wird auf Spieler Gewartet..."
 L["HUD_DEAD"]					= "(Tot) "
 
-L["HUD-HUD_TEAMWIN"]		= "%s gewinnen!"
+L["HUD_TEAMWIN"]		= "%s gewinnen!"
 L["HUD_LOSE"]			= "UnendShieden, jeder Verliert!"
 L["MISC_TIMELEFT"]			= "Übrige Zeit: %s"
 L["MISC_GAMEEND"] 		= "Das Spiel wird nach diser runde enden"

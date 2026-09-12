@@ -50,11 +50,11 @@ function SWEP:PrimaryAttack()
 
     if (  !self:CanPrimaryAttack() ) then return end
 
-    self.Weapon:EmitSound( "Weapon_AR2.NPC_Single" ) --"Weapon_AR2.Single"
+    self:EmitSound( "Weapon_AR2.NPC_Single" ) --"Weapon_AR2.Single"
     self:ShootBullet( 8, 1, math.Rand(0.02,0.05), self.Primary.Ammo, 1, 3 )
     self:TakePrimaryAmmo( 1 )
-    self.Owner:ViewPunch( Angle( math.Rand(0.2, -0.9), math.Rand(0.3,-0.3), 0 ) )
-    self.Weapon:SetNextPrimaryFire( CurTime() + 0.095 )
+    self:GetOwner():ViewPunch( Angle( math.Rand(0.2, -0.9), math.Rand(0.3,-0.3), 0 ) )
+    self:SetNextPrimaryFire( CurTime() + 0.095 )
 
 end
 

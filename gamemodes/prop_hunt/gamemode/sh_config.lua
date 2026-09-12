@@ -290,12 +290,14 @@ PHX.WINNINGSOUNDS = {
 
 if SERVER then
 	function PHX:PlayWinningSound( teamid )
-		teamid = math.Clamp(teamid, 1, 3)
-	
-		if !teamid or teamid == nil or 
+		-- Guard BEFORE clamping: math.Clamp(nil,..) errors, and Clamp(0,1,3) would
+		-- turn a draw into a Hunters win before the check below ever sees it.
+		if !teamid or teamid == nil or !isnumber(teamid) or
 			teamid == 0 or teamid == 1001 then
 			teamid = 3 -- make '3' as a default sound.
 		end
+		
+		teamid = math.Clamp(teamid, 1, 3)
 		
 		local t = PHX.WINNINGSOUNDS[teamid]
 		local rand = t[math.random(1,#t)]
@@ -633,7 +635,7 @@ if SERVER then
 		
 		if ( file.Exists( dir.."/bans.txt", "DATA" ) ) then
 		
-			local PROP_PLMODEL_BANS_READ = util.JSONToTable( file.Read( dir.."/bans.txt", "DATA" ) )
+			local PROP_PLMODEL_BANS_READ = util.JSONToTable( file.Read( dir.."/bans.txt", "DATA" ) or "" ) or {}
 			
 			-- empty the table instead
 			PHX.PROP_PLMODEL_BANS = {}
@@ -668,7 +670,7 @@ if SERVER then
 		end
 		
 		if ( file.Exists ( dir.."/model_bans.txt","DATA" ) ) then
-			local PROP_MODEL_BANS_READ = util.JSONToTable(file.Read(dir.."/model_bans.txt"))
+			local PROP_MODEL_BANS_READ = util.JSONToTable(file.Read(dir.."/model_bans.txt") or "") or {}
             
 			--PHX.BANNED_PROP_MODELS = {}
 			for _,v in pairs(PROP_MODEL_BANS_READ) do

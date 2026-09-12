@@ -57,14 +57,14 @@ function ENT:Initialize()
 		
 		else
 		
-			self.Entity:SetModel( "models/player/kleiner.mdl" )
+			self:SetModel( "models/player/kleiner.mdl" )
 		
 		end
 	
-        self.Entity:PhysicsInit(SOLID_BBOX)
-        self.Entity:SetSolid(SOLID_BBOX)
-		self.Entity:SetMoveType(MOVETYPE_NONE)
-        self.Entity.owner = NULL
+        self:PhysicsInit(SOLID_BBOX)
+        self:SetSolid(SOLID_BBOX)
+		self:SetMoveType(MOVETYPE_NONE)
+        self.owner = NULL
         
 		if self:GetOverrideHealth() > 0 then
 			self.health = self:GetOverrideHealth()
@@ -79,7 +79,7 @@ end
 
 if CLIENT then
 	function ENT:Draw()
-		self.Entity:DrawModel()
+		self:DrawModel()
 	end
 end
 
@@ -106,7 +106,10 @@ if SERVER then
 
     function ENT:TakeModelFromMap()
         local physProp = ents.FindByClass("prop_physics*")
+        if table.IsEmpty( physProp ) then return end	-- map has no physics props to copy.
+        
         local RandomProp = physProp[math.random(1, #physProp)]
+        if !IsValid( RandomProp ) then return end
         
         self:SetModel( RandomProp:GetModel() )
         self:SetCollisionBounds( RandomProp:GetCollisionBounds() )
@@ -128,14 +131,14 @@ if SERVER then
 		local owner = self:GetOwner()
 
 		-- Health
-		if GAMEMODE:InRound() and attacker:IsPlayer() and attacker:Team() == TEAM_HUNTERS and dmg:GetDamage() > 0 then
+		if GAMEMODE:InRound() and IsValid(attacker) and attacker:IsPlayer() and attacker:Team() == TEAM_HUNTERS and dmg:GetDamage() > 0 then
 			self.health = self.health - dmg:GetDamage()
 			
 			if self.health <= 0 then
 				hook.Call("PH_OnFakePropKilled", nil, attacker)
 				
 				-- Steal attacker's frags and give the frags to the owner of this prop!
-                if IsValid(owner) or owner ~= NULL then
+                if IsValid(owner) then
                     attacker:SetFrags( attacker:Frags() - 1 )
                     owner:AddFrags( 1 )
                     owner.propdecoy = nil

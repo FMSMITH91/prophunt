@@ -46,7 +46,7 @@ function Player:TraceLineFromPlayer(endpos, usehull)
 	
 	local traceResult = util.TraceLine(trace)
 	
-	if (usehull) then
+	if (usehull) and IsValid(self.ph_prop) then
 		trace.mins = self.ph_prop:OBBMins()
 		trace.maxs = self.ph_prop:OBBMaxs()
 	
@@ -214,6 +214,10 @@ if SERVER then
         -- Todo: if this causes issues, next time: Try make kleiner's physics using 1 single solid instead.
         
         self.ph_prop = ents.Create("ph_prop")
+        if !IsValid(self.ph_prop) then
+            PHX:VerboseMsg("[Prop] Failed to create ph_prop entity - entity limit reached?", 4)
+            return
+        end
         self.ph_prop:SetPos( self:GetPos() )
         self.ph_prop:SetAngles( self:GetAngles() )
         self.ph_prop:Spawn()
@@ -306,6 +310,10 @@ if SERVER then
 				local pos = tr.HitPos
 				
 				self.propdecoy = ents.Create("ph_fake_prop")
+                if !IsValid(self.propdecoy) then
+                    PHX:VerboseMsg("[Decoy] Failed to create ph_fake_prop entity - entity limit reached?", 4)
+                    return
+                end
                 if self.ph_prop:GetModel() == "models/player/kleiner.mdl" or
                     self.ph_prop:GetModel() == player_manager.TranslatePlayerModel( tostring(self:GetInfo("cl_playermodel")) ) then
                     self.propdecoy:SetPos( pos )
@@ -377,7 +385,7 @@ if SERVER then
 	-- VAR ARGS CANNOT CONTAIN OBJECT/USERDATA. See: https://wiki.facepunch.com/gmod/net.ReadTable
 	function Player:PHXNotify( msg, kind, time, bShouldUseTheirOwnLang, ... )
 		
-		if !kind then kind = "GENERIC" end
+		if !kind or !kinds[kind] then kind = "GENERIC" end
 		if bShouldUseTheirOwnLang == nil then bShouldUseTheirOwnLang = false end
 		if !time then time = 8 end
 		if time > 30 then time = 30 end

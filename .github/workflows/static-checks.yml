@@ -1,0 +1,29 @@
+name: Static checks
+
+on:
+  push:
+    paths:
+      - '**.lua'
+      - '.github/scripts/**'
+      - '.github/workflows/static-checks.yml'
+  pull_request:
+    paths:
+      - '**.lua'
+      - '.github/scripts/**'
+      - '.github/workflows/static-checks.yml'
+  workflow_dispatch:
+
+# Both checks are reports rather than gates - they annotate findings but exit 0.
+# Each script has a STRICT flag to make it fail the build once its existing
+# backlog is clean.
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Translations vs english.lua
+        run: python3 .github/scripts/check_langs.py
+
+      - name: Sender validation on server net.Receive handlers
+        run: python3 .github/scripts/check_net_receivers.py

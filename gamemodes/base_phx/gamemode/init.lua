@@ -71,7 +71,7 @@ function GM:Think()
 	for k,v in pairs( player.GetAll() ) do
 	
 		local Class = v:GetPlayerClass()
-		if ( !Class ) then return end
+		if ( !Class ) then continue end
 		
 		v:CallClassFunction( "Think" )
 		
@@ -441,6 +441,7 @@ function GM:CheckTeamBalance( bDontKillPlayer )
 				while team.NumPlayers( id ) < team.NumPlayers( highest ) - 1 do
 				
 					local ply = GAMEMODE:FindLeastCommittedPlayerOnTeam( highest )
+					if ( !IsValid( ply ) ) then break end
 					
 					if !bDontKillPlayer then
 						ply:Kill()

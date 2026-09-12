@@ -237,11 +237,11 @@ function PHX.LUCKY_BALL:AddMoreLuckyEvents()
 	local t = list.Get("LuckyBallsAddition")
 	if !table.IsEmpty(t) then
 		for name,tab in pairs(t) do
-			PHX.VerboseMsg("[PHX: Lucky Ball] Adding new events : "..name)
+			PHX:VerboseMsg("[PHX: Lucky Ball] Adding new events : "..name)
 			table.insert(self.Items, tab)
 		end
 	else
-		PHX.VerboseMsg("[PHX: Lucky Ball] There is no additional events detected, skipping...")
+		PHX:VerboseMsg("[PHX: Lucky Ball] There is no additional events detected, skipping...")
 	end
 end
 
@@ -269,8 +269,9 @@ PHX.DEVIL_BALL = {
 				pl:SendLua("surface.PlaySound('prop_idbs/speedup.wav')")
 				pl:SetWalkSpeed( pl:GetWalkSpeed() + 100 )
 				pl.ph_fastspeed = true
-				pl.RevertWalk = timer.Simple(math.random(4,12), 
+				timer.Simple(math.random(4,12), 
 				function()
+					if !IsValid(pl) then return end
 					pl:ChatPrint("[Devil Crystal] super speed power up exhausted...")
 					pl:SendLua("surface.PlaySound('prop_idbs/generic_exhaust.wav')")
 					pl:SetWalkSpeed( pl._OriginalWSpeed )
@@ -300,8 +301,9 @@ PHX.DEVIL_BALL = {
 				pl:SendLua("surface.PlaySound('prop_idbs/slowdown.wav')")
 				pl:SetWalkSpeed( pl:GetWalkSpeed() - 100 )
 				pl.ph_slowspeed = true
-				pl.RevertWalk = timer.Simple(math.random(4,12), 
+				timer.Simple(math.random(4,12), 
 				function()
+					if !IsValid(pl) then return end
 					pl:ChatPrint("[Devil Crystal] slow down power up exhausted...")
 					pl:SendLua("surface.PlaySound('prop_idbs/generic_exhaust.wav')")
 					pl:SetWalkSpeed( pl._OriginalWSpeed )
@@ -342,6 +344,7 @@ PHX.DEVIL_BALL = {
 			
 			nade:Fire("SetTimer","3",0)
 			timer.Simple(0.1, function()
+				if !IsValid(nade) or !IsValid(pl) then return end
 				nade:SetOwner(pl)
 				nade:SetSaveValue( "m_hThrower", pl )
 				nade:SetSaveValue( "m_flDamage", 90 )
@@ -387,21 +390,23 @@ PHX.DEVIL_BALL = {
 			  end
 		end,
 		function(pl)
-			if !pl.ph_cloacking then
+			if !pl.ph_cloacking and IsValid(pl.ph_prop) then
 				pl:ChatPrint("[Devil Crystal] Cloaking...")
 				pl:SendLua("surface.PlaySound('prop_idbs/cloak.wav')")
 				pl.ph_prop:DrawShadow(false)
 				pl.ph_prop:SetMaterial("models/effects/vol_light001")
 				pl.ph_cloacking = true
-				pl.RevertMaterial = timer.Simple(math.random(5,15),
+				timer.Simple(math.random(5,15),
 				function()
+					if !IsValid(pl) then return end
 					pl:ChatPrint("[Devil Crystal] cloak power up exhausted...")
 					pl:SendLua("surface.PlaySound('prop_idbs/generic_exhaust.wav')")
-					if pl.ph_prop and IsValid(pl.ph_prop) then
+					if IsValid(pl.ph_prop) then
 						pl.ph_prop:DrawShadow(true)
 						pl.ph_prop:SetMaterial("")
-						pl.ph_cloacking = false
 					end
+					-- Always clear the flag, otherwise the player can never cloak again.
+					pl.ph_cloacking = false
 				end)
 			end
 		end
@@ -433,15 +438,15 @@ PHX.DEVIL_BALL.PropRevenge = {
 						timer.Remove(pl.tmr_item)	-- immediately clear timer.
 						PHX.DEVIL_BALL:ResetPlayerStuff(pl)
 					end
-				elseif !pl:Alive() then
+				elseif !IsValid(pl) then
+					print("[PHX Devil Crystal] Removing Timer '" .. safefail .. "' because player was disconnected!")
+					timer.Remove(safefail)
+					-- ResetPlayerStuff will be invalid here.
+				else
 					print("[PHX Devil Crystal] Removing Timer '" .. pl.tmr_item .. "' because player was dead!")
 					timer.Remove(pl.tmr_item)
 					print("[PHX Devil Crystal] Unsetting parameters on dead player.")
 					PHX.DEVIL_BALL:ResetPlayerStuff(pl)
-				else
-					print("[PHX Devil Crystal] Removing Timer '" .. safefail .. "' because player was disconnected!")
-					timer.Remove(safefail)
-					-- ResetPlayerStuff will be invalid here.
 				end
 			
 			end)
@@ -566,11 +571,11 @@ function PHX.DEVIL_BALL:AddMoreLuckyEvents()
 	local t = list.Get("DevilBallsAddition")
 	if !table.IsEmpty(t) then
 		for name,tab in pairs(t) do
-			PHX.VerboseMsg("[PHX: Devil Crystal] Adding new events: "..name)
+			PHX:VerboseMsg("[PHX: Devil Crystal] Adding new events: "..name)
 			table.insert(self.Items, tab)
 		end
 	else
-		PHX.VerboseMsg("[PHX: Devil Crystal] There is no additional events detected, skipping...")
+		PHX:VerboseMsg("[PHX: Devil Crystal] There is no additional events detected, skipping...")
 	end
 end
 
@@ -597,7 +602,7 @@ local function ResetEverything()
 			
 			if v:Alive() then
 				if v:Team() == TEAM_PROPS && v._OriginalWSpeed then v:SetWalkSpeed(v._OriginalWSpeed) end
-				if v:Team() == TEAM_PROPS && v.ph_prop:GetMaterial() then v.ph_prop:DrawShadow(true); v.ph_prop:SetMaterial(""); end
+				if v:Team() == TEAM_PROPS && IsValid(v.ph_prop) then v.ph_prop:DrawShadow(true); v.ph_prop:SetMaterial(""); end
 				if v:IsFrozen() then v:Freeze(false) end
 			end
 		end
@@ -625,9 +630,8 @@ local function DoPropRevenge( pl, amount )
 	if pl.has_uniqueitem_shoot then return end
 	if !pl.prop_revenge_item or pl.prop_revenge_item == nil or pl.prop_revenge_item == 0 then return end
 	
-	local max = 1
-	if !amount or amount == nil or amount < 1 then max = 1 end
-	max = amount
+	local max = amount
+	if !max or max < 1 then max = 1 end
 	
 	if IsValid(pl) then
 		if pl.has_uniqueitem and !pl.has_uniqueitem_shoot then

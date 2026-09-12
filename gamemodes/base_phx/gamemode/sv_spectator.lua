@@ -184,11 +184,12 @@ function GM:ChangeObserverMode( pl, mode )
 	end
 
 	if ( mode == OBS_MODE_IN_EYE || mode == OBS_MODE_CHASE ) then
+		// StartEntitySpectate picks and applies the target - do NOT clear it below.
 		GAMEMODE:StartEntitySpectate( pl, mode )
+	else
+		pl:SpectateEntity( NULL )
 	end
 
-	
-	pl:SpectateEntity( NULL )
 	pl:Spectate( mode )
 
 end

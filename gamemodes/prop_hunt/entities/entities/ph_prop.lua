@@ -88,7 +88,7 @@ function ENT:CalcRotation( ply, pos, ang, bLock )
     
 	local posx      = pos - self.PropPosition
     local plyModel  = string.lower( self:GetModel() )
-    if (info and info ~= nil) and plyModel == "models/player/kleiner.mdl" or plyModel == TranslatedModel then
+    if (info and info ~= nil) and (plyModel == "models/player/kleiner.mdl" or plyModel == TranslatedModel) then
         posx = pos
     end
 	
@@ -135,7 +135,7 @@ if SERVER then
 		local inflictor = dmg:GetInflictor()
 
 		-- Health
-		if GAMEMODE:InRound() && IsValid(pl) && pl:Alive() && pl:IsPlayer() && attacker:IsPlayer() && pl:Team() ~= attacker:Team() && dmg:GetDamage() > 0 then
+		if GAMEMODE:InRound() && IsValid(pl) && pl:Alive() && pl:IsPlayer() && IsValid(attacker) && attacker:IsPlayer() && pl:Team() ~= attacker:Team() && dmg:GetDamage() > 0 then
             local allow = PHX:GetCVar( "ph_allow_armor" )
 			if allow and pl:Armor() >= 10 then
 				self.health = self.health - (math.Round( dmg:GetDamage()/2 ))
@@ -150,10 +150,10 @@ if SERVER then
 				pl:KillSilent()
 				pl:SetArmor(0)
 				
-				if inflictor && inflictor == attacker && inflictor:IsPlayer() then
+				if IsValid(inflictor) && inflictor == attacker && inflictor:IsPlayer() then
 					inflictor = inflictor:GetActiveWeapon()
-					if !inflictor || inflictor == NULL then inflictor = attacker end
 				end
+				if !IsValid(inflictor) then inflictor = attacker end
 				
 				net.Start( "PlayerKilledByPlayer" )
 			
@@ -171,7 +171,7 @@ if SERVER then
 						pl:PrintMessage(HUD_PRINTCONSOLE, "!! WARNING: Something went wrong with the Freeze Camera, but it's still enabled!")
 					else
 						timer.Simple(0.5, function()
-							if !pl:GetNWBool("InFreezeCam", false) then
+							if IsValid(pl) && IsValid(attacker) && !pl:GetNWBool("InFreezeCam", false) then
 								-- Play the good old Freeze Cam sound
 								net.Start("PlayFreezeCamSound")
 								net.Send(pl)
@@ -184,7 +184,7 @@ if SERVER then
 						end)
 						
 						timer.Simple(4.5, function()
-							if pl:GetNWBool("InFreezeCam", false) then
+							if IsValid(pl) && pl:GetNWBool("InFreezeCam", false) then
 								pl:SetNWBool("InFreezeCam", false)
 								pl:Spectate( OBS_MODE_CHASE )
 								pl:SpectateEntity( nil )

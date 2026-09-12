@@ -56,21 +56,21 @@ function SWEP:PrimaryAttack()
 	
 	if (self.Reloading) then
 		self.Reloading = false
-		timer.Destroy( "Reload_" .. self.Weapon:EntIndex() )
+		timer.Destroy( "Reload_" .. self:EntIndex() )
 	end
     
 	self.FireMode = 1
-    self.Weapon:EmitSound( Sound("Weapon_Shotgun.NPC_Single") )
+    self:EmitSound( Sound("Weapon_Shotgun.NPC_Single") )
     self:ShootBullet( 6, 5, self.Cone )
     self:TakePrimaryAmmo( 1 )
-    self.Owner:ViewPunch( Angle( -2.5, 0, 0 ) )
-    self.Weapon:SetNextPrimaryFire( CurTime() + 0.88 )
-	self.Weapon:SetNextSecondaryFire( CurTime() + 0.9 )
+    self:GetOwner():ViewPunch( Angle( -2.5, 0, 0 ) )
+    self:SetNextPrimaryFire( CurTime() + 0.88 )
+	self:SetNextSecondaryFire( CurTime() + 0.9 )
 	
 	timer.Simple(0.22, function()
-		if (IsValid( self ) and self.Owner:GetActiveWeapon() == self) then
-			self.Weapon:SendWeaponAnim( ACT_SHOTGUN_PUMP )
-			self.Weapon:EmitSound( Sound("Weapon_Shotgun.Special1") )
+		if (IsValid( self ) and self:GetOwner():GetActiveWeapon() == self) then
+			self:SendWeaponAnim( ACT_SHOTGUN_PUMP )
+			self:EmitSound( Sound("Weapon_Shotgun.Special1") )
 		end
 	end)
 
@@ -82,40 +82,40 @@ function SWEP:SecondaryAttack()
 	
 	if (self.Reloading) then
 		self.Reloading = false
-		timer.Destroy( "Reload_" .. self.Weapon:EntIndex() )
+		timer.Destroy( "Reload_" .. self:EntIndex() )
 	end
     
     if self:Clip1() > 1 then
     
 		self.FireMode = 2
-        self.Weapon:EmitSound( Sound("Shotgun.FireSpecial") )
+        self:EmitSound( Sound("Shotgun.FireSpecial") )
         self:ShootBullet( 6, 10, self.Cone )
         self:TakePrimaryAmmo( 2 )
-        self.Owner:ViewPunch( Angle( -6, 0, 0 ) )
-        self.Weapon:SetNextPrimaryFire( CurTime() + 0.9 )
-		self.Weapon:SetNextSecondaryFire( CurTime() + 0.9 )
+        self:GetOwner():ViewPunch( Angle( -6, 0, 0 ) )
+        self:SetNextPrimaryFire( CurTime() + 0.9 )
+		self:SetNextSecondaryFire( CurTime() + 0.9 )
 		
 		timer.Simple(0.35, function() 
-			if (IsValid( self ) and self.Owner:GetActiveWeapon() == self) then
-				self.Weapon:SendWeaponAnim( ACT_SHOTGUN_PUMP )
-				self.Weapon:EmitSound( Sound("Weapon_Shotgun.Special1") )
+			if (IsValid( self ) and self:GetOwner():GetActiveWeapon() == self) then
+				self:SendWeaponAnim( ACT_SHOTGUN_PUMP )
+				self:EmitSound( Sound("Weapon_Shotgun.Special1") )
 			end
 		end)
         
     else
         
 		self.FireMode = 1
-        self.Weapon:EmitSound( Sound("Weapon_Shotgun.NPC_Single") )
+        self:EmitSound( Sound("Weapon_Shotgun.NPC_Single") )
         self:ShootBullet( 6, 5, self.Cone )
         self:TakePrimaryAmmo( 1 )
-        self.Owner:ViewPunch( Angle( -2, 0, 0 ) )
-        self.Weapon:SetNextPrimaryFire( CurTime() + 0.88 )
-		self.Weapon:SetNextSecondaryFire( CurTime() + 0.9 )
+        self:GetOwner():ViewPunch( Angle( -2, 0, 0 ) )
+        self:SetNextPrimaryFire( CurTime() + 0.88 )
+		self:SetNextSecondaryFire( CurTime() + 0.9 )
 		
 		timer.Simple(0.22, function()
-			if (IsValid( self ) and self.Owner:GetActiveWeapon() == self) then
-				self.Weapon:SendWeaponAnim( ACT_SHOTGUN_PUMP )
-				self.Weapon:EmitSound( Sound("Weapon_Shotgun.Special1") )
+			if (IsValid( self ) and self:GetOwner():GetActiveWeapon() == self) then
+				self:SendWeaponAnim( ACT_SHOTGUN_PUMP )
+				self:EmitSound( Sound("Weapon_Shotgun.Special1") )
 			end
 		end)
         
@@ -127,45 +127,45 @@ end
 -- Controls the Reload.
 function SWEP:Reload()
     if SERVER then
-        if !(self.Owner:GetActiveWeapon():GetClass() == "weapon_shotgun_water") then return end
-        if self.Reloading || self.Owner:GetAmmoCount( "Buckshot" ) == 0 then return end
+        if !(self:GetOwner():GetActiveWeapon():GetClass() == "weapon_shotgun_water") then return end
+        if self.Reloading || self:GetOwner():GetAmmoCount( "Buckshot" ) == 0 then return end
             
-        if self.Weapon:Clip1() < self.Primary.ClipSize then
-            self.Weapon:SendWeaponAnim( ACT_SHOTGUN_RELOAD_START )
-            self.Owner:RemoveAmmo( 1, self.Primary.Ammo, false )
-            self.Weapon:SetClip1(  self.Weapon:Clip1() + 1 )
-            self.Weapon:SetNextSecondaryFire(CurTime() + 1)
-            self.Weapon:SetNextPrimaryFire(CurTime() + 1)
-            self.Weapon:EmitSound(self.ReloadSound)
+        if self:Clip1() < self.Primary.ClipSize then
+            self:SendWeaponAnim( ACT_SHOTGUN_RELOAD_START )
+            self:GetOwner():RemoveAmmo( 1, self.Primary.Ammo, false )
+            self:SetClip1(  self:Clip1() + 1 )
+            self:SetNextSecondaryFire(CurTime() + 1)
+            self:SetNextPrimaryFire(CurTime() + 1)
+            self:EmitSound(self.ReloadSound)
             self.Reloading = true
 
             local PerformReload = function()
                 if !self.Reloading then 
-                    timer.Destroy( "Reload_" .. self.Weapon:EntIndex() )
+                    timer.Destroy( "Reload_" .. self:EntIndex() )
                     return
                 end
-                local Ammo = self.Weapon:Clip1( )
+                local Ammo = self:Clip1( )
                 
-                if Ammo >= self.Primary.ClipSize || self.Owner:GetAmmoCount( "Buckshot" ) == 0 then
+                if Ammo >= self.Primary.ClipSize || self:GetOwner():GetAmmoCount( "Buckshot" ) == 0 then
                     self.Reloading = false
-                    timer.Destroy( "Reload_" .. self.Weapon:EntIndex() )
-                    self.Weapon:SendWeaponAnim( ACT_SHOTGUN_PUMP )
-					self.Weapon:EmitSound( Sound("Weapon_Shotgun.Special1") )
-                    self.Weapon:SetNextSecondaryFire(CurTime() + 0.35)
-                    self.Weapon:SetNextPrimaryFire(CurTime() + 0.35)
+                    timer.Destroy( "Reload_" .. self:EntIndex() )
+                    self:SendWeaponAnim( ACT_SHOTGUN_PUMP )
+					self:EmitSound( Sound("Weapon_Shotgun.Special1") )
+                    self:SetNextSecondaryFire(CurTime() + 0.35)
+                    self:SetNextPrimaryFire(CurTime() + 0.35)
                 else
                     self.Reloading = true
-                    self.Weapon:SendWeaponAnim( ACT_VM_RELOAD )
-                    if self.Owner:GetAmmoCount( "Buckshot" ) <= 0 then return end
-                    self.Owner:RemoveAmmo( 1, self.Primary.Ammo, false )
-                    self.Weapon:SetClip1(  self.Weapon:Clip1() + 1 )
-                    self.Weapon:SetNextSecondaryFire( CurTime() + 0.35 )
-                    self.Weapon:SetNextPrimaryFire( CurTime() + 0.35 )
-                    self.Weapon:EmitSound(self.ReloadSound)
+                    self:SendWeaponAnim( ACT_VM_RELOAD )
+                    if self:GetOwner():GetAmmoCount( "Buckshot" ) <= 0 then return end
+                    self:GetOwner():RemoveAmmo( 1, self.Primary.Ammo, false )
+                    self:SetClip1(  self:Clip1() + 1 )
+                    self:SetNextSecondaryFire( CurTime() + 0.35 )
+                    self:SetNextPrimaryFire( CurTime() + 0.35 )
+                    self:EmitSound(self.ReloadSound)
                 end
             end
             
-            timer.Create( "Reload_" .. self.Weapon:EntIndex(), 0.45, 17- self.Weapon:Clip1(), PerformReload)
+            timer.Create( "Reload_" .. self:EntIndex(), 0.45, 17- self:Clip1(), PerformReload)
         end
     end
 end
@@ -177,15 +177,15 @@ function SWEP:ShootEffects()
 	elseif self.FireMode == 2 then
 		self:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
 	end
-	self.Owner:MuzzleFlash()						-- Crappy muzzle light
-	self.Owner:SetAnimation( PLAYER_ATTACK1 )		-- 3rd Person Animation
+	self:GetOwner():MuzzleFlash()						-- Crappy muzzle light
+	self:GetOwner():SetAnimation( PLAYER_ATTACK1 )		-- 3rd Person Animation
 
 end
 
 function SWEP:Holster()
     if self.Reloading then
         self.Reloading = false
-        timer.Destroy( "Reload_" .. self.Weapon:EntIndex() )
+        timer.Destroy( "Reload_" .. self:EntIndex() )
     end
     return true
 end

@@ -32,8 +32,9 @@ if SERVER then
         --local mins,maxs = self:GetHull()
         local maxs = self:GetPlayerPropEntity():OBBMaxs()
         self._lpsWepEnt = ents.Create( "ph_lps_weapon" )
+        if !IsValid(self._lpsWepEnt) then return end
         self._lpsWepEnt:SetPos( self:GetPos() + Vector(0,0,maxs.z*1.1) )
-        self._lpsWepEnt:GetAngles( Vector(0, self:GetAngles().y, 0) )
+        self._lpsWepEnt:SetAngles( Angle(0, self:GetAngles().y, 0) )
         
         self._lpsWepEnt:SetSolid( SOLID_NONE )
         self._lpsWepEnt:SetOwner( self )
@@ -146,7 +147,7 @@ end
 
 function Player:LPSShootBullets()
 
-    if !IsValid(self) and self:Team() ~= TEAM_PROPS and !self:Alive() then return end
+    if !IsValid(self) or self:Team() ~= TEAM_PROPS or !self:Alive() then return end
     if !GetGlobalBool("InRound", false) then return end
     if !PHX:GetCVar( "lps_enable" ) then return end
     if !self:IsLastStanding() then return end
@@ -176,7 +177,11 @@ function Player:LPSShootBullets()
         self:SetLPSAmmoCount( self:GetLPSAmmo() )
 
         local wepEntity      = self:GetLPSWeaponEntity()
+        if !IsValid(wepEntity) then return end
+        
         local att            = wepEntity:GetAttachment(1)
+        if !att then return end	-- model has no attachment 1 to shoot from.
+        
         local shootOrg       = att.Pos
         local shootAng       = self:EyeAngles()
         local aimTraceResult = util.LPSgetAccurateAim( { ph_prop }, self:EyePos(), shootOrg, shootAng, plmaxs.z )

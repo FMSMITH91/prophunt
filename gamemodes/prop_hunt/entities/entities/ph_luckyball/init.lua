@@ -17,13 +17,6 @@ ENT.sounds = {
 }
 
 function ENT:Initialize()
-	local cvEnableSpawn = GetConVar( "ph_enable_team_itemspawner" )
-	
-	if (not cvEnableSpawn:GetBool()) then
-		if SERVER then self:Remove(); end
-		return
-	end
-	
 	self:SetModel( self.model[math.random(1,#self.model)] )
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
@@ -40,7 +33,7 @@ function ENT:Initialize()
 end
 
 function ENT:Use(activator)
-	if GAMEMODE:InRound() && activator:IsPlayer() && activator:Alive() && activator:Team() == TEAM_HUNTERS then
+	if GAMEMODE:InRound() && IsValid(activator) && activator:IsPlayer() && activator:Alive() && activator:Team() == TEAM_HUNTERS then
 		if activator:Team() == TEAM_HUNTERS and activator:Alive() then
 			local DoItem = PHX.LUCKY_BALL.Items[math.random(1,#PHX.LUCKY_BALL.Items)]; DoItem(activator);
 			hook.Call("PH_OnLuckyBallPickup", nil, activator)
@@ -56,7 +49,7 @@ function ENT:OnTakeDamage(dmg)
 	local hit = dmg:GetDamage()
 	self:SetHealth( self:Health()-hit )
 	
-	if self:Health() < 0 then
+	if self:Health() <= 0 then
 		self:EmitSound(Sound("physics/glass/glass_cup_break"..math.random(1,2)..".wav"))
 		self:ShowEffects(self, "cball_explode", self:GetPos(), self:GetPos())
 		self:Remove()

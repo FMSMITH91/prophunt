@@ -17,13 +17,6 @@ function ENT:StopTeslaSpark()
 end
 
 function ENT:Initialize()
-	local cvEnableSpawn = GetConVar( "ph_enable_team_itemspawner" )
-	
-	if (not cvEnableSpawn:GetBool()) then
-		if SERVER then self:Remove(); end
-		return
-	end
-	
 	self:SetModel(self.model)
 	self:PhysicsInit(SOLID_BBOX)
 	self:SetMoveType(MOVETYPE_NONE)
@@ -67,9 +60,12 @@ function ENT:Use(activator)
 		
 		if activator:Team() == TEAM_PROPS && activator:Alive() then
 			local cur
-			repeat
+			-- Give up after a few tries: with a single item this could never
+			-- satisfy the condition and would hang the server.
+			for _ = 1, 10 do
 				cur = PHX.DEVIL_BALL.Items[math.random(1, #PHX.DEVIL_BALL.Items)]
-			until cur ~= self.getfunction
+				if cur ~= self.getfunction then break end
+			end
 			
 			self.getfunction = cur
 			self.getfunction(activator,self)
@@ -88,7 +84,7 @@ function ENT:OnTakeDamage(dmg)
 	
 	self:SetHealth( self:Health() - hit )
 	
-	if self:Health() < 0 then
+	if self:Health() <= 0 then
 		self:EmitSound(Sound("physics/glass/glass_cup_break"..math.random(1,2)..".wav"))
 		self:ShowEffects(self, "GlassImpact", self:GetPos(), self:GetPos())
 		self:Remove()

@@ -49,8 +49,8 @@ function ENT:makeEntity()
 
     local SpawnToEnt = ents.FindByName( self.EntityNameToSpawn )
 	
-	local MaxType = self.SpawnMaxType
-    local Max = math.Clamp( self.SpawnMaximum, -1, #SpawnToEnt )
+	local MaxType = self.SpawnMaxType or 0
+    local Max = math.Clamp( self.SpawnMaximum or 0, -1, #SpawnToEnt )
 	
 	local Chance = self.SpawnChance
 	local SpawnRandom = self.SpawnRandom
@@ -75,20 +75,25 @@ function ENT:makeEntity()
 			for _,targEnt in pairs( SpawnToEnt ) do
 			
 				count=count+1
-				if Max > 0 and count == Max then break end
+				if Max > 0 and count > Max then break end
 			
 				local pos = targEnt:GetPos()
 				
 				-- Don't spawn if some decoys spawned near 32 units nearby
-				local findEnt = ents.FindInSphere( pos, 32 )
-				for _,v in ipairs(findEnt) do
+				-- NOTE: 'continue' here only skipped one nearby entity, it never
+				-- stopped the decoy below from being spawned. Use a flag instead.
+				local blocked = false
+				for _,v in ipairs( ents.FindInSphere( pos, 32 ) ) do
 					if IsValid(v) and DontSpawn[v:GetClass()] then
 						PHX:VerboseMsg("[Decoy Spawner] I was trying to spawn decoy but there was prop or decoy near ".. tostring(v:GetPos())..", Surpressing!\n", 2)
-						continue
+						blocked = true
+						break
 					end
 				end
+				if blocked then continue end
 				
 				local decoy = ents.Create( "ph_fake_prop" )
+				if !IsValid( decoy ) then continue end
 				decoy:SetKeyValue( "health", tostring(math.random(5,50)) )
 				decoy:SetPos( pos )
 				
@@ -120,7 +125,7 @@ function ENT:AcceptInput(name, act, cal, data)
         self.SpawnChance = tonumber(data)
         return true
     elseif name == "ChangeTarget" then
-        self.EntityNameToSpawn(tostring(data))
+        self.EntityNameToSpawn = tostring(data)
         return true
     elseif name == "SetMax" then
 		self.SpawnMaximum = tonumber(data)
