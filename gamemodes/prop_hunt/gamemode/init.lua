@@ -1143,6 +1143,16 @@ function GM:PlayerSwitchFlashlight(pl, on)
 	return false
 end
 
+-- Kill the flashlight when a player dies, otherwise a dead hunter's beam stays
+-- lit in the world and keeps lighting up the room they died in.
+-- PostPlayerDeath rather than PlayerDeath: it fires for KillSilent() too, which
+-- is how ph_prop and several other paths here kill players.
+hook.Add("PostPlayerDeath", "PHX.DisablePlayerFlashlight", function( ply )
+	if IsValid(ply) && ply:FlashlightIsOn() then
+		ply:Flashlight(false)
+	end
+end)
+
 -- Round Control Override
 function GM:OnRoundEnd( num )
 	-- Check if PHX:GetCVar( "ph_waitforplayers" ) is true

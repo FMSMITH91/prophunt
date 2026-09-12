@@ -932,9 +932,10 @@ end)
 
 -- Turns the dynamic light OFF
 net.Receive("DisableDynamicLight", function()
-	if client_prop_light then
-		client_prop_light = false
-	end
+	client_prop_light = false
+	-- Reset the HUD indicator too. Without this it stays lit after respawning,
+	-- because only the toggle above ever wrote CL_GLOBAL_LIGHT_STATE.
+	CL_GLOBAL_LIGHT_STATE = 0
 end)
 
 -- Draw a deathnotice from decoy prop
