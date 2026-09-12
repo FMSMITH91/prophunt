@@ -24,6 +24,10 @@ net.Receive("RAM_MapVoteStart", function()
     
     MapVote.Panel = vgui.Create("VoteScreen")
     MapVote.Panel:SetMaps(MapVote.CurrentMaps)
+    
+    // GM:OnEndOfGame force-opens the scoreboard just before the vote starts.
+    // Close it now the panel exists, so it cannot sit on top of the vote.
+    if ( GAMEMODE && GAMEMODE.ScoreboardHide ) then GAMEMODE:ScoreboardHide() end
 end)
 
 net.Receive("RAM_MapVoteUpdate", function()

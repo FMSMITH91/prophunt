@@ -141,6 +141,15 @@ end
 //
 function GM:PreRoundStart( iNum )
 
+	// The game is already over. EndOfGame() returns silently when called twice,
+	// so without this the round cycle would carry on underneath the map vote:
+	// CleanUpMap, respawn everyone, new round, all while the vote is on screen.
+	if ( GAMEMODE.IsEndOfGame ) then return end
+
+	// Likewise for a vote started mid-game (RTV, ulx map_vote, mv_start), where
+	// IsEndOfGame is never set at all.
+	if ( PHX && PHX.MV && PHX.MV.Allow ) then return end
+
 	// Should the game end?
 	if( CurTime() >= GAMEMODE.GetTimeLimit() || GAMEMODE:HasReachedRoundLimit( iNum ) ) then
 		GAMEMODE:EndOfGame( true );
