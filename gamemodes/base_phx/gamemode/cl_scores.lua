@@ -65,7 +65,15 @@ function GM:AddScoreboardAvatar( ScoreBoard )
 end
 
 local function canMute(ply)
-	return LocalPlayer():CheckGroup(ply:GetUserGroup() )
+	// Player:CheckGroup does not exist - not in GMod, not in this repo - so this
+	// threw "attempt to call method 'CheckGroup' (a nil value)" for every other
+	// player on the scoreboard. Use the same rule the F1 menu already applies in
+	// prop_hunt/gamemode/cl_menutypes.lua: staff and whitelisted usergroups are
+	// not mutable, everyone else is.
+	if ( !IsValid( ply ) ) then return false end
+	if ( ply:PHXIsStaff() ) then return false end
+	
+	return !PHX.IgnoreMutedUserGroup[ ply:GetUserGroup() ]
 end
  
  
@@ -80,7 +88,7 @@ function GM:AddScoreboardVoice( ScoreBoard )
 				vc:SetPos(15, 6)
 				vc:SetSize(20, 20)
 			if IsValid(ply) && ply != LocalPlayer() then
-				muted = false
+				local muted = false
 				if canMute(ply) then
 					muted = ply:IsMuted()
 				else
