@@ -51,7 +51,7 @@ function PCR:ReadBannedProps()
 	
 	if file.Exists(path.."/model_bans.txt","DATA") then
 		PHX:VerboseMsg("[Prop Menu] Reading Prop Hunt: X's Prop Ban Data...")	-- PHX.BANNED_PROP_MODELS
-		local read = util.JSONToTable(file.Read(path.."/model_bans.txt"))
+		local read = util.JSONToTable(file.Read(path.."/model_bans.txt") or "") or {}
 		for _,mdl in pairs(read) do
 			table.insert(self.BannedProp, mdl)
 		end
@@ -61,7 +61,7 @@ function PCR:ReadBannedProps()
 	
 	if file.Exists(path.."/pcr_bans.txt","DATA") then
 		PHX:VerboseMsg("[Prop Menu] Reading Prop Menu's additional ban list...")
-		local read = util.JSONToTable(file.Read(path.."/pcr_bans.txt"))
+		local read = util.JSONToTable(file.Read(path.."/pcr_bans.txt") or "") or {}
 		for _,mdl in pairs(read) do
 			table.insert(self.BannedProp, mdl)
 		end
@@ -101,7 +101,7 @@ function PCR:GetCustomProps()
 	end
 	
 	if file.Exists(path.."/models.txt","DATA") then
-		local read = util.JSONToTable(file.Read(path.."/models.txt"))
+		local read = util.JSONToTable(file.Read(path.."/models.txt") or "") or {}
 		for _,mdl in pairs(read) do
 			table.insert(self.CustomProp, string.lower( mdl ))
 		end

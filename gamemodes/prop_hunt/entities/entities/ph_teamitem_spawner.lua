@@ -4,10 +4,11 @@ ENT.Base = "base_point"
 ENT.Items 		= { "ph_luckyball", "ph_devilball", "ph_ultpointball" }
 ENT.MsgPrefix 	= "[PH:X Item Spawner] "
 
-local cvEnableTeamSpawner --temp cvar because we dont want to mess sh_convars.lua due to new upcoming PHX update
-if !ConVarExists( "ph_enable_team_itemspawner" ) then
-	cvEnableTeamSpawner = CreateConVar( "ph_enable_team_itemspawner", "1", FCVAR_SERVER_CAN_EXECUTE+FCVAR_ARCHIVE+FCVAR_REPLICATED, "Enable or Disable Team Item Spawner, this is where Lucky Balls and Devil Crystals are spawned.", 0, 1 )
-end
+--temp cvar because we dont want to mess sh_convars.lua due to new upcoming PHX update
+-- NOTE: this file is run again on gamemode reload and on clients, where the ConVar
+-- may already exist - always end up holding the object, never nil.
+local cvEnableTeamSpawner = CreateConVar( "ph_enable_team_itemspawner", "1", FCVAR_SERVER_CAN_EXECUTE+FCVAR_ARCHIVE+FCVAR_REPLICATED, "Enable or Disable Team Item Spawner, this is where Lucky Balls and Devil Crystals are spawned.", 0, 1 )
+	or GetConVar( "ph_enable_team_itemspawner" )
 
 if SERVER then
 	ENT.RemoveAfterSpawn = false

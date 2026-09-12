@@ -1,4 +1,4 @@
-﻿-- Language Improved by Galaxio.
+-- Language Improved by Galaxio.
 -- Previously Translated by: TR1NITY & Haeiven
 
 local L={}

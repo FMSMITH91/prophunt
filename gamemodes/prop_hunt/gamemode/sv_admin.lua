@@ -124,9 +124,39 @@ local function doAdminStrictCheck(ply)
 	return false
 end
 
+-- Only PH:X's own ConVars may be driven from the client menu. Without this, any
+-- staff group could run *any* server command (rcon_password, changelevel, ...).
+local AllowedCVarPrefix = { "ph_", "phx_", "lps_", "pcr_" }
+
+-- These are PH:X ConVars whose value is later executed as code (RunString /
+-- game.ConsoleCommand, see mapvote/sv_mapvote.lua). They are server-console only
+-- and are not offered by the menu, so never accept them over the network.
+local DeniedCVars = {
+	["ph_custom_mv_func"]	= true,
+	["ph_custom_mv_concmd"]	= true,
+	["ph_use_custom_mapvote"]		= true,
+	["ph_use_custom_mapvote_cmd"]	= true
+}
+
+local function IsAllowedCVar( cmd )
+	if !cmd or !isstring(cmd) or DeniedCVars[cmd] or !ConVarExists(cmd) then return false end
+
+	for _,prefix in ipairs( AllowedCVarPrefix ) do
+		if (cmd:sub(1, #prefix) == prefix) then return true end
+	end
+
+	return false
+end
+
 local function doCommand(ply, cmd, value, identifier)
 	-- Bug: Float value, if you exceed less than 0.0001, will prints out "1e-05". I'm not sure if this valid value.
 	-- Also, while it will be printed like that, util.NiceFloat might help but it only cuts to 1e-07 (0.0000001)
+	if !IsAllowedCVar( cmd ) then
+		PHX:VerboseMsg("[Server CVar: "..identifier.."] Rejected non-PH:X command '"..tostring(cmd).."' from "..ply:Nick().." ("..ply:SteamID()..")", 3)
+		ply:PHXChatInfo( "ERROR", "PHX_ADMIN_ACCESS_ONLY", ply:Nick() )
+		return
+	end
+
 	RunConsoleCommand(cmd, tostring(value))	-- convert evertyhing into string because GetGlobalBool and other value don't like actual data type, they'll think as failed value. (e.g: GetGlobalBool 0 = ignored.)
 	PHX:VerboseMsg("[Server CVar: "..identifier.."] Command '".. cmd .. "' has changed to " .. value .. " (Player: " .. ply:Nick().. " (" ..ply:SteamID() ..") )")
 end

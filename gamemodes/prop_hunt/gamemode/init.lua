@@ -205,6 +205,10 @@ function GM:PlayerCanHearPlayersVoice(listen, speaker)
 	-- prevent Loopback check.
 	if (listen == speaker) then return false, false end
 
+	-- Spectator can only read from themselves.
+	-- NOTE: must come before the "both alive" rule below, otherwise it never matches.
+	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false, false end
+	
 	-- Only alive players can listen other living players.
 	if listen:Alive() && speaker:Alive() then return true, false end
 	
@@ -219,9 +223,6 @@ function GM:PlayerCanHearPlayersVoice(listen, speaker)
 	
 	-- Event: On Round End/Time End. Listen to everyone.
 	if PHX.VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true, false end
-
-	-- Spectator can only read from themselves.
-	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false, false end
 	
 	-- This is for ULX "Permanent Gag". Uncomment this if you have some issues.
 	-- if speaker:GetPData( "permgagged" ) == "true" then return false, false end
@@ -238,12 +239,13 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 		if ( listen:Team() != speaker:Team() ) then return false end
 		
 		-- ditto, this is same as below.
+		-- NOTE: the spectator rule must come first, or the "both alive" rule swallows it.
+		if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
 		if listen:Alive() && speaker:Alive() then return true end
 		if PHX.VOICE_IS_END_ROUND == 0 && listen:Alive() && !speaker:Alive() then return false end
 		if !listen:Alive() && !speaker:Alive() then return true end
 		if !listen:Alive() && speaker:Alive() then return true end
 		if PHX.VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true end
-		if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
 	end
 	
 	local alltalk_cvar = GetConVar("sv_alltalk"):GetInt()
@@ -251,6 +253,10 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 	
 	-- Generic Checks
 	if ( !IsValid( speaker ) || !IsValid( listen ) ) then return false end
+	
+	-- Spectator can only read from themselves.
+	-- NOTE: must come before the "both alive" rule below, otherwise it never matches.
+	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
 	
 	-- Only alive players can see other living players.
 	if listen:Alive() && speaker:Alive() then return true end
@@ -266,9 +272,6 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 	
 	-- Event: On Round End/Time End. See Chat to everyone.
 	if PHX.VOICE_IS_END_ROUND == 1 && listen:Alive() && !speaker:Alive() then return true end
-
-	-- Spectator can only read from themselves.
-	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
 	
 	return true
 end
@@ -278,10 +281,10 @@ function EntityTakeDamage(ent, dmginfo)
 	local att = dmginfo:GetAttacker()
 	
 	-- Code from: https://facepunch.com/showthread.php?t=1500179 , Special thanks from AlcoholicoDrogadicto(http://steamcommunity.com/profiles/76561198082241865/) for suggesting this.
-	if GAMEMODE:InRound() && ent && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && ent.ph_prop then
+	if GAMEMODE:InRound() && IsValid(ent) && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && ent.ph_prop then
 		-- Prevent Prop 'Friendly Fire'
-		if ( dmginfo:GetAttacker():IsPlayer() && dmginfo:GetAttacker():Team() == ent:Team() ) then 
-			PHX:VerboseMsg("[TakeDamage] DMGINFO::ATTACKED!!-> "..ent:Nick().."(Victim) <- "..tostring(dmginfo:GetAttacker()).."! DMGTYPE: "..dmginfo:GetDamageType())
+		if ( IsValid(att) && att:IsPlayer() && att:Team() == ent:Team() ) then 
+			PHX:VerboseMsg("[TakeDamage] DMGINFO::ATTACKED!!-> "..ent:Nick().."(Victim) <- "..tostring(att).."! DMGTYPE: "..dmginfo:GetDamageType())
 			return
 		end
 		--Debug purpose.
@@ -291,8 +294,8 @@ function EntityTakeDamage(ent, dmginfo)
 		return	-- don't continue below.
 	end
 	
-	if GAMEMODE:InRound() && ent && (ent:GetClass() != "ph_prop" && !hunterdamagefix[ent:GetClass()] && PHX:IsUsablePropEntity(ent:GetClass()) && !ent:IsPlayer()) && 
-		(att && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive()) then
+	if GAMEMODE:InRound() && IsValid(ent) && (ent:GetClass() != "ph_prop" && !hunterdamagefix[ent:GetClass()] && PHX:IsUsablePropEntity(ent:GetClass()) && !ent:IsPlayer()) && 
+		(IsValid(att) && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive()) then
         
         local penalty = PHX:GetCVar( "ph_hunter_fire_penalty" )
         local allow   = PHX:GetCVar( "ph_allow_armor" )
@@ -520,7 +523,7 @@ hook.Add("OnPlayerChangedTeam", "TeamChange_switchLimitter", function(ply, old, 
 		if ply.ChangeLimit > MAX_TEAMCHANGE_LIMIT and new ~= TEAM_SPECTATOR then
 			ply.ChangeLimit = MAX_TEAMCHANGE_LIMIT
 			timer.Simple(0.3, function()
-				if old ~= TEAM_SPECTATOR then
+				if IsValid(ply) and old ~= TEAM_SPECTATOR then
 					if (ply.PHXHasLoadout) then ply.PHXHasLoadout = false end
 					ply:SetTeam(old)
 					ply:PHXChatInfo("ERROR", "CHAT_SWAPTEAM_REVERT", PHX:TranslateName(new,ply))
@@ -828,6 +831,16 @@ function GM:Think()
 		
 	end
 
+	-- Prop spectating is a bit messy so let us clean it up a bit
+	if PHX.SPECTATOR_CHECK < CurTime() then
+		for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
+			if IsValid(pl) && !pl:Alive() && pl:GetObserverMode() == OBS_MODE_IN_EYE then
+				hook.Call("ChangeObserverMode", GAMEMODE, pl, OBS_MODE_ROAMING)
+			end
+		end
+		PHX.SPECTATOR_CHECK = CurTime() + PHX.SPECTATOR_CHECK_ADD
+	end
+
 	-- Game time related
 	if( !GAMEMODE.IsEndOfGame && ( !GAMEMODE.RoundBased || ( GAMEMODE.RoundBased && GAMEMODE:CanEndRoundBasedGame() ) ) && CurTime() >= GAMEMODE.GetTimeLimit() ) then
 		GAMEMODE:EndOfGame( true )
@@ -1100,19 +1113,6 @@ function GM:OnPreRoundStart(num)
 	UTIL_SpawnAllPlayers()
 end
 
--- Called every server tick.
-function GM:Think()	
-	-- Prop spectating is a bit messy so let us clean it up a bit
-	if PHX.SPECTATOR_CHECK < CurTime() then
-		for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
-			if IsValid(pl) && !pl:Alive() && pl:GetObserverMode() == OBS_MODE_IN_EYE then
-				hook.Call("ChangeObserverMode", GAMEMODE, pl, OBS_MODE_ROAMING)
-			end
-		end
-		PHX.SPECTATOR_CHECK = CurTime() + PHX.SPECTATOR_CHECK_ADD
-	end
-end
-
 -- Bonus Drop. Only works on prop_* entities apparently.
 hook.Add("PropBreak", "Props_OnBreak_WithDrops", function( ply, ent )
     if PHX:GetCVar( "ph_enable_lucky_balls" ) and GAMEMODE:InRound() then
@@ -1285,9 +1285,12 @@ function PHX:PlayTaunt( pl, sndTaunt, bIsPitchEnabled, iPitchLevel, bIsRandomize
 			if (TAUNT_FALLBACK) then
 				taunt = "vo/coast/odessa/male01/nlo_cheer0"..math.random(1,4)..".wav"
 			else
-				repeat
+				-- Bail out after a few tries: with only one taunt available this
+				-- condition can never be satisfied and would hang the server.
+				for _ = 1, 10 do
 					taunt = PHX:GetRandomTaunt( pl:Team() )
-				until taunt != pl.last_taunt
+					if taunt != pl.last_taunt then break end
+				end
 				pl.last_taunt = taunt
 			end
 			

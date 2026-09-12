@@ -31,7 +31,7 @@ local function AutoTauntThink()
 				-- Play random HL2 cheer sound because taunt is empty.
 				if (TAUNT_FALLBACK) then
 					PHX:PlayTaunt( ply, "vo/coast/odessa/male01/nlo_cheer0"..math.random(1,4)..".wav", 0, 100, 0, "LastTauntTime" )
-					return;
+					continue;	-- next prop, NOT out of the whole loop.
 				end
 				
 				PHX:PlayTaunt( ply, rand_taunt, pitchRandEnabled, pitchlevel, isRandomized, "LastTauntTime" )
@@ -53,7 +53,10 @@ local function IsDelayed(ply)
 	return { delay > CurTime(), delay - CurTime() }
 end
 local function CheckValidity( tauntName, sndFile, plyTeam )
-	return file.Exists("sound/"..sndFile, "GAME") and (PHX.CachedTaunts[plyTeam][tauntName] ~= nil) and table.HasValue( PHX.CachedTaunts[plyTeam], sndFile )
+	local cached = PHX.CachedTaunts[plyTeam]
+	if !cached then return false end	-- spectators/unassigned have no taunt list.
+	
+	return file.Exists("sound/"..sndFile, "GAME") and (cached[tauntName] ~= nil) and table.HasValue( cached, sndFile )
 end
 
 local function SetLastTauntDelay( ply )

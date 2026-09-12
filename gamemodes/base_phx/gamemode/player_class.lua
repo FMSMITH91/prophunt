@@ -12,7 +12,9 @@ end
 
 function Get( name )
 	
-	if ( !ClassTables[ name ] ) then return {} end
+	// Must return nil, NOT an empty table: callers rely on "if ( !c )" to fall
+	// back to the team class / "Default".
+	if ( !ClassTables[ name ] ) then return end
 
 	// Derive class here.
 	// I have favoured using table.Inherit over using a meta table 

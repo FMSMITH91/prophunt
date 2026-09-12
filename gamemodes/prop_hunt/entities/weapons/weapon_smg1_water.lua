@@ -96,7 +96,7 @@ function SWEP:SecondaryAttack()
 		self.Weapon:SetNextPrimaryFire( CurTime() + 0.5 )
         self.Weapon:SetNextSecondaryFire( CurTime() + 1.25 )
         self.Weapon:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
-        self.Owner:RemoveAmmo( 1, self.Weapon:GetSecondaryAmmoType() )
+        ply:RemoveAmmo( 1, self.Weapon:GetSecondaryAmmoType() )
         
     else
     

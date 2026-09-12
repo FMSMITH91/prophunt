@@ -80,6 +80,9 @@ function ENT:RemoveBans()
 end
 
 function ENT:KeyValue( key, value )
+	-- ENT.KVs sits on the shared class table; give each instance its own copy,
+	-- otherwise keyvalues leak into the next map's entity.
+	if !rawget( self, "KVs" ) then self.KVs = {} end
 	self.KVs[key] = value
 end
 
