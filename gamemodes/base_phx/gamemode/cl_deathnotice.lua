@@ -122,6 +122,12 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	-- for some odd reason, Attacker == nil if inflictor == "suicide" in the base gamemode. wtf and WHEN DID THEY UPDATED THIS???
 	if Inflictor == "suicide" then Attacker = Victim; team1 = team2 end
 	
+	-- Same deal for world/environment kills ("killed by worldspawn"): the base
+	-- gamemode's PlayerKilled receiver passes no attacker at all, which used to
+	-- reach pnl:AddText(nil) below and error. Show it as a self-death, which is
+	-- what dying to fall damage or a trigger_hurt effectively is.
+	if Attacker == nil or Attacker == "" then Attacker = Victim; team1 = team2 end
+	
 	if ( !IsValid( g_DeathNotify ) ) then return end
 
 	local pnl = vgui.Create( "GameNotice", g_DeathNotify )
@@ -129,10 +135,13 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	local color2
 	
 	
-	if ( team1 == -1 ) then color1 = table.Copy( NPC_Color ) 	-- Warning: NPC_Color don't exists!
+	-- NPC_Color was never defined - table.Copy(nil) returns nil, so non-team
+	-- kills silently lost their colour. DeathNoticeDefaultColor is the value
+	-- base_phx/gamemode/shared.lua already defines for exactly this case.
+	if ( team1 == -1 ) then color1 = table.Copy( GAMEMODE.DeathNoticeDefaultColor )
 	else color1 = table.Copy( team.GetColor( team1 ) ) end
 	
-	if ( team2 == -1 ) then color2 = table.Copy( NPC_Color ) 
+	if ( team2 == -1 ) then color2 = table.Copy( GAMEMODE.DeathNoticeDefaultColor )
 	else color2 = table.Copy( team.GetColor( team2 ) ) end
 	
 	if Victim == Attacker then
