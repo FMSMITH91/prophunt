@@ -65,12 +65,23 @@ function GM:AddScoreboardAvatar( ScoreBoard )
 end
 
 local function canMute(ply)
-	// Player:CheckGroup does not exist - not in GMod, not in this repo - so this
-	// threw "attempt to call method 'CheckGroup' (a nil value)" for every other
-	// player on the scoreboard. Use the same rule the F1 menu already applies in
-	// prop_hunt/gamemode/cl_menutypes.lua: staff and whitelisted usergroups are
-	// not mutable, everyone else is.
 	if ( !IsValid( ply ) ) then return false end
+	
+	local lp = LocalPlayer()
+	if ( !IsValid( lp ) ) then return false end
+	
+	// Player:CheckGroup is ULib's (lua/ulib/shared/sh_ucl.lua). Unlike
+	// IsUserGroup it walks the UCL inheritance chain, so a superadmin passes
+	// CheckGroup("admin"). Asking it about the target's group answers "is my
+	// rank at or above theirs" - an admin can mute a user, a user cannot mute an
+	// admin. That is the intended rule; keep it wherever ULib is installed.
+	if ( lp.CheckGroup ) then
+		return lp:CheckGroup( ply:GetUserGroup() )
+	end
+	
+	// No ULib on this server, so CheckGroup would be a nil call. Fall back to
+	// PH:X's own rule, the one the F1 menu applies in
+	// prop_hunt/gamemode/cl_menutypes.lua.
 	if ( ply:PHXIsStaff() ) then return false end
 	
 	return !PHX.IgnoreMutedUserGroup[ ply:GetUserGroup() ]
