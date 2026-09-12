@@ -50,17 +50,17 @@ function SWEP:PrimaryAttack()
 
     if ( !self:CanPrimaryAttack() ) then return end
     
-    self.Weapon:EmitSound( Sound( "Weapon_SMG1.Single" ) )
+    self:EmitSound( Sound( "Weapon_SMG1.Single" ) )
     self:ShootBullet( 4, 1, math.Rand(0.03, 0.05 ), self.Primary.Ammo, 1, 2 )
     self:TakePrimaryAmmo( 1 )
-    self.Owner:ViewPunch( Angle( math.Rand(0.2, -0.8), math.Rand(0.2,-0.2), 0 ) )
-    self.Weapon:SetNextPrimaryFire( CurTime() + 0.07 )
+    self:GetOwner():ViewPunch( Angle( math.Rand(0.2, -0.8), math.Rand(0.2,-0.2), 0 ) )
+    self:SetNextPrimaryFire( CurTime() + 0.07 )
 
 end
 
 function SWEP:Reload()
 	if ( self:Clip1() < self:GetMaxClip1() ) then
-		self.Weapon:EmitSound( Sound( "Weapon_SMG1.Reload" ) )
+		self:EmitSound( Sound( "Weapon_SMG1.Reload" ) )
 	end
 	self:DefaultReload( ACT_VM_RELOAD )
 end
@@ -72,7 +72,7 @@ function SWEP:SecondaryAttack()
         
     if self:Ammo2() > 0 then
         
-        self.Weapon:EmitSound( Sound( "NPC_Combine.GrenadeLaunch" ) )
+        self:EmitSound( Sound( "NPC_Combine.GrenadeLaunch" ) )
         
         if SERVER then
             local Forward = ply:EyeAngles():Forward()
@@ -93,10 +93,10 @@ function SWEP:SecondaryAttack()
         end
         
         ply:ViewPunch( Angle(-7.5, 0, 0) )
-		self.Weapon:SetNextPrimaryFire( CurTime() + 0.5 )
-        self.Weapon:SetNextSecondaryFire( CurTime() + 1.25 )
-        self.Weapon:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
-        ply:RemoveAmmo( 1, self.Weapon:GetSecondaryAmmoType() )
+		self:SetNextPrimaryFire( CurTime() + 0.5 )
+        self:SetNextSecondaryFire( CurTime() + 1.25 )
+        self:SendWeaponAnim( ACT_VM_SECONDARYATTACK )
+        ply:RemoveAmmo( 1, self:GetSecondaryAmmoType() )
         
     else
     

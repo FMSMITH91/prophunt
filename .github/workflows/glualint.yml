@@ -22,10 +22,15 @@ jobs:
   # there and lint_warningsAreErrors is false, so only genuine syntax/parse
   # errors fail the build - warnings are reported but do not block.
   #
-  # The config is passed explicitly rather than left to glualint's own search:
-  # that search looks for "glualint.json" walking up from each linted file,
-  # while the dotted ".glualint.json" spelling is only honoured in the user's
-  # home folder. Passing --config removes the ambiguity entirely.
+  # NOTE: this reusable workflow always downloads the LATEST glualint release,
+  # so the version is not pinned. lint_warningsAreErrors only exists from
+  # 1.30.0 onwards - on 1.29.0 it is ignored and any warning fails the build.
+  # If this check ever goes red with warnings but no errors, check which
+  # version the "Prepare GLuaLint" step downloaded before changing anything
+  # here.
+  #
+  # The config is also passed explicitly rather than left to glualint's own
+  # search, so the result does not depend on discovery rules.
   Lint:
     uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
     with:

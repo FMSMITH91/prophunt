@@ -57,14 +57,14 @@ function ENT:Initialize()
 		
 		else
 		
-			self.Entity:SetModel( "models/player/kleiner.mdl" )
+			self:SetModel( "models/player/kleiner.mdl" )
 		
 		end
 	
-        self.Entity:PhysicsInit(SOLID_BBOX)
-        self.Entity:SetSolid(SOLID_BBOX)
-		self.Entity:SetMoveType(MOVETYPE_NONE)
-        self.Entity.owner = NULL
+        self:PhysicsInit(SOLID_BBOX)
+        self:SetSolid(SOLID_BBOX)
+		self:SetMoveType(MOVETYPE_NONE)
+        self.owner = NULL
         
 		if self:GetOverrideHealth() > 0 then
 			self.health = self:GetOverrideHealth()
@@ -79,7 +79,7 @@ end
 
 if CLIENT then
 	function ENT:Draw()
-		self.Entity:DrawModel()
+		self:DrawModel()
 	end
 end
 
