@@ -1,6 +1,10 @@
 ENT.Type = "point"
 ENT.Base = "base_point"
-ENT.KVs = {}
+
+-- ENT.KVs is deliberately NOT declared here. A table on the ENT class table is
+-- shared by reference across every instance and across map changes, so
+-- keyvalues from one map leaked into the next map's entity. Each instance
+-- builds its own in ENT:KeyValue below.
 
 local StoredBanName = "BAN_"..game.GetMap()
 
@@ -42,7 +46,7 @@ function ENT:AddBans()
 		
 		local BannedMdls = PHX.BANNED_PROP_MODELS
 		
-		for _,mdl in SortedPairs( self.KVs ) do
+		for _,mdl in SortedPairs( self.KVs or {} ) do
 			if !CurMapBan[mdl] then 
 				CurMapBan[mdl] = true
 				if !table.HasValue( BannedMdls, mdl ) then table.insert(BannedMdls, mdl); end
@@ -65,7 +69,7 @@ function ENT:RemoveBans()
 		
 		local BannedMdls = PHX.BANNED_PROP_MODELS
 		
-		for _,mdl in SortedPairs( self.KVs ) do
+		for _,mdl in SortedPairs( self.KVs or {} ) do
 			if CurMapBan[mdl] then
 				CurMapBan[mdl] = nil;
 				table.RemoveByValue( BannedMdls, mdl )
@@ -80,17 +84,18 @@ function ENT:RemoveBans()
 end
 
 function ENT:KeyValue( key, value )
-	-- ENT.KVs sits on the shared class table; give each instance its own copy,
-	-- otherwise keyvalues leak into the next map's entity.
-	if !rawget( self, "KVs" ) then self.KVs = {} end
+	-- Create the table on first use so it belongs to this instance. Do not reach
+	-- for rawget() here: self is an Entity (userdata), not a table.
+	if ( not self.KVs ) then self.KVs = {} end
 	self.KVs[key] = value
 end
 
 function ENT:GetBannedList()
+	local kvs = self.KVs or {}
 	local t={}
 	for i=1,16 do
 	
-		local KeyVal = self.KVs["model"..i]
+		local KeyVal = kvs["model"..i]
 		if (KeyVal) then table.insert(t, KeyVal); end
 		
 	end
