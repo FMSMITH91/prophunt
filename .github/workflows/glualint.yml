@@ -4,34 +4,46 @@ on:
   push:
     paths:
       - '**.lua'
-      - '.glualint.json'
+      - 'glualint.json'
       - '.github/workflows/glualint.yml'
   pull_request:
     paths:
       - '**.lua'
-      - '.glualint.json'
+      - 'glualint.json'
       - '.github/workflows/glualint.yml'
   workflow_dispatch:
 
+# Pinned on purpose. FPtje/GLuaFixer also publishes a reusable workflow, but it
+# always downloads the LATEST release, which makes this check's pass/fail
+# semantics change without any commit here: lint_warningsAreErrors only exists
+# from 1.30.0 onwards, so on 1.29.0 every warning failed the build. Pin the
+# version and verify the download, and the result only changes when we change it.
+#
+# To bump: update both values below. Get the new checksum with
+#   curl -fsSL <url> | sha256sum
+env:
+  GLUALINT_VERSION: '1.30.0'
+  GLUALINT_SHA256: 'ddceb69c949a8a09d320b4f810e1baae1b46f0efa77aa31ca326a14dc4f6193a'
+
 jobs:
-  # Reusable workflow published by GLuaFixer itself: it downloads the latest
-  # glualint release and runs `glualint lint .` over the repo, annotating any
-  # findings inline on the commit/PR.
-  #
-  # Settings come from glualint.json in the repo root. Style rules are off
-  # there and lint_warningsAreErrors is false, so only genuine syntax/parse
-  # errors fail the build - warnings are reported but do not block.
-  #
-  # NOTE: this reusable workflow always downloads the LATEST glualint release,
-  # so the version is not pinned. lint_warningsAreErrors only exists from
-  # 1.30.0 onwards - on 1.29.0 it is ignored and any warning fails the build.
-  # If this check ever goes red with warnings but no errors, check which
-  # version the "Prepare GLuaLint" step downloaded before changing anything
-  # here.
-  #
-  # The config is also passed explicitly rather than left to glualint's own
-  # search, so the result does not depend on discovery rules.
-  Lint:
-    uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
-    with:
-      config: "glualint.json"
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install glualint
+        run: |
+          url="https://github.com/FPtje/GLuaFixer/releases/download/${GLUALINT_VERSION}/glualint-${GLUALINT_VERSION}-x86_64-linux.zip"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/glualint.zip" "$url"
+          echo "${GLUALINT_SHA256}  $RUNNER_TEMP/glualint.zip" | sha256sum --check --strict
+          unzip -q -o "$RUNNER_TEMP/glualint.zip" -d "$RUNNER_TEMP/glualint"
+          chmod +x "$RUNNER_TEMP/glualint/glualint"
+
+      - name: Lint
+        run: |
+          "$RUNNER_TEMP/glualint/glualint" --version
+          # Settings come from glualint.json in the repo root. Style rules are off
+          # there and lint_warningsAreErrors is false, so warnings annotate the
+          # commit/PR but only genuine syntax/parse errors fail the build.
+          "$RUNNER_TEMP/glualint/glualint" --output-format github --config glualint.json lint .
