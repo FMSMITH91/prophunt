@@ -1,0 +1,129 @@
+name: Server smoke test
+
+# Boots a headless Garry's Mod dedicated server with this gamemode mounted and
+# fails if the gamemode does not reach InitPostEntity, or if anything throws a
+# Lua error while it runs.
+#
+# Deliberately NOT run on push: the SteamCMD download is several GB and the job
+# takes ~10 minutes on a cold cache. Run it before you push to a live server.
+#
+# Caveat: this repo ships no ph_* map, and neither team's spawn-point list
+# includes info_player_start, so players cannot actually spawn on a stock map.
+# This is a load-time smoke test, not a gameplay test.
+
+on:
+  workflow_dispatch:
+    inputs:
+      map:
+        description: 'Map to boot (must exist in the dedicated server install)'
+        type: string
+        default: 'gm_construct'
+      seconds:
+        description: 'How long to let the server run before shutting down'
+        type: string
+        default: '30'
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+
+concurrency:
+  group: smoke-test
+  cancel-in-progress: true
+
+env:
+  SRCDS_DIR: ${{ github.workspace }}/srcds
+  GMOD_APPID: '4020'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+
+      - name: Install 32-bit runtime libraries
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            lib32gcc-s1 lib32stdc++6 libncurses5:i386 libcurl4-gnutls-dev:i386
+
+      - name: Cache dedicated server
+        id: srcds-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SRCDS_DIR }}
+          key: srcds-${{ env.GMOD_APPID }}-${{ runner.os }}-v1
+
+      - name: Install SteamCMD and the Garry's Mod dedicated server
+        if: steps.srcds-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/steamcmd" "$SRCDS_DIR"
+          curl -sSL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" \
+            | tar zxf - -C "$RUNNER_TEMP/steamcmd"
+          "$RUNNER_TEMP/steamcmd/steamcmd.sh" \
+            +force_install_dir "$SRCDS_DIR" \
+            +login anonymous \
+            +app_update "$GMOD_APPID" validate \
+            +quit
+
+      - name: Mount the gamemode
+        run: |
+          # The repo root maps onto garrysmod/ - gamemodes/, lua/, materials/, ...
+          cp -r repo/gamemodes repo/lua repo/materials repo/models repo/particles \
+                repo/sound "$SRCDS_DIR/garrysmod/"
+          ls "$SRCDS_DIR/garrysmod/gamemodes"
+
+      - name: Install the CI probe
+        run: |
+          mkdir -p "$SRCDS_DIR/garrysmod/lua/autorun/server"
+          # Named zzz_ so it loads after everything else. CI-only, never committed.
+          cat > "$SRCDS_DIR/garrysmod/lua/autorun/server/zzz_ci_smoke.lua" <<'LUA'
+          hook.Add( "InitPostEntity", "ci_smoke_boot", function()
+              MsgN( "CI_SMOKE_BOOTED gamemode=" .. tostring( engine.ActiveGamemode() ) )
+
+              timer.Simple( ${{ inputs.seconds || '30' }}, function()
+                  MsgN( "CI_SMOKE_DONE map=" .. game.GetMap() )
+                  timer.Simple( 1, function() engine.CloseServer() end )
+              end )
+          end )
+          LUA
+
+      - name: Boot the server
+        run: |
+          cd "$SRCDS_DIR"
+          set +e
+          timeout --signal=INT 600 ./srcds_run \
+            -game garrysmod -console -norestart -nohltv \
+            +sv_lan 1 +maxplayers 12 \
+            +gamemode prop_hunt +map "${{ inputs.map || 'gm_construct' }}" \
+            2>&1 | tee "$GITHUB_WORKSPACE/console.log"
+          echo "srcds exited with ${PIPESTATUS[0]}"
+
+      - name: Check the gamemode actually loaded
+        run: |
+          if ! grep -q 'CI_SMOKE_BOOTED' console.log; then
+            echo "::error::The server never reached InitPostEntity - the gamemode failed to load."
+            tail -n 120 console.log
+            exit 1
+          fi
+          grep 'CI_SMOKE_BOOTED\|CI_SMOKE_DONE' console.log
+
+      - name: Check for Lua errors
+        run: |
+          PATTERN='\[ERROR\]|Couldn.t include file|Timer Error|Hook .* Failed|attempt to (index|call|compare|perform|concatenate)|Tried to use a NULL entity|bad argument'
+          if grep -nEi "$PATTERN" console.log; then
+            echo "::error::Lua errors were logged while the server was running (see above)."
+            exit 1
+          fi
+          echo "No Lua errors logged."
+
+      - name: Upload console log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: srcds-console-log
+          path: console.log
+          if-no-files-found: warn

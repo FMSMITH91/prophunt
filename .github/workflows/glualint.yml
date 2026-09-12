@@ -1,0 +1,25 @@
+name: GLuaLint
+
+on:
+  push:
+    paths:
+      - '**.lua'
+      - '.glualint.json'
+      - '.github/workflows/glualint.yml'
+  pull_request:
+    paths:
+      - '**.lua'
+      - '.glualint.json'
+      - '.github/workflows/glualint.yml'
+  workflow_dispatch:
+
+jobs:
+  # Reusable workflow published by GLuaFixer itself: it downloads the latest
+  # glualint release and runs `glualint lint .` over the repo, annotating any
+  # findings inline on the commit/PR.
+  #
+  # Settings come from .glualint.json in the repo root. Style rules are off
+  # there and lint_warningsAreErrors is false, so only genuine syntax/parse
+  # errors fail the build - warnings are reported but do not block.
+  Lint:
+    uses: FPtje/GLuaFixer/.github/workflows/glualint.yml@master
