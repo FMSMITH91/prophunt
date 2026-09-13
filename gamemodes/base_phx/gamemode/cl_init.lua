@@ -38,7 +38,13 @@ surface.CreateLegacyFont( "Roboto", 19, 700, true, false, "FRETTA_MEDIUM" )
 surface.CreateLegacyFont( "Roboto", 19, 700, true, false, "FRETTA_MEDIUM_SHADOW", true )
 surface.CreateLegacyFont( "Roboto", 16, 700, true, false, "FRETTA_SMALL" )
 
-surface.CreateLegacyFont( "Roboto", ScreenScale( 10 ), 700, true, false, "FRETTA_NOTIFY", true )
+-- The kill feed was the only font here that scaled with resolution.
+-- ScreenScale is ScrH/480, so this was 22.5px at 1080p and 30px at 1440p while
+-- every font around it stayed fixed (SMALL 16, MEDIUM 19, LARGE 24) - the feed
+-- grew with the monitor and nothing else did, which is why it read as
+-- oversized on a big screen. Scale from a 1080p reference and clamp, so it
+-- stays in proportion with its neighbours at any resolution.
+surface.CreateLegacyFont( "Roboto", math.Round( 19 * math.Clamp( ScrH() / 1080, 0.85, 1.3 ) ), 700, true, false, "FRETTA_NOTIFY", true )
 
 CreateClientConVar( "cl_spec_mode", "5", true, true )
 

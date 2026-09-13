@@ -117,6 +117,38 @@ net.Receive( "NPCKilledNPC", RecvNPCKilledNPC )
    Desc: Adds an death notice entry
 ---------------------------------------------------------*/
 --function GM:AddDeathNotice( victim, inflictor, attacker )
+/*
+	hud_deathnotice_time and hud_deathnotice_limit are declared in
+	vgui_gamenotice.lua and were read by nothing at all, so notices fell back to
+	DNotify's hardcoded 5 second life and nothing capped how many could stack.
+	A mass death event - a round wipe, or an admin slaying the server - filled
+	the whole screen edge to edge with notices.
+*/
+local function PushNotice( pnl )
+
+	if ( !IsValid( pnl ) ) then return end
+
+	local cvTime = GetConVar( "hud_deathnotice_time" )
+	local life   = cvTime and math.max( 1, cvTime:GetFloat() ) or 6
+
+	g_DeathNotify:AddItem( pnl, life )
+
+	local cvLimit = GetConVar( "hud_deathnotice_limit" )
+	local limit   = cvLimit and math.max( 1, cvLimit:GetInt() ) or 5
+
+	// DNotify blanks expired entries to false rather than removing them, so
+	// count the live ones and drop the oldest of those.
+	local live = {}
+	for _, v in ipairs( g_DeathNotify:GetItems() ) do
+		if ( IsValid( v ) ) then table.insert( live, v ) end
+	end
+
+	for i = 1, #live - limit do
+		live[ i ]:Remove()
+	end
+
+end
+
 function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	
 	-- for some odd reason, Attacker == nil if inflictor == "suicide" in the base gamemode. wtf and WHEN DID THEY UPDATED THIS???
@@ -158,7 +190,7 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	end
 	
 	
-	g_DeathNotify:AddItem( pnl )
+	PushNotice( pnl )
 
 end
 
@@ -172,6 +204,6 @@ function GM:AddPlayerAction( ... )
 		pnl:AddText( v )
 	end
 	
-	g_DeathNotify:AddItem( pnl )
+	PushNotice( pnl )
 	
 end
