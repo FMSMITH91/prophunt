@@ -499,7 +499,6 @@ L["PCR_EDT_NO_RIGHTS"]		= "你无权访问该功能."
 ]]
 L["PHXM_PLAYER_PROP_CHOOSER_KEY"]	= "打开物品菜单 (物品选择器) 的默认键."
 L["PHXM_PROP_FREEZE_MIDAIR"]			= "作为物品在空中静止的默认键."
-L["PHXM_ADMIN_PROP_RIGHT_CLICK"]		= "作为物品时是否能用右键嘲讽?"
 L["PHXM_ADMIN_TAUNT_SCANNER"]		= "(需要重启地图) 启用嘲讽扫描器?"
 L["PHXM_ADMLBL_USABLE_ENTS"]			= "可用的物品实体类型"
 L["PHXM_ADMLBL_USABLE_ENTS_REF"]		= "类型可以为: 1: 仅物理, 2: 物理 & 动态, 3: 几乎所有包括布娃娃, 4: 自定义实体."

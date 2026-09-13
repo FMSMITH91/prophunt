@@ -48,7 +48,6 @@ local mat 		            = "prophunt_enhanced/sprites/luckyball"
 local pointer 	            = "prophunt_enhanced/sprites/luckyball_pointer"
 local dmat		            = "prophunt_enhanced/sprites/devilball"
 local dpointer	            = "prophunt_enhanced/sprites/devilball_pointer"
-local tutormat 	            = "vgui/hud_control_help.png"
 local crosshair             = Material("vgui/hud_crosshair")
 local curshow 	            = 0
 local lgWind 	            = {}
@@ -249,7 +248,6 @@ end
 
 -- ShowTeam also moved in here.
 local TeamPanel = {}
-local Splash    = {}
 
 function GM:ShowTeam()
 
@@ -337,7 +335,6 @@ hook.Add("PlayerButtonDown", "PHX.EnableThirdPerson", function(ply,btn)
 end)
 
 -- Decides where  the player view should be (forces third person for props)
-local cameradist = 0
 local camMaxCollBounds=Vector(4,4,4)
 local camBlindFoldV = Vector(20000, 0, 0)
 function GM:CalcView(pl, origin, angles, fov)
@@ -470,7 +467,7 @@ local ply = LocalPlayer()
 			if ply:Team() == TEAM_HUNTERS then
 				if ply:Alive() then
 					overlaydraw = 1
-				else end
+				end
 			end
 			blindlock_time_left_msg = PHX:FTranslate("HUD_BLINDED", PHX:TranslateName(TEAM_HUNTERS), string.ToMinutesSeconds(blindlock_time_left))
 		else

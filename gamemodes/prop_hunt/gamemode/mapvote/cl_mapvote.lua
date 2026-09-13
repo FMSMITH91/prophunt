@@ -165,9 +165,7 @@ function PANEL:PerformLayout()
     
 end
 
-local heart_mat = Material("icon16/heart.png")
 local star_mat = Material("icon16/star.png")
-local shield_mat = Material("icon16/shield.png")
 
 function PANEL:AddVoter(voter)
     for k, v in pairs(self.Voters) do

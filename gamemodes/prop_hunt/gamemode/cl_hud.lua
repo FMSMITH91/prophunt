@@ -40,11 +40,6 @@ local armor
 local hpcolor
 local AmmoColor = Color( 225,180,15,255 )
 
-local bar = {
-	hp = { h = 15, col = Color(250,40,10,240) },
-	am = { h = 5, col = Color(80,255,80,240) }
-}
-
 local Rstate = 0
 net.Receive("PHX.rotateState", function() Rstate = net.ReadUInt(1) end)
 

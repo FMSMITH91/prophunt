@@ -111,8 +111,6 @@ local function CreateTauntIndicators( material, color, tx, ty, w, h )
 	end
 end
 
-local delayR = PHX:GetCVar( "ph_normal_taunt_delay" )
-local delayC = PHX:GetCVar( "ph_customtaunts_delay" )
 
 -- /!\ NOTICE: This is prototype, will improved or changed sometime in future.
 local colText = color_white -- decoy
