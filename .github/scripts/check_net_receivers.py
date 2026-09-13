@@ -137,7 +137,6 @@ def main():
                     if re.search(pattern % ply if "%s" in pattern else pattern, body):
                         present.append(label)
 
-                gated = bool({"admin", "team", "alive"} & set(present))
                 # Handlers that hand `ply` straight to a helper may well be
                 # validated in there; this script cannot follow that, so flag
                 # them for a human rather than crying wolf.
@@ -146,9 +145,24 @@ def main():
                     fn = call.group(1)
                     if fn in NOT_DELEGATION or fn.split(".")[0] in ("net", "timer", "hook", "table", "util"):
                         continue
+                    # Follow one level: if the helper is defined in this file and
+                    # itself checks the player, the handler is gated after all.
+                    # Without this, wrappers like CheckUser() leave a permanent
+                    # backlog of "review" entries that nobody ends up reading.
+                    helper = re.search(
+                        r"function\s+%s\s*\(([^)]*)\)(.*?)\n(?:end|\tend)" % re.escape(fn),
+                        src, re.S)
+                    if helper:
+                        hargs = [a.strip() for a in helper.group(1).split(",") if a.strip()]
+                        harg = re.escape(hargs[0]) if hargs else ply
+                        hbody = helper.group(2)
+                        if re.search(CHECKS[0][1], hbody) or re.search(r"%s\s*:\s*(Team|Alive)\s*\(" % harg, hbody):
+                            present.append("admin (via %s)" % fn)
+                            break
                     delegated = True
                     break
 
+                gated = any(p.split(" ")[0] in ("admin","team","alive") for p in present)
                 if gated:
                     verdict = "ok"
                 elif delegated:
