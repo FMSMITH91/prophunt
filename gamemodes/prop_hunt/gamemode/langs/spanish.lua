@@ -497,7 +497,6 @@ L["PCR_EDT_NO_RIGHTS"]		= "No tienes derechos para acceder a esta característic
 ]]
 L["PHXM_PLAYER_PROP_CHOOSER_KEY"]	= "Tecla por defecto para abrir el menú de obj. (elegir objeto)."
 L["PHXM_PROP_FREEZE_MIDAIR"]			= "Tecla por defecto para alternar movimiento del obj. en el aire."
-L["PHXM_ADMIN_PROP_RIGHT_CLICK"]		= "¿Deberían los objetos hacer la burla con clic derecho?"
 L["PHXM_ADMIN_TAUNT_SCANNER"]		= "(Es necesario reiniciar el mapa) ¿Activar escáner de burlas?"
 L["PHXM_ADMLBL_USABLE_ENTS"]			= "Tipos de entidades utilizables"
 L["PHXM_ADMLBL_USABLE_ENTS_REF"]		= "Los tipos son: 1: Solo físicas, 2: Físicas y dinámicas, 3: Casi todo, cuerpos incluidos, 4: Entidades personalizadas."

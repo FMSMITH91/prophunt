@@ -512,7 +512,6 @@ L["PCR_EDT_NO_RIGHTS"]		= "해당 특성에 대한 접근 권한이 없습니다
 ]]
 L["PHXM_PLAYER_PROP_CHOOSER_KEY"]	= "프롭 메뉴 열기 기본 키 (프롭 선택기)."
 L["PHXM_PROP_FREEZE_MIDAIR"]			= "프롭으로 공중에 떠있을 때 정지하기 기본 키"
-L["PHXM_ADMIN_PROP_RIGHT_CLICK"]		= "프롭일 때 마우스 우클릭으로 도발하기?"
 L["PHXM_ADMIN_TAUNT_SCANNER"]		= "(맵 재시작 필요) 도발 스캐너 활성화?"
 L["PHXM_ADMLBL_USABLE_ENTS"]			= "사용 가능 프롭 엔티티 타입"
 L["PHXM_ADMLBL_USABLE_ENTS_REF"]		= "다음의 유형이 있습니다: 1: 물리 전용, 2: 물리 및 역학, 3: Almost Anything inc.의 레그돌, 4: 사용자 지정 엔티티."

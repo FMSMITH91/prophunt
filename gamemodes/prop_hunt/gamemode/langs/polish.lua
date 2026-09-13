@@ -502,7 +502,6 @@ L["PCR_EDT_NO_RIGHTS"]				= "Nie masz uprawnień by korzystać z tej opcji."
 ]]
 L["PHXM_PLAYER_PROP_CHOOSER_KEY"]	= "Domyślny klawisz dla Menu Przedmiotu (Wybór Przedmiotu)."
 L["PHXM_PROP_FREEZE_MIDAIR"]				= "Domyślny klawisz do zawiśnięcia w powietrzu jako przedmiot."
-L["PHXM_ADMIN_PROP_RIGHT_CLICK"]		= "Czy przedmioty również mogą odtwarzać podpowiedzi po wciśnięciu PPM?"
 L["PHXM_ADMIN_TAUNT_SCANNER"]			= "(Wymaga przeładowania mapy) Włączyć skaner podpowiedzi?"
 L["PHXM_ADMLBL_USABLE_ENTS"]				= "Rodzaje przedmiotów do wykorzystania"
 L["PHXM_ADMLBL_USABLE_ENTS_REF"]		= "Dostępne opcje: 1: Tylko fizyczne, 2: Fizyczne i dynamiczne, 3: Prawie wszystko (nawet ciała), 4: Niestandardowe."
