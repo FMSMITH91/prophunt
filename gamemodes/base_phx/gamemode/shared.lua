@@ -312,19 +312,24 @@ function util.ToMinutesSecondsMilliseconds(seconds)
 end
 
 function timer.SimpleEx(delay, action, ...)
-	if ... == nil then
+	-- `... == nil` only inspects the FIRST vararg, so a leading nil made this
+	-- drop every argument after it. select("#") counts what was actually passed.
+	if select("#", ...) == 0 then
 		timer.Simple(delay, action)
 	else
-		local a, b, c, d, e, f, g, h, i, j, k = ...
-		timer.Simple(delay, function() action(a, b, c, d, e, f, g, h, i, j, k) end)
+		local args = { ... }
+		local n = select("#", ...)
+		timer.Simple(delay, function() action(unpack(args, 1, n)) end)
 	end
 end
 
 function timer.CreateEx(timername, delay, repeats, action, ...)
-	if ... == nil then
+	-- Same fix as timer.SimpleEx above.
+	if select("#", ...) == 0 then
 		timer.Create(timername, delay, repeats, action)
 	else
-		local a, b, c, d, e, f, g, h, i, j, k = ...
-		timer.Create(timername, delay, repeats, function() action(a, b, c, d, e, f, g, h, i, j, k) end)
+		local args = { ... }
+		local n = select("#", ...)
+		timer.Create(timername, delay, repeats, function() action(unpack(args, 1, n)) end)
 	end
 end

@@ -99,7 +99,7 @@ function GM:AddScoreboardAvatar( ScoreBoard )
 
 end
 
-local function canMute(ply)
+function PHX:CanMutePlayer( ply )
 	if ( !IsValid( ply ) ) then return false end
 	
 	local lp = LocalPlayer()
@@ -135,7 +135,7 @@ function GM:AddScoreboardVoice( ScoreBoard )
 				vc:SetSize(20, 20)
 			if IsValid(ply) && ply != LocalPlayer() then
 				local muted = false
-				if canMute(ply) then
+				if PHX:CanMutePlayer(ply) then
 					muted = ply:IsMuted()
 				else
 					vc:SetAlpha(100)
@@ -146,7 +146,7 @@ function GM:AddScoreboardVoice( ScoreBoard )
 			end
  
 			function vc.DoClick()
-				if IsValid(ply) && ply != LocalPlayer() && canMute(ply) then
+				if IsValid(ply) && ply != LocalPlayer() && PHX:CanMutePlayer(ply) then
 					ply:SetMuted(!ply:IsMuted() )
 				end
 			end

@@ -195,7 +195,7 @@ if SERVER then
 				
 				attacker:AddFrags(1)
 				pl:AddDeaths(1)
-				attacker:SetHealth(math.Clamp(attacker:Health() + GetConVarNumber("ph_hunter_kill_bonus"), 1, 100))
+				attacker:SetHealth(math.Clamp(attacker:Health() + PHX:GetCVar( "ph_hunter_kill_bonus" ), 1, 100))
                 
                 hook.Call("PH_OnPropKilled", nil, pl, inflictor, attacker) -- Added inflictor, due to PS2 needs it, although it doesn't.
 				pl:RemoveProp()
