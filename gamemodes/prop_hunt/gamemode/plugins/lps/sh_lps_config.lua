@@ -261,11 +261,13 @@ PHX.LPS.WEAPON_NEW = {
                             if SERVER then
                                 local BoomPos = tr.HitPos + 3 * tr.HitNormal
                                 local target = ents.Create("info_target")
+                                if !IsValid(target) then return end
                                 target:SetPos( BoomPos )
                                 target:SetOwner( ply )
                                 target:Spawn()
                                 
                                 local inf = ents.Create("prop_combine_ball")
+                                if !IsValid(inf) then target:Remove() return end
                                 inf:SetKeyValue("spawnflags",1678)
                                 inf:SetOwner( ply )
                                 inf:Spawn()
@@ -404,9 +406,12 @@ PHX.LPS.WEAPON_NEW = {
             ply:LagCompensation(false)
             
             if SERVER then
-                if (tr.Entity and tr.Entity:IsValid()) and
-                    (SafeEntityToDamage[tr.Entity:GetClass()]) or 
-                    (tr.Entity:IsPlayer() and tr.Entity:Team() == TEAM_HUNTERS and tr.Entity:Alive()) then
+                -- 'and' binds tighter than 'or', so without the outer parentheses
+                -- the IsPlayer branch was evaluated with no IsValid guard at all
+                -- and threw on a NULL trace entity.
+                if IsValid(tr.Entity) and
+                    ( SafeEntityToDamage[tr.Entity:GetClass()] or
+                      (tr.Entity:IsPlayer() and tr.Entity:Team() == TEAM_HUNTERS and tr.Entity:Alive()) ) then
                     
                     LaserDoDamage(tr.Entity, tr.HitPos, Damage, ply, WepEnt )
                 end
@@ -526,6 +531,7 @@ if SERVER then
         for _,ply in pairs( team.GetPlayers(TEAM_PROPS) ) do
             ClearLPSFireSound( ply )
             timer.Simple(0, function() 
+                if !IsValid(ply) then return end
                 ply:SetNWBool( "LPS.LaserSoundPlayed", false )
                 ply:SendLua("LPSStopLaserSound()") 
             end)

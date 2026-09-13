@@ -306,13 +306,18 @@ end
 
 --[[ END OF SHARED INIT HEADERS ]]--
 
-local getloadedgamemodes = engine.GetGamemodes()
-for _,data in ipairs(getloadedgamemodes) do
-	if (data.name) and (string.find(data.name, "fretta")) then
-		MsgN("------------!! WARNING: DEFAULT FRETTA: [".. data.name .."] HAS DETECTED - THIS MAY CAUSE PH:X TO STOP WORKING !!------------")
-		MsgN("Unless if you use other gamemode that is still using fretta, ignore this message but this wont guarantee to make PH:X to work.")
-		MsgN("------------!! Please uninstall any gamemodes/Other Prop Hunt Version that uses fretta otherwise use this gamemode at your own risk! !!------------")
-		ErrorNoHalt("Prop Hunt X2Z Warning - Please check console for more info!")
+-- Server only. engine.GetGamemodes() reports the gamemodes installed on the
+-- machine it runs on, so running this clientside told players about their own
+-- local installs - which say nothing about the server they just joined - and
+-- threw a red Lua error at them on every connect.
+if SERVER then
+	for _,data in ipairs( engine.GetGamemodes() ) do
+		if (data.name) and (string.find(data.name, "fretta")) then
+			MsgN("------------!! WARNING: DEFAULT FRETTA: [".. data.name .."] HAS DETECTED - THIS MAY CAUSE PH:X TO STOP WORKING !!------------")
+			MsgN("Unless if you use other gamemode that is still using fretta, ignore this message but this wont guarantee to make PH:X to work.")
+			MsgN("------------!! Please uninstall any gamemodes/Other Prop Hunt Version that uses fretta otherwise use this gamemode at your own risk! !!------------")
+			ErrorNoHalt("Prop Hunt X2Z Warning - Please check console for more info!")
+		end
 	end
 end
 

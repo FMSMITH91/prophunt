@@ -1,4 +1,8 @@
 
+-- Looked up once: these run inside PaintOver, i.e. every frame per icon.
+local cvPlayerModel = GetConVar( "cl_playermodel" )
+local cvPlayerColor = GetConVar( "cl_playercolor" )
+
 function GM:ShowHelp()
 
 	--if ( !IsValid( Help ) ) then
@@ -84,7 +88,7 @@ function GM:ShowHelp()
 					
 					local icon = vgui.Create( "SpawnIcon" )
 					icon.DoClick = function() surface.PlaySound( "ui/buttonclickrelease.wav" ) RunConsoleCommand( "cl_playermodel", name ) end
-					icon.PaintOver = function() if ( GetConVarString( "cl_playermodel" ) == name ) then surface.SetDrawColor( Color( 255, 210 + math.sin(RealTime()*10)*40, 0 ) ) surface.DrawOutlinedRect( 4, 4, icon:GetWide()-8, icon:GetTall()-8 ) surface.DrawOutlinedRect( 3, 3, icon:GetWide()-6, icon:GetTall()-6 ) end end
+					icon.PaintOver = function() if ( cvPlayerModel:GetString() == name ) then surface.SetDrawColor( Color( 255, 210 + math.sin(RealTime()*10)*40, 0 ) ) surface.DrawOutlinedRect( 4, 4, icon:GetWide()-8, icon:GetTall()-8 ) surface.DrawOutlinedRect( 3, 3, icon:GetWide()-6, icon:GetTall()-6 ) end end
 					icon:SetModel( model )
 					icon:SetSize( 64, 64 )
 					icon:SetTooltip( name )
@@ -117,7 +121,7 @@ function GM:ShowHelp()
 					icon:SetText( "" )
 					icon.DoClick = function() surface.PlaySound( "ui/buttonclickrelease.wav" ) RunConsoleCommand( "cl_playercolor", name ) end
 					icon.Paint = function() surface.SetDrawColor( colr ) icon:DrawFilledRect() end
-					icon.PaintOver = function() if ( GetConVarString( "cl_playercolor" ) == name ) then surface.SetDrawColor( Color( 255, 210 + math.sin(RealTime()*10)*40, 0 ) ) surface.DrawOutlinedRect( 4, 4, icon:GetWide()-8, icon:GetTall()-8 ) surface.DrawOutlinedRect( 3, 3, icon:GetWide()-6, icon:GetTall()-6 ) end end
+					icon.PaintOver = function() if ( cvPlayerColor:GetString() == name ) then surface.SetDrawColor( Color( 255, 210 + math.sin(RealTime()*10)*40, 0 ) ) surface.DrawOutlinedRect( 4, 4, icon:GetWide()-8, icon:GetTall()-8 ) surface.DrawOutlinedRect( 3, 3, icon:GetWide()-6, icon:GetTall()-6 ) end end
 					icon:SetSize( 32, 128 )
 					icon:SetTooltip( name )
 						

@@ -230,7 +230,7 @@ end,
 		
 		button.DoClick = function()
 			if not IsValid(ply) then return end
-			if ply:PHXIsStaff() or PHX.IgnoreMutedUserGroup[ply:GetUserGroup()] then return end
+			if not PHX:CanMutePlayer( ply ) then return end
 			
 			local mute = ply:IsMuted()
 			ply:SetMuted(not mute)
@@ -243,7 +243,7 @@ end,
 			button:SetVisible(true)
 		end
 		
-		if ply:PHXIsStaff() or PHX.IgnoreMutedUserGroup[ply:GetUserGroup()] then
+		if not PHX:CanMutePlayer( ply ) then
 			button:SetVisible(false)
 		end
 		
