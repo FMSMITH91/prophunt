@@ -784,8 +784,13 @@ function GM:PlayerUse(pl, ent)
 end
 
 function GM:CanStartRound()
-	if #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= GetConVar("ph_min_waitforplayers"):GetInt() then return true end
-	return false
+	-- ph_waitforplayers gates the whole waiting system, and it defaults to 0.
+	-- This used to ignore it and block on ph_min_waitforplayers regardless, so a
+	-- server that dropped below the minimum stopped starting rounds even though
+	-- waiting was switched off.
+	if ( not PHX:GetCVar( "ph_waitforplayers" ) ) then return true end
+	
+	return #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= PHX:GetCVar( "ph_min_waitforplayers" )
 end
 
 -- Called when a player leaves

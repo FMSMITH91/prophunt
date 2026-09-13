@@ -158,10 +158,25 @@ function GM:PreRoundStart( iNum )
 	
 	if ( !GAMEMODE:CanStartRound( iNum ) ) then
 	
+		// Say why once, not once per retry, and flag it so cl_hud can show the
+		// waiting state instead of leaving the last round result on screen.
+		if ( !GAMEMODE.bWaitingForPlayers ) then
+		
+			GAMEMODE.bWaitingForPlayers = true
+			SetGlobalBool( "RoundWaitForPlayers", true )
+			
+			for _, pl in pairs( player.GetAll() ) do
+				pl:PHXChatInfo( "ERROR", "CHAT_NOPLAYERS" )
+			end
+			
+		end
+	
 		timer.Simple( 1, function() GAMEMODE:PreRoundStart( iNum ) end ) // In a second, check to see if we can start
 		return;
 		
 	end
+	
+	GAMEMODE.bWaitingForPlayers = false
 
 	timer.Create( "RoundStartTimer", GAMEMODE.RoundPreStartTime, 1, function() GAMEMODE:RoundStart() end )
 	SetGlobalInt( "RoundNumber", iNum )
