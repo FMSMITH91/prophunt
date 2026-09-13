@@ -385,6 +385,13 @@ L["PHXM_MV_EXPLANATION1"]		= "To Setup which map should be listed, use (for exam
 L["PHXM_MV_EXPLANATION2"]		= "if ULX installed, use 'ulx map_vote' instead. Otherwise use 'mv_start' for normal call."
 L["PHXM_MV_EXPLANATION3"]		= "MapVote Action (To cancel, simply use 'ulx unmap_vote' or 'mv_stop' in the console.)"
 
+-- Modern map vote screen (mapvote/cl_mapvote_ui.lua)
+L["PHXM_MV_TITLE"]		= "Vote for the next map"
+L["PHXM_MV_WINNER"]		= "Next map"
+L["PHXM_MV_TALLY"]		= "%d / %d voted"
+L["PHXM_MV_HINT"]		= "Click a map to vote. You can change your mind."
+L["PHXM_MV_CANCEL"]		= "Cancel vote"
+
 L["PHXM_MV_START"]		= "Start the MapVote"
 L["PHXM_MV_STOP"]		= "Stop the MapVote"
 --                  			  ^YOU VIOLATED THE LAW!

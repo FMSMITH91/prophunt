@@ -196,12 +196,14 @@ PHX.MV = {}
 if SERVER then
     AddCSLuaFile("sh_mapvote.lua")
     AddCSLuaFile("mapvote/cl_mapvote.lua")
+    AddCSLuaFile("mapvote/cl_mapvote_ui.lua")
 
 	include("sh_mapvote.lua")
     include("mapvote/sv_mapvote.lua")
     include("mapvote/rtv.lua")
 else
 	include("sh_mapvote.lua")
+    include("mapvote/cl_mapvote_ui.lua")
     include("mapvote/cl_mapvote.lua")
 end
 
