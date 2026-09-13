@@ -170,6 +170,30 @@ function GM:CheckPlayerDeathRoundEnd()
 		
 		if (TeamID == TEAM_PROPS or TeamID == TEAM_HUNTERS) then
 		
+			-- GetTeamAliveCounts only counts the living, so it cannot tell "the
+			-- other team was eliminated" from "the other team left". If nobody is
+			-- even connected to the losing team, there was nothing to beat - end
+			-- the round with no winner instead of handing out a win and a team
+			-- point for someone else's disconnect.
+			local OtherTeam = (TeamID == TEAM_PROPS) and TEAM_HUNTERS or TEAM_PROPS
+			
+			if ( team.NumPlayers( OtherTeam ) < 1 ) then
+			
+				PHX:VerboseMsg("[Round] Round voided: "..team.GetName(OtherTeam).." has no players left to beat.")
+				
+				GAMEMODE:RoundEndWithResult(1001, "HUD_LOSE")
+				PHX.VOICE_IS_END_ROUND = 1
+				ControlTauntWindow(1)
+				
+				PHX:PlayWinningSound( 3 )
+				
+				hook.Call("PH_OnRoundDraw", nil)
+				
+				ClearTimer()
+				return
+				
+			end
+		
 			-- debug
 			PHX:VerboseMsg("[Round] Round Result: "..team.GetName(TeamID).." ("..TeamID..") Wins!")
 			
