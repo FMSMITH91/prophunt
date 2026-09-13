@@ -56,7 +56,7 @@ function SWEP:PrimaryAttack()
 	
 	if (self.Reloading) then
 		self.Reloading = false
-		timer.Destroy( "Reload_" .. self:EntIndex() )
+		timer.Remove( "Reload_" .. self:EntIndex() )
 	end
     
 	self.FireMode = 1
@@ -82,7 +82,7 @@ function SWEP:SecondaryAttack()
 	
 	if (self.Reloading) then
 		self.Reloading = false
-		timer.Destroy( "Reload_" .. self:EntIndex() )
+		timer.Remove( "Reload_" .. self:EntIndex() )
 	end
     
     if self:Clip1() > 1 then
@@ -141,14 +141,14 @@ function SWEP:Reload()
 
             local PerformReload = function()
                 if !self.Reloading then 
-                    timer.Destroy( "Reload_" .. self:EntIndex() )
+                    timer.Remove( "Reload_" .. self:EntIndex() )
                     return
                 end
                 local Ammo = self:Clip1( )
                 
                 if Ammo >= self.Primary.ClipSize || self:GetOwner():GetAmmoCount( "Buckshot" ) == 0 then
                     self.Reloading = false
-                    timer.Destroy( "Reload_" .. self:EntIndex() )
+                    timer.Remove( "Reload_" .. self:EntIndex() )
                     self:SendWeaponAnim( ACT_SHOTGUN_PUMP )
 					self:EmitSound( Sound("Weapon_Shotgun.Special1") )
                     self:SetNextSecondaryFire(CurTime() + 0.35)
@@ -185,7 +185,7 @@ end
 function SWEP:Holster()
     if self.Reloading then
         self.Reloading = false
-        timer.Destroy( "Reload_" .. self:EntIndex() )
+        timer.Remove( "Reload_" .. self:EntIndex() )
     end
     return true
 end

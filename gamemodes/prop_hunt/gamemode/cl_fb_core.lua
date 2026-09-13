@@ -199,7 +199,7 @@ function PHXPM_openFileBrowser( ply, global, sub, svContents, wTitle )
 			f.btn:SetFont("RobotoWarn")
 			f.btn:DockMargin(20,5,10,5)
 			f.btn:SetText(PHX:FTranslate("PHZ_tooltip_removesel"))
-			f.btn:SetToolTip(PHX:FTranslate("PHZ_Tooltip_removesel"))
+			f.btn:SetTooltip(PHX:FTranslate("PHZ_Tooltip_removesel"))
 			
 			f.list = vgui.Create("DIconBrowser", f.panelpm)
 			f.list:Dock(FILL)
@@ -336,7 +336,7 @@ function PHXPM_openFileBrowser( ply, global, sub, svContents, wTitle )
 						if !table.HasValue(_G[global][sub], realIcon:GetModelName()) then
 							ic.markeddontexist = true
 							ic:SetBackgroundColor(Color(255,200,16))
-							realIcon:SetToolTip(PHX:FTranslate("PHZ_tooltip_wasmarked"))
+							realIcon:SetTooltip(PHX:FTranslate("PHZ_tooltip_wasmarked"))
 						end
 						if !ic.markeddontexist then ic:Remove() end
 					end

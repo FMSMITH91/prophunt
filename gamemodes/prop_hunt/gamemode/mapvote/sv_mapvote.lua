@@ -301,7 +301,7 @@ function MapVote.PHXCancel()
         net.Start("RAM_MapVoteCancel")
         net.Broadcast()
 
-        timer.Destroy("RAM_MapVote")
+        timer.Remove("RAM_MapVote")
     end
 end
 

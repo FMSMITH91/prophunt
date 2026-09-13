@@ -154,7 +154,7 @@ end,
 		local slider = vgui.Create("DNumSlider",pnlslider)
         slider:Dock(FILL)
         slider:SetText("")
-		slider:SetToolTip(PHX:QTrans(l))
+		slider:SetTooltip(PHX:QTrans(l))
 		slider:SetMin(min)
 		slider:SetMax(max)
 		slider:SetValue(dval)
@@ -397,7 +397,7 @@ end,
     else
         textEntry:SetValue( GetConVar(c):GetString() )
     end
-    textEntry:SetToolTip(PHX:QTrans(l))
+    textEntry:SetTooltip(PHX:QTrans(l))
 	
 	local btn = vgui.Create("DButton", pnl)
 	btn:Dock(LEFT)
@@ -459,7 +459,7 @@ end,
 	cbox:Dock(LEFT)
 	cbox:SetSize(pnl:GetWide()*0.25, 0)
 	cbox:DockMargin(4,2,0,2)
-    cbox:SetToolTip(tt)
+    cbox:SetTooltip(tt)
     cbox:SetSortItems(false)
     
     if d and d ~= nil and istable(d) then

@@ -17,7 +17,7 @@ function PANEL:Init()
 	self.pnlButtons = vgui.Create( "DPanelList", self )
 	self.pnlButtons:SetPadding( 10 )
 	self.pnlButtons:SetSpacing( 10 )
-	self.pnlButtons:SetDrawBackground( false )
+	self.pnlButtons:SetPaintBackground( false )
 	self.pnlButtons:EnableVerticalScrollbar()
 
 	self.lblMain = vgui.Create( "DLabel", self )
@@ -27,7 +27,7 @@ function PANEL:Init()
 		
 	self.pnlMain = vgui.Create( "DPanelList", self )
 		self.pnlMain:SetNoSizing( true )
-		self.pnlMain:SetDrawBackground( false )
+		self.pnlMain:SetPaintBackground( false )
 		self.pnlMain:EnableVerticalScrollbar()
 		
 	self.btnCancel = vgui.Create( "DButton", self )

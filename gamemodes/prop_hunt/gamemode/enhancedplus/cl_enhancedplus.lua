@@ -56,7 +56,7 @@ plus.PanelType = {
 		Btn:Dock(FILL)
 		Btn:DockMargin(8,4,8,4)
 		Btn:SetText( PHX:QTrans( d.text ) )
-		Btn:SetToolTip( PHX:QTrans( d.text ) )
+		Btn:SetTooltip( PHX:QTrans( d.text ) )
 		
 		local f = function() print("Button: It's nothing here. Did you forgot to add something?") end
 		if d.func and d.func ~= nil and isfunction(d.func) then
@@ -112,7 +112,7 @@ plus.PanelType = {
 		Slider:Dock(FILL)
 		Slider:DockMargin(8,4,8,4)
 		Slider:SetText("")
-		Slider:SetToolTip( PHX:QTrans( l ) )
+		Slider:SetTooltip( PHX:QTrans( l ) )
 		Slider:SetMin(Min)
 		Slider:SetMax(Max)
 		Slider:SetValue( GetConVar(c):GetInt() )

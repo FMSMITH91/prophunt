@@ -228,7 +228,7 @@ end)
 
 local function RemoveTimer()
 	if timer.Exists(timerID) then
-		timer.Destroy(timerID)
+		timer.Remove(timerID)
 	end
 end
 
@@ -265,7 +265,7 @@ local function CheckPlayer()
 
 	if ply:Alive() && ply:Team() == TEAM_PROPS then
 		if timer.Exists(teamCheckTimer) then
-			timer.Destroy(teamCheckTimer)
+			timer.Remove(teamCheckTimer)
 		end
 
 		Setup()
