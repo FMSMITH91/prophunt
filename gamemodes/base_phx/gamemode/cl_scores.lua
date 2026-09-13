@@ -47,16 +47,51 @@ function GM:ScoreboardHide()
 	
 end
 
+// Bots have no community profile, and a disconnected player has no id to look
+// up, so there is nothing to open for either.
+function PHX:CanOpenSteamProfile( ply )
+	if ( !IsValid( ply ) or !ply:IsPlayer() or ply:IsBot() ) then return false end
+	
+	local id64 = ply:SteamID64()
+	
+	return id64 ~= nil and id64 ~= "" and id64 ~= "0"
+end
+
+// Opens in the Steam overlay, or the default browser when the overlay is off.
+function PHX:OpenSteamProfile( ply )
+	if ( !self:CanOpenSteamProfile( ply ) ) then return end
+	
+	gui.OpenURL( "https://steamcommunity.com/profiles/" .. ply:SteamID64() )
+end
+
+// Makes a panel open ply's Steam profile when left clicked. Used for both the
+// avatar and the name column.
+function PHX:MakeProfileLink( pnl, ply )
+	if ( !IsValid( pnl ) ) then return end
+	
+	if ( !self:CanOpenSteamProfile( ply ) ) then
+		pnl:SetMouseInputEnabled( false )
+		return
+	end
+	
+	pnl:SetMouseInputEnabled( true )
+	pnl:SetCursor( "hand" )
+	pnl:SetTooltip( PHX:FTranslate( "DERMA_OPEN_STEAM_PROFILE" ) )
+	
+	pnl.OnMousePressed = function( _, code )
+		if ( code == MOUSE_LEFT ) then PHX:OpenSteamProfile( ply ) end
+	end
+end
+
 function GM:AddScoreboardAvatar( ScoreBoard )
 
 	local f = function( ply ) 	
 		local av = vgui.Create( "AvatarImage", ScoreBoard )
 			av:SetSize( 32, 32 )
 			av:SetPlayer( ply )
-			av.Click = function()
-				--print( "LOL" )
-				-- todo: Let's add something here in future. Hopefully...
-			end
+			
+			PHX:MakeProfileLink( av, ply )
+			
 			return av
 	end
 	
@@ -129,7 +164,11 @@ end
 function GM:AddScoreboardName( ScoreBoard )
 
 	local f = function( ply ) return ply:Name() end
-	ScoreBoard:AddColumn( PHX:FTranslate("DERMA_NAME") or "Name", nil, f, 10, nil, 4, 4 )
+	local col = ScoreBoard:AddColumn( PHX:FTranslate("DERMA_NAME") or "Name", nil, f, 10, nil, 4, 4 )
+	
+	// Handled in vgui_scoreboard_team.lua: this column's value is plain text, so
+	// the label is built by the engine and only reachable from UpdateColumn.
+	col.bOpenProfile = true
 
 end
 

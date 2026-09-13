@@ -78,6 +78,7 @@ L["DERMA_CHANGETEAM"]		= "Change Team"
 -- FRETTA: Scoreboard
 L["DERMA_PLAYER"]			= "(%d player)"	
 L["DERMA_PLAYERS"]			= "(%d players)"
+L["DERMA_OPEN_STEAM_PROFILE"]	= "Click to open this player's Steam profile"
 L["DERMA_NAME"]				= "Name"
 L["DERMA_KILLS"]				= "Kills"
 L["DERMA_DEATHS"]			= "Deaths"

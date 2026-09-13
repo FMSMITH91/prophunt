@@ -194,6 +194,13 @@ function PANEL:UpdateColumn( i, col, pLine )
 		Derma_Hook( lbl, 	"Paint", 				"Paint", 	"ScorePanelLabel" )
 		Derma_Hook( lbl, 	"ApplySchemeSettings", 	"Scheme", 	"ScorePanelLabel" )
 		Derma_Hook( lbl, 	"PerformLayout", 		"Layout", 	"ScorePanelLabel" )
+		
+		-- Columns flagged in cl_scores.lua open the player's Steam profile.
+		-- The engine disables mouse input on these labels, so clicking one
+		-- currently selects the row; this takes the click instead.
+		if ( col.bOpenProfile ) then
+			PHX:MakeProfileLink( lbl, pLine.pPlayer )
+		end
 	
 	end
 
