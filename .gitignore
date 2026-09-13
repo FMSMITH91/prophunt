@@ -1,0 +1,5 @@
+# Python bytecode from the .github/scripts helpers. test_check_net_receivers.py
+# imports check_net_receivers.py, which makes CPython write one of these next to
+# the script.
+__pycache__/
+*.py[cod]
