@@ -15,7 +15,7 @@ function PANEL:Init()
 	self.lblActionName = vgui.Create( "DLabel", self.ControlCanvas )
 	
 	self.ctrlList = vgui.Create( "DPanelList", self.ControlCanvas )
-	self.ctrlList:SetDrawBackground( false )
+	self.ctrlList:SetPaintBackground( false )
 	self.ctrlList:SetSpacing( 2 )
 	self.ctrlList:SetPadding( 2 )
 	self.ctrlList:EnableHorizontal( true )

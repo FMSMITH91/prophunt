@@ -77,7 +77,7 @@ function PANEL:Init()
     self.countDown:SetPos(0, 14)
     
     self.mapList = vgui.Create("DPanelList", self.Canvas)
-    self.mapList:SetDrawBackground(false)
+    self.mapList:SetPaintBackground(false)
     self.mapList:SetSpacing(4)
     self.mapList:SetPadding(4)
     self.mapList:EnableHorizontal(true)
@@ -285,7 +285,7 @@ function PANEL:SetMaps(maps)
         
         local extra = math.Clamp(300, 0, ScrW() - 640)
         
-        button:SetDrawBackground(false)
+        button:SetPaintBackground(false)
         button:SetTall(24)
         button:SetWide(285 + (extra / 2))
         button.NumVotes = 0

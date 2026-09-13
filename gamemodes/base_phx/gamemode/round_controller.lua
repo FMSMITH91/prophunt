@@ -287,8 +287,8 @@ function GM:RoundEnd()
 
 	self:SetInRound( false )
 	
-	timer.Destroy( "RoundEndTimer" )
-	timer.Destroy( "CheckRoundEnd" )
+	timer.Remove( "RoundEndTimer" )
+	timer.Remove( "CheckRoundEnd" )
 	SetGlobalFloat( "RoundEndTime", -1 )
 	
 	timer.Simple( GAMEMODE.RoundPostLength, function() GAMEMODE:PreRoundStart( GetGlobalInt( "RoundNumber" )+1 ) end )

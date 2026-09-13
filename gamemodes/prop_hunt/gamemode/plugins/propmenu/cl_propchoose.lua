@@ -151,7 +151,7 @@ function PCR:MainWindow()
 			local icon = pan:Add("SpawnIcon")
 			icon:SetModel(Model(p))
 			icon:SetSize(64,64)
-			icon:SetToolTip(tooltext)
+			icon:SetTooltip(tooltext)
 			
 			icon.DoClick = function()
 				net.Start("pcr.SetMetheProp")

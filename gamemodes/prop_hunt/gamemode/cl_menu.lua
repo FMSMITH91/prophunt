@@ -96,7 +96,7 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 			draw.DrawText( text, font ,w*0.24,h*0.4, color, TEXT_ALIGN_LEFT )
 		end
         
-        item.Button:SetToolTip( text )
+        item.Button:SetTooltip( text )
 		
 		item.Button.OnCursorEntered = function(self)
 			color = Color(255,255,0)
