@@ -2,6 +2,10 @@ local MapVote = PHX.MV
 
 MapVote.EndTime = 0
 MapVote.Panel = false
+MapVote.Duration = 0
+
+local cvarModern = CreateClientConVar( "ph_cl_modern_mapvote", "1", true, false,
+    "Use the modern map vote screen. 0 falls back to the classic list." )
 
 net.Receive("RAM_MapVoteStart", function()
     MapVote.CurrentMaps = {}
@@ -16,13 +20,16 @@ net.Receive("RAM_MapVoteStart", function()
         MapVote.CurrentMaps[#MapVote.CurrentMaps + 1] = map
     end
     
-    MapVote.EndTime = CurTime() + net.ReadUInt(32)
+    local duration = net.ReadUInt(32)
+    
+    MapVote.Duration = duration
+    MapVote.EndTime = CurTime() + duration
     
     if(IsValid(MapVote.Panel)) then
         MapVote.Panel:Remove()
     end
     
-    MapVote.Panel = vgui.Create("VoteScreen")
+    MapVote.Panel = vgui.Create( cvarModern:GetBool() and "PHXMapVote" or "PHXMapVoteClassic" )
     MapVote.Panel:SetMaps(MapVote.CurrentMaps)
     
     // GM:OnEndOfGame force-opens the scoreboard just before the vote starts.
@@ -327,4 +334,8 @@ function PANEL:Flash(id)
     end
 end
 
-derma.DefineControl("VoteScreen", "", PANEL, "DPanel")
+-- Registered as PHXMapVoteClassic, not "VoteScreen".
+-- base_phx/gamemode/vgui/vgui_vote.lua already registers a control by that
+-- name - Fretta's gamemode vote, which cl_gmchanger.lua creates - and
+-- prop_hunt loads second, so this file used to silently overwrite it.
+derma.DefineControl("PHXMapVoteClassic", "", PANEL, "DPanel")
