@@ -1,17 +1,44 @@
 
 include( "vgui/vgui_scoreboard.lua" )
+include( "vgui/vgui_scoreboard_modern.lua" )
+include( "cl_scoreboard_admin.lua" )
+
+local cvarModern = CreateClientConVar( "ph_cl_modern_scoreboard", "1", true, false,
+	"Use the modern scoreboard. 0 falls back to the classic Fretta list." )
+
+function PHX:UseModernScoreboard()
+	return cvarModern:GetBool()
+end
+
+// Rebuild on the next open rather than swapping panels underneath a board that
+// might be on screen right now.
+cvars.AddChangeCallback( "ph_cl_modern_scoreboard", function()
+	if ( IsValid( g_ScoreBoard ) ) then
+		g_ScoreBoard:Remove()
+		g_ScoreBoard = nil
+	end
+end, "PHX.ScoreboardStyle" )
 
 function GM:GetScoreboard()
 
 	if ( IsValid( g_ScoreBoard ) ) then
 		g_ScoreBoard:Remove()
 	end
-	
-	g_ScoreBoard = vgui.Create( "FrettaScoreboard" )
-	self:CreateScoreboard( g_ScoreBoard )
-	
+
+	if ( PHX:UseModernScoreboard() ) then
+
+		g_ScoreBoard = vgui.Create( "PHXScoreboardModern" )
+		self:CreateModernScoreboard( g_ScoreBoard )
+
+	else
+
+		g_ScoreBoard = vgui.Create( "FrettaScoreboard" )
+		self:CreateScoreboard( g_ScoreBoard )
+
+	end
+
 	return g_ScoreBoard
-	
+
 end
 
 // True while the map vote panel is on screen. The panel is removed when the
@@ -197,6 +224,12 @@ end
 
 function GM:PositionScoreboard( ScoreBoard )
 
+	// The modern board sizes itself against the screen; nothing to place.
+	if ( ScoreBoard.PHXModern ) then
+		ScoreBoard:PositionSelf()
+		return
+	end
+
 	if ( GAMEMODE.TeamBased ) then
 		ScoreBoard:SetSize( ScrW()/1.2, ScrH() - 50 )
 		ScoreBoard:SetPos( (ScrW() - ScoreBoard:GetWide()) * 0.5,  25 )
@@ -262,5 +295,33 @@ function GM:CreateScoreboard( ScoreBoard )
 		
 	// Here we sort by these columns (and descending), in this order. You can define up to 4
 	ScoreBoard:SetSortColumns( { 5, true, 6, false, 4, false } )
-	
+
+end
+
+/*
+	The modern board draws avatar/name/kills/deaths/ping/mute itself, so it only
+	needs to be told which teams are real and which are a footnote. The
+	PH_AddColumnScoreboard hook is still fired with the same signature, so
+	addons that add a column keep working on both boards.
+*/
+function GM:CreateModernScoreboard( ScoreBoard )
+
+	ScoreBoard:SetAsBullshitTeam( TEAM_SPECTATOR )
+	ScoreBoard:SetAsBullshitTeam( TEAM_CONNECTING )
+
+	if ( GAMEMODE.TeamBased ) then
+		ScoreBoard:SetAsBullshitTeam( TEAM_UNASSIGNED )
+	end
+
+	// Custom columns land to the left of kills/deaths/ping.
+	hook.Call( "PH_AddColumnScoreboard", nil, ScoreBoard, function( Name, Fixed, Func, Rate, TeamID, HAlign, VAlign, Font )
+		GAMEMODE:AddScoreboardCustom( ScoreBoard, Name, Fixed, Func, Rate, TeamID, HAlign, VAlign, Font )
+	end )
+
+	// Must run after the bullshit teams are flagged, or they would get a card.
+	local ids = {}
+	for id in pairs( team.GetAllTeams() ) do table.insert( ids, id ) end
+
+	ScoreBoard:SetupTeams( ids )
+
 end
