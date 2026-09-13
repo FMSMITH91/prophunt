@@ -163,6 +163,25 @@ function PANEL:UpdateColumn( i, col, pLine )
 	if ( Value == nil ) then return end
 	
 	local lbl = pLine:SetColumnText( i, Value )
+	
+	-- DListView_Line:SetColumnText returns nothing when it is handed a Panel
+	-- instead of text, so lbl is nil for the columns that supply one (the avatar
+	-- and the mute button) and the hooks below are skipped for them.
+	--
+	-- Clicking any line makes DListView:ClearSelection call SetSelected(false) on
+	-- every line, and DListView_Line:SetSelected calls ApplySchemeSettings() on
+	-- every column. AvatarImage has no such method, so that threw
+	-- "attempt to call method 'ApplySchemeSettings' (a nil value)".
+	--
+	-- Give a panel column a harmless one rather than running the label hooks over
+	-- it, which would replace the avatar's Paint and stop it drawing.
+	if ( !IsValid( lbl ) ) then
+		local pnl = pLine.Columns[ i ]
+		if ( IsValid( pnl ) && !pnl.ApplySchemeSettings ) then
+			pnl.ApplySchemeSettings = function() end
+		end
+	end
+	
 	if ( IsValid( lbl ) && !lbl.bScorePanelHooks ) then
 	
 		lbl.bScorePanelHooks = true
