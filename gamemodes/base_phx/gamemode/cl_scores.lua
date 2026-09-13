@@ -61,17 +61,25 @@ function GM:ScoreboardShow()
 end
 
 function GM:ScoreboardHide()
-	
+
 	GAMEMODE:GetScoreboard():SetVisible( false )
-	
+
+	// The right-click menu is an unparented DMenu (DermaMenu passes no parent),
+	// so hiding the board leaves it on screen - and the screen clicker is
+	// released a few lines down, so it is stranded there unclickable too.
+	CloseDermaMenus()
+
 	// The vote panel drives the cursor through MakePopup; releasing the screen
 	// clicker here would leave it visible but unclickable. The -showscores that
 	// GM:OnEndOfGame schedules lands at the same moment the vote opens, so this
 	// race is the normal case rather than an edge case.
-	if ( MapVoteOnScreen() ) then return end
-	
+	//
+	// A kick/ban dialog is modal and drives its own cursor for the same
+	// reason; PHX hands the cursor back when that dialog closes.
+	if ( MapVoteOnScreen() || ( PHX.ScoreboardDialogOpen && PHX:ScoreboardDialogOpen() ) ) then return end
+
 	gui.EnableScreenClicker(false)
-	
+
 end
 
 // Bots have no community profile, and a disconnected player has no id to look

@@ -132,10 +132,46 @@ local BAN_TIMES = {
 	{ mins = 0,     key = "DERMA_BAN_PERMA", fallback = "Permanent" }
 }
 
+/*
+	Derma_Query and Derma_StringRequest both return a MakePopup'd modal DFrame
+	that is not a child of the scoreboard. GM:ScoreboardHide releases the screen
+	clicker, which would strand one of these on screen and unclickable - the
+	same failure an open DMenu had. The board asks ScoreboardDialogOpen before
+	letting the cursor go, and the cursor is handed back when the dialog closes.
+*/
+function PHX:TrackScoreboardDialog( frame )
+
+	if ( !IsValid( frame ) ) then return frame end
+
+	self.SBDialog = frame
+
+	local previous = frame.OnRemove
+
+	frame.OnRemove = function( pnl, ... )
+
+		if ( previous ) then previous( pnl, ... ) end
+
+		PHX.SBDialog = nil
+
+		// Only take the cursor back if the board itself is no longer holding it.
+		if ( !IsValid( g_ScoreBoard ) || !g_ScoreBoard:IsVisible() ) then
+			gui.EnableScreenClicker( false )
+		end
+
+	end
+
+	return frame
+
+end
+
+function PHX:ScoreboardDialogOpen()
+	return IsValid( self.SBDialog )
+end
+
 local function Confirm( text, fn )
-	Derma_Query( text, PHX.TITLE or "Prop Hunt",
+	PHX:TrackScoreboardDialog( Derma_Query( text, PHX.TITLE or "Prop Hunt",
 		PHX:SBTranslate( "DERMA_MENU_YES", "Yes" ), fn,
-		PHX:SBTranslate( "DERMA_MENU_NO",  "No" ), function() end )
+		PHX:SBTranslate( "DERMA_MENU_NO",  "No" ), function() end ) )
 end
 
 /*
@@ -231,12 +267,12 @@ function PHX:OpenPlayerMenu( ply )
 
 		kick:AddSpacer()
 		kick:AddOption( self:SBTranslate( "DERMA_MENU_CUSTOM_REASON", "Custom reason..." ), function()
-			Derma_StringRequest(
+			self:TrackScoreboardDialog( Derma_StringRequest(
 				self:SBTranslate( "DERMA_MENU_KICK_TITLE", "Kick %s", ply:Nick() ),
 				self:SBTranslate( "DERMA_MENU_REASON", "Reason:" ), "",
 				function( reason )
 					self:RunULX( "kick", ply, reason )
-				end )
+				end ) )
 		end )
 	end
 
@@ -249,7 +285,7 @@ function PHX:OpenPlayerMenu( ply )
 			local label = self:SBTranslate( t.key, t.fallback )
 
 			ban:AddOption( label, function()
-				Derma_StringRequest(
+				self:TrackScoreboardDialog( Derma_StringRequest(
 					self:SBTranslate( "DERMA_MENU_BAN_TITLE", "Ban %s (%s)", ply:Nick(), label ),
 					self:SBTranslate( "DERMA_MENU_REASON", "Reason:" ), "",
 					function( reason )
@@ -257,7 +293,7 @@ function PHX:OpenPlayerMenu( ply )
 							// ulx ban <player> <minutes, 0 = permanent> <reason>
 							self:RunULX( "ban", ply, t.mins, reason )
 						end )
-					end )
+					end ) )
 			end )
 
 		end

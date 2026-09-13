@@ -61,6 +61,10 @@ local matBlur   = Material( "pp/blurscreen" )
 
 local PAD_ROW = 10
 
+// Team card header: the coloured strip, then the column-label row beneath it.
+local TEAM_STRIP_H = 46
+local TEAM_LABEL_H = 32
+
 local function PingColor( ping )
 	if ( ping <= 0 ) then return COL_TEXT_DIM end
 	if ( ping < 80 ) then return COL_PING_GOOD end
@@ -294,6 +298,186 @@ vgui.Register( "PHXScoreRow", PANEL, "Panel" )
 
 
 /*---------------------------------------------------------
+	PHXSpectatorChip - one spectator / unassigned player
+
+	Spectators used to be a flat run of text in the footer, which meant the
+	people most likely to need moderating were the only ones you could not
+	right-click. Each one is now its own small panel with the same menu.
+---------------------------------------------------------*/
+local PANEL = {}
+
+function PANEL:Init()
+
+	self.HoverFrac = 0
+
+	self.Avatar = vgui.Create( "AvatarImage", self )
+	self.Avatar:SetMouseInputEnabled( false )
+
+end
+
+function PANEL:SetPlayer( ply )
+
+	self.pPlayer = ply
+	self.Avatar:SetPlayer( ply, 32 )
+
+	surface.SetFont( "PHX.SB.Sub" )
+	local tw = surface.GetTextSize( ply:Nick() )
+
+	self.TextW = tw
+	self:SetWide( SBScale( 8 ) + SBScale( 18 ) + SBScale( 6 ) + tw + SBScale( 9 ) )
+
+	self:SetCursor( ( PHX && PHX.CanOpenSteamProfile && PHX:CanOpenSteamProfile( ply ) ) and "hand" or "arrow" )
+
+end
+
+function PANEL:OpenMenu()
+
+	if ( !PHX || !PHX.OpenPlayerMenu ) then return end
+
+	local menu = PHX:OpenPlayerMenu( self.pPlayer )
+	if ( IsValid( menu ) ) then menu:Open() end
+
+end
+
+function PANEL:OnMousePressed( code )
+
+	if ( code == MOUSE_RIGHT ) then
+		self:OpenMenu()
+	elseif ( code == MOUSE_LEFT && PHX && PHX.OpenSteamProfile ) then
+		PHX:OpenSteamProfile( self.pPlayer )
+	end
+
+end
+
+function PANEL:PerformLayout( w, h )
+
+	local size = SBScale( 18 )
+	self.Avatar:SetPos( SBScale( 8 ), ( h - size ) * 0.5 )
+	self.Avatar:SetSize( size, size )
+
+end
+
+function PANEL:Paint( w, h )
+
+	local ply = self.pPlayer
+	if ( !IsValid( ply ) ) then return end
+
+	self.HoverFrac = math.Approach( self.HoverFrac, self:IsHovered() and 1 or 0, FrameTime() * 6 )
+
+	local radius = SBScale( 4 )
+	draw.RoundedBox( radius, 0, 0, w, h, COL_ROW_ALT )
+
+	if ( self.HoverFrac > 0 ) then
+		draw.RoundedBox( radius, 0, 0, w, h,
+			Color( COL_ROW_HOVER.r, COL_ROW_HOVER.g, COL_ROW_HOVER.b, 255 * self.HoverFrac ) )
+	end
+
+	draw.SimpleText( ply:Nick(), "PHX.SB.Sub",
+		SBScale( 8 ) + SBScale( 18 ) + SBScale( 6 ), h * 0.5, COL_TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+
+end
+
+vgui.Register( "PHXSpectatorChip", PANEL, "Panel" )
+
+
+/*---------------------------------------------------------
+	PHXSpectatorBar - the footer strip of spectator chips
+---------------------------------------------------------*/
+local PANEL = {}
+
+function PANEL:Init()
+	self.Chips  = {}
+	self.Teams  = {}
+	self.RowsUsed = 1
+end
+
+function PANEL:SetTeams( ids )
+	self.Teams = ids
+end
+
+function PANEL:GetPlayers()
+
+	local out = {}
+
+	for id in pairs( self.Teams ) do
+		for _, ply in ipairs( team.GetPlayers( id ) ) do
+			table.insert( out, ply )
+		end
+	end
+
+	table.sort( out, function( a, b ) return a:Nick():lower() < b:Nick():lower() end )
+
+	return out
+
+end
+
+function PANEL:ChipHeight()
+	return SBScale( 24 )
+end
+
+function PANEL:Think()
+
+	local players = self:GetPlayers()
+	local dirty   = ( #players ~= #self.Chips )
+
+	if ( !dirty ) then
+		for i, ply in ipairs( players ) do
+			if ( self.Chips[ i ].pPlayer ~= ply ) then dirty = true break end
+		end
+	end
+
+	if ( !dirty ) then return end
+
+	for _, chip in ipairs( self.Chips ) do chip:Remove() end
+	self.Chips = {}
+
+	for _, ply in ipairs( players ) do
+		local chip = vgui.Create( "PHXSpectatorChip", self )
+		chip:SetTall( self:ChipHeight() )
+		chip:SetPlayer( ply )
+		table.insert( self.Chips, chip )
+	end
+
+	self:InvalidateLayout( true )
+	if ( IsValid( self:GetParent() ) ) then self:GetParent():InvalidateLayout() end
+
+end
+
+// Flows left to right and wraps. Returns how many rows it needed so the board
+// can give the footer the right amount of space.
+function PANEL:PerformLayout( w, h )
+
+	local gap  = SBScale( 5 )
+	local ch   = self:ChipHeight()
+	local x, y = 0, 0
+	local rows = 1
+
+	for _, chip in ipairs( self.Chips ) do
+
+		if ( x > 0 && x + chip:GetWide() > w ) then
+			x = 0
+			y = y + ch + gap
+			rows = rows + 1
+		end
+
+		chip:SetPos( x, y )
+		x = x + chip:GetWide() + gap
+
+	end
+
+	self.RowsUsed = rows
+
+end
+
+function PANEL:DesiredHeight()
+	if ( #self.Chips == 0 ) then return 0 end
+	return self.RowsUsed * self:ChipHeight() + ( self.RowsUsed - 1 ) * SBScale( 5 )
+end
+
+vgui.Register( "PHXSpectatorBar", PANEL, "Panel" )
+
+
+/*---------------------------------------------------------
 	PHXScoreTeam - one team card
 ---------------------------------------------------------*/
 local PANEL = {}
@@ -321,7 +505,7 @@ function PANEL:Setup( iTeam, pMain )
 end
 
 function PANEL:HeaderHeight()
-	return SBScale( 46 ) + SBScale( 22 )
+	return SBScale( TEAM_STRIP_H ) + SBScale( TEAM_LABEL_H )
 end
 
 function PANEL:ScrollInset()
@@ -336,7 +520,7 @@ function PANEL:Paint( w, h )
 	draw.RoundedBox( SBScale( 6 ), 0, 0, w, h, COL_CARD )
 
 	// Team strip: a dimmed band in the team colour with a bright underline.
-	local hh = SBScale( 46 )
+	local hh = SBScale( TEAM_STRIP_H )
 	draw.RoundedBoxEx( SBScale( 6 ), 0, 0, w, hh,
 		Color( tc.r * 0.34, tc.g * 0.34, tc.b * 0.34, 255 ), true, true, false, false )
 
@@ -351,11 +535,13 @@ function PANEL:Paint( w, h )
 
 	// DERMA_PLAYERS is a format string - "(%d players)" - and already carries
 	// its own brackets, so it takes the count rather than being concatenated.
+	// A separate singular key avoids printing "(1 players)".
 	local count    = #team.GetPlayers( self.iTeam )
-	local countStr = "(" .. count .. " players)"
+	local key      = ( count == 1 ) and "DERMA_PLAYERS_ONE" or "DERMA_PLAYERS"
+	local countStr = "(" .. count .. ( count == 1 and " player)" or " players)" )
 
 	if ( PHX && PHX.SBTranslate ) then
-		countStr = PHX:SBTranslate( "DERMA_PLAYERS", countStr, count )
+		countStr = PHX:SBTranslate( key, countStr, count )
 	end
 
 	draw.SimpleText( countStr, "PHX.SB.Sub",
@@ -376,7 +562,7 @@ function PANEL:Paint( w, h )
 	local rowW   = IsValid( canvas ) and canvas:GetWide() or ( w - inset * 2 )
 
 	local xs = ComputeCellX( cells, rowW )
-	local ly = hh + SBScale( 11 )
+	local ly = hh + SBScale( 9 )
 
 	for i, cell in ipairs( cells ) do
 		if ( cell.label && cell.label ~= "" ) then
@@ -388,8 +574,10 @@ function PANEL:Paint( w, h )
 	local nameLbl = ( PHX && PHX.SBTranslate ) and PHX:SBTranslate( "DERMA_NAME", "Name" ) or "Name"
 	draw.SimpleText( nameLbl, "PHX.SB.Label", pad, ly, COL_TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
 
+	// Sits below the label text, not through it: the labels run from hh+9 to
+	// roughly hh+22, so the rule goes at the bottom of the 32px label row.
 	surface.SetDrawColor( COL_BORDER )
-	surface.DrawRect( pad, self:HeaderHeight() - SBScale( 4 ), w - pad * 2, 1 )
+	surface.DrawRect( pad, self:HeaderHeight() - SBScale( 6 ), w - pad * 2, 1 )
 
 end
 
@@ -469,10 +657,12 @@ function PANEL:Init()
 	self.SmallTeams = {}
 	self.Cells      = {}
 	self.CustomCols = {}
-	self.SpecText   = ""
 
 	self:SetRowHeight( SBScale( 34 ) )
 	self:RebuildCells()
+
+	self.SpecBar = vgui.Create( "PHXSpectatorBar", self )
+	self.SpecBar:SetTeams( self.SmallTeams )
 
 end
 
@@ -629,35 +819,51 @@ function PANEL:SetupTeams( teams )
 
 end
 
+/*
+	Height follows the fullest team rather than always eating 84% of the screen,
+	which left a mostly empty board on a quiet server. Still capped, so a full
+	32-slot server scrolls instead of running off the top and bottom.
+*/
+function PANEL:DesiredHeight()
+
+	local rows = 1
+	for _, card in pairs( self.Boards ) do
+		rows = math.max( rows, #team.GetPlayers( card.iTeam ) )
+	end
+
+	local rowH  = self:GetRowHeight() + SBScale( 3 )
+	local cardH = SBScale( TEAM_STRIP_H ) + SBScale( TEAM_LABEL_H ) + rows * rowH + SBScale( 8 )
+	local total = SBScale( 74 ) + cardH + self:FooterHeight() + SBScale( 14 )
+
+	return math.Clamp( total, SBScale( 240 ), ScrH() * 0.84 )
+
+end
+
 function PANEL:PositionSelf()
 
 	local w = math.min( ScrW() * 0.8, SBScale( 1180 ) )
-	local h = math.min( ScrH() * 0.84, SBScale( 820 ) )
+	local h = self:DesiredHeight()
 
 	self:SetSize( w, h )
 	self:SetPos( ( ScrW() - w ) * 0.5, ( ScrH() - h ) * 0.5 )
 
 end
 
-function PANEL:SpectatorText()
+// Grow and shrink as people join, leave and switch teams while it is open.
+function PANEL:Think()
 
-	local out = {}
-
-	for id in pairs( self.SmallTeams ) do
-
-		local players = team.GetPlayers( id )
-
-		if ( #players > 0 ) then
-			local names = {}
-			for _, ply in ipairs( players ) do table.insert( names, ply:Nick() ) end
-
-			local label = ( PHX && PHX.TranslateName ) and PHX:TranslateName( id ) or team.GetName( id )
-			table.insert( out, label .. ": " .. table.concat( names, ", " ) )
-		end
-
+	if ( math.abs( self:DesiredHeight() - self:GetTall() ) > 1 ) then
+		self:PositionSelf()
 	end
 
-	return table.concat( out, "   |   " )
+end
+
+// The hint always needs a line; spectator chips stack on top of it.
+function PANEL:FooterHeight()
+
+	local specH = IsValid( self.SpecBar ) and self.SpecBar:DesiredHeight() or 0
+
+	return SBScale( 26 ) + ( specH > 0 and ( specH + SBScale( 6 ) ) or 0 )
 
 end
 
@@ -665,12 +871,7 @@ function PANEL:PerformLayout( w, h )
 
 	local pad     = SBScale( 14 )
 	local headerH = SBScale( 74 )
-
-	self.SpecText = self:SpectatorText()
-
-	// The footer is always reserved, spectators or not, so the right-click hint
-	// has somewhere to live and the cards do not jump when someone spectates.
-	local footerH = SBScale( 28 )
+	local footerH = self:FooterHeight()
 
 	local cards = {}
 	for _, card in pairs( self.Boards ) do table.insert( cards, card ) end
@@ -689,6 +890,21 @@ function PANEL:PerformLayout( w, h )
 	end
 
 	self.FooterY = headerH + cardH + SBScale( 6 )
+
+	if ( IsValid( self.SpecBar ) ) then
+
+		local specH = self.SpecBar:DesiredHeight()
+
+		// Left visible even when empty, at zero height. A hidden panel gets no
+		// Think, so hiding it would stop it ever noticing the first spectator.
+		self.SpecBar:SetPos( pad, self.FooterY )
+		self.SpecBar:SetSize( w - pad * 2, math.max( 0, specH ) )
+
+		self.HintY = self.FooterY + ( ( specH > 0 ) and ( specH + SBScale( 6 ) ) or 0 )
+
+	else
+		self.HintY = self.FooterY
+	end
 
 end
 
@@ -727,28 +943,14 @@ function PANEL:Paint( w, h )
 	surface.SetDrawColor( COL_BORDER )
 	surface.DrawRect( pad, SBScale( 70 ), w - pad * 2, 1 )
 
-	if ( !self.FooterY ) then return end
+	if ( !self.HintY ) then return end
 
+	// Spectators are real child panels now, so the footer only draws the hint.
 	local hint = ( PHX && PHX.SBTranslate )
 		and PHX:SBTranslate( "DERMA_MENU_HINT", "Right-click a player for options" )
 		or "Right-click a player for options"
 
-	surface.SetFont( "PHX.SB.Sub" )
-	local hintW = surface.GetTextSize( hint )
-
-	draw.SimpleText( hint, "PHX.SB.Sub", w - pad, self.FooterY, COL_TEXT_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
-
-	if ( self.SpecText && self.SpecText ~= "" ) then
-
-		// Clipped so a long spectator list cannot run under the hint.
-		local avail  = w - pad * 2 - hintW - SBScale( 16 )
-		local sx, sy = self:LocalToScreen( pad, self.FooterY )
-
-		render.SetScissorRect( sx, sy, sx + math.max( 0, avail ), sy + SBScale( 24 ), true )
-		draw.SimpleText( self.SpecText, "PHX.SB.Sub", pad, self.FooterY, COL_TEXT_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
-		render.SetScissorRect( 0, 0, 0, 0, false )
-
-	end
+	draw.SimpleText( hint, "PHX.SB.Sub", w - pad, self.HintY, COL_TEXT_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
 
 end
 
