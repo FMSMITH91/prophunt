@@ -49,6 +49,7 @@ local COL_WIN     = Color(  92, 205, 130, 255 )
 local COL_URGENT  = Color( 226,  92,  82, 255 )
 
 local matBlur = Material( "pp/blurscreen" )
+local matGrad = Material( "gui/gradient_down" )
 
 // PHX:FTranslate returns the key itself for an undefined string, so the usual
 // `FTranslate( k ) or "text"` idiom never falls back. SBTranslate handles that;
@@ -137,6 +138,10 @@ function PANEL:Setup( id, map, screen )
 	self.Screen = screen
 	self.Thumb  = MapThumb( map )
 	self.Tint   = MapTint( map )
+
+	// The name bar clips anything too long (ph_awesomewarehouse_night_map and
+	// friends), so the full name is always available on hover.
+	self:SetTooltip( map )
 end
 
 function PANEL:OnMousePressed( code )
@@ -220,14 +225,23 @@ function PANEL:Paint( w, h )
 		surface.SetMaterial( self.Thumb )
 		surface.DrawTexturedRect( 0, 0, w, th )
 	else
+		// No name here: the bar directly below already carries it, and printing
+		// it twice per card just read as a doubled label. The tint alone is the
+		// map's identity; the gradient keeps it from looking like a flat swatch.
 		draw.RoundedBoxEx( r, 0, 0, w, th, self.Tint, true, true, false, false )
-		draw.SimpleText( self.Map, "PHX.MV.Card", w * 0.5, th * 0.5,
-			Color( 255, 255, 255, 55 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+		surface.SetDrawColor( 0, 0, 0, 70 )
+		surface.SetMaterial( matGrad )
+		surface.DrawTexturedRect( 0, 0, w, th )
 	end
 
-	// Scrim under the avatars so faces stay legible over a bright thumbnail.
-	surface.SetDrawColor( 0, 0, 0, 90 )
-	surface.DrawRect( 0, th - MVScale( 34 ), w, MVScale( 34 ) )
+	// Scrim under the avatars, so faces stay legible over a bright thumbnail.
+	// Only when there are faces - otherwise it is an unexplained dark band
+	// across the bottom of every card.
+	if ( #self.Voters > 0 ) then
+		surface.SetDrawColor( 0, 0, 0, 90 )
+		surface.DrawRect( 0, th - MVScale( 34 ), w, MVScale( 34 ) )
+	end
 
 	local pad = MVScale( 9 )
 
