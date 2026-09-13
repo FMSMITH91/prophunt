@@ -25,5 +25,11 @@ jobs:
       - name: Translations vs english.lua
         run: python3 .github/scripts/check_langs.py
 
+      # This one IS a gate. The net checker follows delegation chains, which
+      # makes it permissive; these cases prove it still flags an unguarded
+      # handler and still refuses to clear a chain with a gap in it.
+      - name: Self-test the net.Receive checker
+        run: python3 .github/scripts/test_check_net_receivers.py
+
       - name: Sender validation on server net.Receive handlers
         run: python3 .github/scripts/check_net_receivers.py

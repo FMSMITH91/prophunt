@@ -262,8 +262,13 @@ function PANEL:Paint( w, h )
 		draw.RoundedBoxEx( radius, 0, 0, SBScale( 3 ), h, tc, true, false, true, false )
 	end
 
-	// A dead player keeps their row but reads as inactive.
-	local fade = alive and 255 or 105
+	// A dead player keeps their row but reads as inactive. Only the identity
+	// fades - avatar, name, icons. The stats stay legible, because kills and
+	// deaths are the thing you opened the scoreboard to read and they matter
+	// just as much for someone who is already dead.
+	local fade  = alive and 255 or 105
+	local stats = alive and 255 or 215
+
 	self.Avatar:SetAlpha( fade )
 
 	local textX = self.NameX
@@ -289,7 +294,7 @@ function PANEL:Paint( w, h )
 	render.SetScissorRect( 0, 0, 0, 0, false )
 
 	for i, cell in ipairs( self.Cells ) do
-		if ( cell.draw ) then cell.draw( self, ply, self.CellX[ i ] or 0, cell, h, fade ) end
+		if ( cell.draw ) then cell.draw( self, ply, self.CellX[ i ] or 0, cell, h, stats ) end
 	end
 
 end
@@ -489,12 +494,19 @@ function PANEL:Init()
 	self.Scroll = vgui.Create( "DScrollPanel", self )
 	self.Scroll:SetPaintBackground( false )
 
+	// The bar only appears when there is something to scroll to, so it needs to
+	// read as an affordance rather than a hairline: a visible track plus a grip
+	// with real contrast. On a full server this is the only cue that there are
+	// more players below the fold.
 	local bar = self.Scroll:GetVBar()
-	bar:SetWide( SBScale( 6 ) )
+	bar:SetWide( SBScale( 8 ) )
 	bar:SetHideButtons( true )
-	bar.Paint = function() end
-	bar.btnGrip.Paint = function( _, w, h )
-		draw.RoundedBox( SBScale( 3 ), 0, 0, w, h, Color( 255, 255, 255, 40 ) )
+	bar.Paint = function( _, w, h )
+		draw.RoundedBox( SBScale( 4 ), 0, 0, w, h, Color( 255, 255, 255, 18 ) )
+	end
+	bar.btnGrip.Paint = function( pnl, w, h )
+		draw.RoundedBox( SBScale( 4 ), 0, 0, w, h,
+			Color( 255, 255, 255, pnl.Depressed and 190 or ( pnl:IsHovered() and 150 or 110 ) ) )
 	end
 
 end
