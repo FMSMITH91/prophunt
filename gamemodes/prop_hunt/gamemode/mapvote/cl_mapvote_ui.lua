@@ -101,6 +101,36 @@ local function MapTint( map )
 
 end
 
+/*
+	Column count for the compact grid.
+
+	Start from a comfortable row width rather than the fewest columns that fit -
+	fewest-columns gives two 580px rows carrying "ph_office" and a single digit,
+	which is mostly empty space - then widen the grid only as far as needed to
+	keep every row on screen. If even the narrowest sensible row cannot fit the
+	list, return that and let the scroll take over.
+*/
+local function FitColumns( n, availW, availH, cardH, gap, targetW, minW )
+
+	local function ColsFor( w )
+		return math.max( 1, math.floor( ( availW + gap ) / ( w + gap ) ) )
+	end
+
+	local cols    = ColsFor( targetW )
+	local maxCols = math.max( cols, ColsFor( minW ) )
+
+	local function Fits( c )
+		return math.ceil( n / c ) * ( cardH + gap ) - gap <= availH
+	end
+
+	while ( cols < maxCols && !Fits( cols ) ) do
+		cols = cols + 1
+	end
+
+	return cols
+
+end
+
 local function DrawBlur( panel, amount )
 
 	local x, y = panel:LocalToScreen( 0, 0 )
@@ -182,20 +212,76 @@ end
 
 function PANEL:PerformLayout( w, h )
 
-	local size = MVScale( 20 )
 	local pad  = MVScale( 8 )
-	local x    = w - pad - size
+	local size = self.Compact and MVScale( 18 ) or MVScale( 20 )
+
+	// Compact rows have no tile to sit on, so the faces go inline, just left of
+	// the vote count.
+	local x = self.Compact and ( w - MVScale( 46 ) - size ) or ( w - pad - size )
+	local y = self.Compact and ( ( h - size ) * 0.5 ) or ( self:ThumbHeight() - size - pad )
 
 	for _, av in ipairs( self.Faces ) do
 		av:SetSize( size, size )
-		av:SetPos( x, self:ThumbHeight() - size - pad )
+		av:SetPos( x, y )
 		x = x - size - MVScale( 3 )
 	end
 
 end
 
 function PANEL:ThumbHeight()
+	if ( self.Compact ) then return 0 end
 	return self:GetTall() - MVScale( 44 )
+end
+
+// One row: colour stripe, name, faces, count. Used when no map in the vote has
+// an image, where a tile would be a coloured rectangle earning its space in
+// scrolling rather than information.
+function PANEL:PaintCompact( w, h )
+
+	local selected = ( self.Screen && self.Screen.MyVote == self.ID )
+	local winner   = ( self.Screen && self.Screen.Winner == self.ID )
+	local r        = MVScale( 4 )
+
+	draw.RoundedBox( r, 0, 0, w, h, COL_CARD )
+
+	if ( self.HoverFrac > 0 ) then
+		draw.RoundedBox( r, 0, 0, w, h,
+			Color( COL_CARD_HI.r, COL_CARD_HI.g, COL_CARD_HI.b, 255 * self.HoverFrac ) )
+	end
+
+	// The tint is the map's only visual identity here, so it keeps a stripe.
+	draw.RoundedBoxEx( r, 0, 0, MVScale( 4 ), h, self.Tint, true, false, true, false )
+
+	local pad   = MVScale( 12 )
+	local nameX = MVScale( 14 )
+	local nameW = w - nameX - MVScale( 50 ) - ( #self.Faces * MVScale( 21 ) )
+
+	local sx, sy = self:LocalToScreen( nameX, 0 )
+	render.SetScissorRect( sx, sy, sx + math.max( 0, nameW ), sy + h, true )
+	draw.SimpleText( self.Map, "PHX.MV.Card", nameX, h * 0.5,
+		COL_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+	render.SetScissorRect( 0, 0, 0, 0, false )
+
+	draw.SimpleText( self.NumVotes, "PHX.MV.Card", w - pad, h * 0.5,
+		self.NumVotes > 0 and COL_TEXT or COL_DIM, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+
+	if ( self.ShareShown > 0 ) then
+		local barH = MVScale( 2 )
+		draw.RoundedBoxEx( r, 0, h - barH, math.max( barH, w * self.ShareShown ), barH,
+			winner and COL_WIN or COL_ACCENT, false, false, true, true )
+	end
+
+	local edge = winner and COL_WIN or ( selected and COL_ACCENT or nil )
+
+	if ( edge ) then
+		surface.SetDrawColor( edge )
+		surface.DrawOutlinedRect( 0, 0, w, h, MVScale( 2 ) )
+	end
+
+	if ( self.Flashing ) then
+		draw.RoundedBox( r, 0, 0, w, h, Color( COL_WIN.r, COL_WIN.g, COL_WIN.b, 60 ) )
+	end
+
 end
 
 function PANEL:Paint( w, h )
@@ -205,6 +291,8 @@ function PANEL:Paint( w, h )
 
 	self.HoverFrac  = math.Approach( self.HoverFrac, self:IsHovered() and 1 or 0, FrameTime() * 6 )
 	self.ShareShown = math.Approach( self.ShareShown, self.Share, FrameTime() * 1.5 )
+
+	if ( self.Compact ) then return self:PaintCompact( w, h ) end
 
 	local r  = MVScale( 6 )
 	local th = self:ThumbHeight()
@@ -382,10 +470,14 @@ function PANEL:SetMaps( maps )
 	self.Cards = {}
 
 	// RandomPairs so the same map is not always top-left, matching the original.
+	self.HasThumbs = false
+
 	for id, map in RandomPairs( maps ) do
 		local card = self.Scroll:Add( "PHXMapVoteCard" )
 		card:Setup( id, map, self )
 		table.insert( self.Cards, card )
+
+		if ( card.Thumb ) then self.HasThumbs = true end
 	end
 
 	self:InvalidateLayout()
@@ -465,33 +557,61 @@ function PANEL:PerformLayout( w, h )
 
 	self:SetSize( ScrW(), ScrH() )
 
-	local cw = math.min( ScrW() * 0.86, MVScale( 1220 ) )
-	local ch = math.min( ScrH() * 0.86, MVScale( 840 ) )
-
-	self.Canvas:SetSize( cw, ch )
-	self.Canvas:SetPos( ( ScrW() - cw ) * 0.5, ( ScrH() - ch ) * 0.5 )
-
 	local pad     = MVScale( 20 )
 	local headerH = MVScale( 96 )
 	local footerH = MVScale( 46 )
 
+	local cw    = math.min( ScrW() * 0.86, MVScale( 1220 ) )
+	local maxCh = math.min( ScrH() * 0.86, MVScale( 840 ) )
+
+	/*
+		Two layouts.
+
+		Where maps ship images, big cards earn their space and scrolling is a
+		fair trade. Where none do - which is every ph_* map - the tile is a
+		coloured rectangle, so it is charging a scroll for no information. The
+		compact rows fit the whole list on one screen instead.
+	*/
+	local compact = !self.HasThumbs
+	local gap     = compact and MVScale( 6 ) or MVScale( 12 )
+	local availW  = cw - pad * 2 - MVScale( 10 )
+	local n       = math.max( 1, #self.Cards )
+
+	local cardH, cols
+
+	if ( compact ) then
+		cardH = MVScale( 40 )
+		// Fit against the tallest the panel may become, then shrink to whatever
+		// the grid actually needs.
+		cols = FitColumns( n, availW, maxCh - headerH - footerH, cardH, gap,
+			MVScale( 340 ), MVScale( 190 ) )
+	else
+		cardH = MVScale( 166 )
+		cols  = math.max( 1, math.floor( ( availW + gap ) / ( MVScale( 236 ) + gap ) ) )
+	end
+
+	local rows  = math.ceil( n / cols )
+	local gridH = rows * ( cardH + gap ) - gap
+
+	// Height follows the grid rather than always filling 86% of the screen,
+	// which left a mostly empty panel for a short map list.
+	local ch = math.Clamp( headerH + gridH + footerH + MVScale( 8 ),
+		MVScale( 280 ), maxCh )
+
+	self.Canvas:SetSize( cw, ch )
+	self.Canvas:SetPos( ( ScrW() - cw ) * 0.5, ( ScrH() - ch ) * 0.5 )
+
 	self.Scroll:SetPos( pad, headerH )
 	self.Scroll:SetSize( cw - pad * 2, math.max( 0, ch - headerH - footerH ) )
 
-	// Flow the cards, wrapping to as many rows as needed.
-	local gap    = MVScale( 12 )
-	local cardW  = MVScale( 236 )
-	local cardH  = MVScale( 166 )
-	local avail  = self.Scroll:GetWide() - MVScale( 10 )
-	local cols   = math.max( 1, math.floor( ( avail + gap ) / ( cardW + gap ) ) )
-
 	// Spread any leftover width across the columns rather than leaving a gutter.
-	local realW = math.floor( ( avail - gap * ( cols - 1 ) ) / cols )
+	local realW = math.floor( ( availW - gap * ( cols - 1 ) ) / cols )
 
 	for i, card in ipairs( self.Cards ) do
 		local col = ( i - 1 ) % cols
 		local row = math.floor( ( i - 1 ) / cols )
 
+		card.Compact = compact
 		card:SetSize( realW, cardH )
 		card:SetPos( col * ( realW + gap ), row * ( cardH + gap ) )
 	end
