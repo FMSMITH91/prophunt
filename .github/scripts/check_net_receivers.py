@@ -101,6 +101,93 @@ def body_of(src, start):
     return src[start:start + 4000]
 
 
+def find_function(src, name):
+    """(args, body) for `function name(...)` defined anywhere in src, else (None, None)."""
+    m = re.search(r"\bfunction\s+%s\s*\(([^)]*)\)" % re.escape(name), src)
+    if not m:
+        return None, None
+    args = [a.strip() for a in m.group(1).split(",") if a.strip()]
+    return args, body_of(src, m.start())
+
+
+def find_table(src, name):
+    """Text of the table literal assigned to `name`, braces included, else None."""
+    m = re.search(r"\b%s\s*=\s*\{" % re.escape(name), src)
+    if not m:
+        return None
+    start = m.end() - 1
+    depth = 0
+    for i in range(start, len(src)):
+        if src[i] == "{":
+            depth += 1
+        elif src[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return src[start:i + 1]
+    return None
+
+
+def sender_checked(src, body, arg, depth=0, seen=None):
+    """Does `body` validate `arg`, directly or through the helpers it calls?
+
+    Follows three shapes, because real handlers rarely check inline:
+      1. a direct rank/team/alive test
+      2. a call to a named helper that checks (possibly itself via a helper)
+      3. dispatch through a table of handlers - TBL[key](ply, ...) - which
+         counts only if EVERY function in that table validates
+
+    Shape 3 is what sv_admin.lua uses: the receiver hands off to
+    ManageNetMessages, which dispatches through net_functions, whose every
+    entry calls doAdminStrictCheck, which calls ply:PHXIsStaff(). Without
+    following that, seven safe handlers sit permanently in the review list and
+    drown out anything real.
+    """
+    if depth > 4:
+        return False
+    seen = set() if seen is None else seen
+    argre = re.escape(arg)
+
+    if re.search(CHECKS[0][1], body):
+        return True
+    if re.search(r"%s\s*:\s*(Team|Alive)\s*\(" % argre, body):
+        return True
+
+    for disp in re.finditer(r"\b([A-Za-z_][\w.]*)\s*\[[^\]]+\]\s*\(\s*%s\b" % argre, body):
+        tbl = find_table(src, disp.group(1))
+        if not tbl:
+            continue
+        entries = list(re.finditer(r"\bfunction\s*\(([^)]*)\)", tbl))
+        if not entries:
+            continue
+        # set(seen) per entry: the visited set guards against recursion cycles
+        # along one path, so sharing it between siblings would let the first
+        # entry consume a helper and make every later entry "already seen" and
+        # therefore unchecked.
+        if all(
+            sender_checked(
+                src,
+                body_of(tbl, e.start()),
+                ([a.strip() for a in e.group(1).split(",") if a.strip()] or [arg])[0],
+                depth + 1, set(seen))
+            for e in entries
+        ):
+            return True
+
+    for call in re.finditer(r"\b([A-Za-z_][\w.:]*)\s*\(\s*%s\b" % argre, body):
+        fn = call.group(1)
+        if fn in NOT_DELEGATION or fn.split(".")[0] in ("net", "timer", "hook", "table", "util"):
+            continue
+        if fn in seen:
+            continue
+        hargs, hbody = find_function(src, fn)
+        if hbody is None:
+            continue
+        if sender_checked(src, hbody, (hargs or [arg])[0], depth + 1, seen | {fn}):
+            return True
+
+    return False
+
+
 def main():
     findings = 0
     review = 0
@@ -163,6 +250,13 @@ def main():
                     break
 
                 gated = any(p.split(" ")[0] in ("admin","team","alive") for p in present)
+
+                # Not gated inline - try to resolve the chain it delegates to
+                # before writing it off as needing a human.
+                if not gated and sender_checked(src, body, args[1]):
+                    present.append("admin (resolved through helpers)")
+                    gated = True
+
                 if gated:
                     verdict = "ok"
                 elif delegated:

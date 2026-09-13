@@ -8,9 +8,28 @@ local MapVote = PHX.MV
 MapVote.Continued = false
 local RecentMapsFile = PHX.ConfigPath .. "/mapvote_recentmaps.txt"
 
+/*
+    Every accepted message here ends in a net.Broadcast(), so one client packet
+    becomes one packet per connected player. Left unthrottled a modified client
+    turns that into an amplifier and can saturate the server's uplink for the
+    whole length of a vote.
+
+    The vote itself was never forgeable - it is keyed by SteamID and the map id
+    is validated below - so this is purely about the outbound traffic. A player
+    changing their mind needs nothing like this rate; anything faster is dropped
+    before it is read.
+
+    The deadline lives on the player so it disappears with them, rather than in
+    a table that would need pruning on disconnect.
+*/
+local VOTE_COOLDOWN = 0.4
+
 net.Receive("RAM_MapVoteUpdate", function(len, ply)
     if(MapVote.Allow) then
         if(IsValid(ply)) then
+            if(ply.PHXNextMapVote and ply.PHXNextMapVote > CurTime()) then return end
+            ply.PHXNextMapVote = CurTime() + VOTE_COOLDOWN
+            
             local update_type = net.ReadUInt(3)
             
             if(update_type == MapVote.UPDATE_VOTE) then
