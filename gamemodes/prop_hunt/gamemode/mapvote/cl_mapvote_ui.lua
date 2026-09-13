@@ -410,20 +410,38 @@ function PANEL:Think()
 		self:SendVote( self.Pending )
 	end
 
-	// Rebuild the tally from MapVote.Votes every frame: it is keyed by SteamID,
-	// so players who disconnected mid-vote simply stop being found and drop out
-	// without any bookkeeping.
-	local byMap, total = {}, 0
+	/*
+		Rebuild the tally from MapVote.Votes every frame.
 
+		Walk the vote table, not the player list. MapVote.Votes maps a vote key
+		to a map id, so each KEY is one vote - and keys are SteamIDs, which are
+		not unique: every bot reports "BOT". Counting per connected player would
+		turn a single "BOT" entry into one vote per bot on the server, so a
+		30-bot server could show 30 phantom votes on one map.
+
+		Resolving keys to players also means anyone who disconnected mid-vote
+		simply fails to resolve and drops out, with no bookkeeping.
+	*/
+	local byKey = {}
 	for _, ply in ipairs( player.GetAll() ) do
-		local id = MapVote.Votes[ ply:SteamID() ]
-		if ( id ) then
+		local sid = ply:SteamID()
+		if ( !byKey[ sid ] ) then byKey[ sid ] = ply end
+	end
+
+	local byMap, total, voters = {}, 0, 0
+
+	for sid, id in pairs( MapVote.Votes ) do
+		local ply = byKey[ sid ]
+
+		if ( IsValid( ply ) ) then
 			byMap[ id ] = byMap[ id ] or { players = {}, votes = 0 }
 			table.insert( byMap[ id ].players, ply )
 
 			local weight = MapVote.HasExtraVotePower( ply ) and 2 or 1
 			byMap[ id ].votes = byMap[ id ].votes + weight
-			total = total + weight
+
+			total   = total + weight
+			voters  = voters + 1
 		end
 	end
 
@@ -435,7 +453,11 @@ function PANEL:Think()
 		card:SetVoters( e and e.players or {} )
 	end
 
-	self.Total = total
+	// Total is weighted, for the share bars. Voters is a headcount, for the
+	// "n / n voted" line - otherwise a single extra-power vote would read as
+	// "2 / 11 voted" with only one person having actually voted.
+	self.Total  = total
+	self.Voters = voters
 
 end
 
@@ -516,8 +538,8 @@ function PANEL:PaintChrome( cw, ch )
 		COL_TEXT, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
 
 	local sub = self.Winner and ( MapVote.CurrentMaps[ self.Winner ] or "" )
-		or Tr( "PHXM_MV_TALLY", ( self.Total or 0 ) .. " / " .. #player.GetAll() .. " voted",
-			self.Total or 0, #player.GetAll() )
+		or Tr( "PHXM_MV_TALLY", ( self.Voters or 0 ) .. " / " .. #player.GetAll() .. " voted",
+			self.Voters or 0, #player.GetAll() )
 
 	draw.SimpleText( sub, "PHX.MV.Sub", cx + pad, cy + MVScale( 56 ),
 		self.Winner and COL_WIN or COL_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
