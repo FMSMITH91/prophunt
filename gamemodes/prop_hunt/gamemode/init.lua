@@ -784,12 +784,11 @@ function GM:PlayerUse(pl, ent)
 end
 
 function GM:CanStartRound()
-	-- ph_waitforplayers gates the whole waiting system, and it defaults to 0.
-	-- This used to ignore it and block on ph_min_waitforplayers regardless, so a
-	-- server that dropped below the minimum stopped starting rounds even though
-	-- waiting was switched off.
-	if ( not PHX:GetCVar( "ph_waitforplayers" ) ) then return true end
-	
+	-- Always gate on having enough players. This is NOT the same switch as
+	-- ph_waitforplayers: that one controls the per-team timer pause and score
+	-- reset inside GM:RoundStart. This is the basic "do not run rounds on an
+	-- empty server" check, and tying it to ph_waitforplayers made rounds start
+	-- with nobody connected.
 	return #team.GetPlayers( TEAM_HUNTERS ) + #team.GetPlayers( TEAM_PROPS ) >= PHX:GetCVar( "ph_min_waitforplayers" )
 end
 
