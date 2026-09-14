@@ -235,12 +235,11 @@ function GM:ShowHelp()
         Help:NoFadeIn()
         
 	else
-	
-		Help:AddCancelButton()
-        
-        Help:MakePopup()
-        Help:NoFadeIn()
-		ErrorNoHalt("[Prop Hunt: X] - Unable to open Help splash screen!!!")
+
+		-- `Help` is local to the branch above, so this used to call methods on a
+		-- nil global and error out - the diagnostic below was never reached.
+		-- There is no panel to show when VGUISplash is missing; just say so.
+		ErrorNoHalt("[Prop Hunt: X] - Unable to open Help splash screen: GAMEMODE.VGUISplash is missing or is not a table!\n")
 
 	end
 	
@@ -845,14 +844,19 @@ function PHX:ShowTutorPopup()
 				local Team = 2
 				if eData.type and eData.type ~= nil then
 					if eData.type == "number" then
-						var = input.GetKeyName(eId):upper()
+						var = ( input.GetKeyName(eId) or "?" ):upper()
 					elseif eData.type == "convar" then
-						var = input.GetKeyName( GetConVar(eId):GetInt() ):upper()
+						-- An addon can name a ConVar that does not exist.
+						local cvar = GetConVar( eId )
+						if cvar then var = ( input.GetKeyName( cvar:GetInt() ) or "?" ):upper() end
 					elseif eData.type == "default" then
-						if (string.find(id, "^KEY_")) then
+						-- Was string.find(id, ...): `id` belongs to the loop above
+						-- and is scoped to it, so here it resolved to a nil global
+						-- and every "default" entry killed this popup.
+						if isstring(eId) and string.find(eId, "^KEY_") then
 							var = PHX:FTranslate(eId):upper()
 						else
-							var = eId:upper()
+							var = tostring(eId):upper()
 						end
 					end
 					if eData.team and eData.team ~= nil then Team = eData.team end
