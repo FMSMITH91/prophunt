@@ -185,7 +185,11 @@ function MapVote.PHXStart(length, current, limit, prefix)
     limit 		= limit or MapVote.PHXConfig.MapLimit or 24
     prefix 		= prefix or MapVote.PHXConfig.MapPrefixes
     
-	local cooldown 	= MapVote.PHXConfig.EnableCooldown or (!MapVote.PHXConfig.EnableCooldown and true)
+	-- `x or (!x and true)` is true for every possible x, so mv_cooldown 0 could
+	-- never actually turn the recent-map cooldown off. Read the setting, and
+	-- only default to on when it is genuinely absent.
+	local cooldown 	= MapVote.PHXConfig.EnableCooldown
+	if cooldown == nil then cooldown = true end
 
     local is_expression = false
 	local ulxmap = MapVote.GetFromULX()
@@ -300,11 +304,13 @@ function MapVote.PHXStart(length, current, limit, prefix)
     end)
 end
 
-hook.Add( "Shutdown", "RemoveRecentMaps", function()
-        if file.Exists( RecentMapsFile, "DATA" ) then
-            file.Delete( RecentMapsFile )
-        end
-end )
+-- There was a hook.Add( "Shutdown", ... ) here that deleted RecentMapsFile.
+-- Two things were wrong with it. The event is spelled "ShutDown", so it never
+-- fired at all; and GM:ShutDown runs whenever the Lua state goes away - "for
+-- example on map change" - which is exactly the transition this file exists to
+-- survive. Correcting the spelling would therefore have wiped the cooldown on
+-- every changelevel and silently disabled the feature. PHX.CoolDownDoStuff
+-- already trims the list to mv_mapbeforerevote entries, so it does not grow.
 
 -- Original: MapVote.Cancel()
 function MapVote.PHXCancel()

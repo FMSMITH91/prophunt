@@ -189,11 +189,20 @@ CVAR["ph_waitforplayers"]					=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY, 	"Should w
 CVAR["ph_min_waitforplayers"]				=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, 	"Numbers of mininum players that we should wait for round start. Value must not contain less than 1.", { min = 1, max = game.MaxPlayers() }, 
 function(cvarname, value)
     cvars.AddChangeCallback(cvarname, function(_, _, new)
-        if tonumber(new) < 1 then
-            RunConsoleCommand("ph_min_waitforplayers", "1")
-            SetGlobalInt( cvarname, tonumber(new) )
-            print("[ConVar:WaitForPlayers] Warning: "..cvarname.." value cannot contain less than 0. Use 'ph_waitforplayers' 0 to disable!")
+        -- Supplying a callback REPLACES the default SetGlobalInt sync above, so
+        -- this has to do it itself. It only did so on the rejection path, which
+        -- meant a valid change never reached PHX:GetCVar (it kept reading the
+        -- boot value until the next PostCleanupMap re-synced everything), while
+        -- an invalid 0 was the one value that did get written through.
+        local num = tonumber(new) or 1
+
+        if num < 1 then
+            print("[ConVar:WaitForPlayers] Warning: "..cvarname.." cannot be less than 1. Use 'ph_waitforplayers 0' to disable waiting!")
+            num = 1
+            RunConsoleCommand( cvarname, "1" )
         end
+
+        SetGlobalInt( cvarname, num )
     end, "phx.cvnum_" .. cvarname)
 end }
 
