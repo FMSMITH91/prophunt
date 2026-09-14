@@ -37,9 +37,16 @@ function CLASS:OnSpawn(pl)
 	-- Prevent 'mod_studio: MOVETYPE_FOLLOW with No Models error.'
 	pl:DrawViewModel( false )
     
-    -- Create Prop Entity
+    -- Create Prop Entity. This can fail when the entity limit is reached, and
+    -- CreatePlayerPropEntity bails out when it does - but everything below here
+    -- uses pl.ph_prop, and touching a NULL entity is a hard error. Stop instead
+    -- of spawning the player into a broken half-state.
     pl:CreatePlayerPropEntity()
-	
+    if not IsValid( pl.ph_prop ) then
+        pl:PrintMessage( HUD_PRINTCONSOLE, "[PHX] Could not create your prop entity - the server has hit its entity limit." )
+        return
+    end
+
 	-- Do not allow Pitch Rotation until the prop is changing to a new prop.
 	pl:EnablePropPitchRot( false )
     

@@ -119,7 +119,21 @@ function PHX:CheckUpdate()
 	UPDATE_DO_FETCH()
 end
 
-concommand.Add("ph_check_update", function() PHX:CheckUpdate() end , nil, "Force Check Update Prop Hunt: X.")
+-- This file is shared, so the command exists on the server too - where running
+-- it costs an outbound http.Fetch (plus a second one to the backup URL on any
+-- failure). Ungated, one client could drive that as fast as they could bind a
+-- key, so the server side is staff-only like every other PH:X admin command.
+-- util.IsStaff() also covers the dedicated server console, where ply == NULL.
+-- Clients may still check their own copy: that costs the server nothing.
+concommand.Add("ph_check_update", function( ply )
+	if SERVER and ( not util.IsStaff( ply ) ) then
+		if IsValid( ply ) then ply:PHXChatInfo( "ERROR", "MISC_ACCESSDENIED" ) end
+		PHX:VerboseMsg("[Update] Rejected ph_check_update from a non-staff player.", 2)
+		return
+	end
+
+	PHX:CheckUpdate()
+end , nil, "Force Check Update Prop Hunt: X. (Server: staff only)")
 
 local cooldown	= 86400
 hook.Add("Initialize", "PHX.CheckUpdateInit", function()
