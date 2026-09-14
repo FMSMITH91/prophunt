@@ -79,7 +79,21 @@ function CLASS:OnSpawn(pl)
 	end
 	
 	local unlock_time = GetGlobalInt("unBlind_Time", 0)
-	if unlock_time > 2 then
+
+	-- A blind window this short is not worth a timer, but the hunter still has
+	-- to be armed. This used to just fall out of the function: no loadout, no
+	-- blindfold, and no _LoadOutUnblind either - which is the flag the late
+	-- loadout in ClearBlindedHuntersList keys off - so with
+	-- ph_hunter_blindlock_time set to 2 or less (the ConVar has no minimum;
+	-- only the F1 slider clamps it to 15) hunters played the whole round
+	-- unarmed. Arm them immediately instead, as the no-blind path above does.
+	if unlock_time <= 2 then
+		self:StartLoadOut( pl )
+		pl.PHXHasLoadout = true
+		return
+	end
+
+	do
 		local TimerID = "tmr.hunterUnblind:"..pl:EntIndex()
 		pl.TimerBlindID = TimerID
 		pl:Blind(true)
