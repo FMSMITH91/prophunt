@@ -37,7 +37,6 @@ local MsgErrorLevel = {
 	{ "[FATAL]", 	Color(208,24,24) }
 }
 local maxMsgErrorLevel = #MsgErrorLevel
-local ErrorKeys = table.GetKeys( MsgErrorLevel )
 
 CreateConVar( "phx_verbose", "0", FCVAR_ARCHIVE, verbHelp, 0, maxMsgErrorLevel )
 function PHX:VerboseMsg( text, level )
@@ -46,7 +45,10 @@ function PHX:VerboseMsg( text, level )
 	local VerboseLevel = GetConVar("phx_verbose"):GetInt()
 	
 	if VerboseLevel > 0 and text then
-		if ErrorKeys[level] >= VerboseLevel then
+		-- Was ErrorKeys[level], ie. table.GetKeys(MsgErrorLevel)[level]. That is
+		-- just `level` for a pure array, but only because pairs() happens to walk
+		-- 1..n in order - it is not required to. Compare the level directly.
+		if level >= VerboseLevel then
 			local lv = MsgErrorLevel[ level ]
 			local realm = Color(231,219,116)
 			if SERVER then realm = Color(137,222,255); end

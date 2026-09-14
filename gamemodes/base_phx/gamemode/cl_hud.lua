@@ -297,5 +297,10 @@ end
 function GM:UpdateHUD_AddedTime( iTimeAdded )
 	// to do or to override, your choice
 end
-usermessage.Hook( "RoundAddedTime", function( um ) if( GAMEMODE && um ) then GAMEMODE:UpdateHUD_AddedTime( um:ReadFloat() ) end end )
+-- Was usermessage.Hook, removed from Garry's Mod alongside umsg. See
+-- round_controller.lua's GM:AddRoundTime for the sending half.
+net.Receive( "PHX.RoundAddedTime", function()
+	local added = net.ReadFloat()
+	if ( GAMEMODE ) then GAMEMODE:UpdateHUD_AddedTime( added ) end
+end )
 ]]--

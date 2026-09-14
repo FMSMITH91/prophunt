@@ -13,7 +13,12 @@ RTV.Wait = 60 -- The wait time in seconds. This is how long a player has to wait
 
 RTV._ActualWait = CurTime() + RTV.Wait
 
-RTV.PlayerCount = MapVote.PHXConfig.RTVPlayerCount or 3
+-- Read live. This used to snapshot mv_rtvcount at file load, so the cvar's
+-- change callback updated MapVote.PHXConfig and RTV carried on using the value
+-- it had at boot - changing mv_rtvcount mid-map did nothing at all.
+function RTV.GetPlayerCount()
+	return MapVote.PHXConfig.RTVPlayerCount or 3
+end
 
 function RTV.ChatPrint( mType, ply, bBroadcast, msg, ... )
 	
@@ -103,7 +108,7 @@ function RTV.CanVote( ply )
 	if ply.RTVoted then
 		return false, "PHXM_MV_HAS_VOTED"
 	end
-	if plyCount < RTV.PlayerCount then
+	if plyCount < RTV.GetPlayerCount() then
         return false, "PHXM_MV_NEED_MORE_PLY"
     end
 

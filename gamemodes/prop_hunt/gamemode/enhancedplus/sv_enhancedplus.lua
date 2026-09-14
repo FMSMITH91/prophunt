@@ -331,8 +331,10 @@ function GM:CheckTeamBalanceCustom()
 			end
 		end
 	else
-		math.randomseed(os.time())
-		for ix = 1, 5 do math.random() end 
+		-- No math.randomseed(os.time()) here: it reseeds the one global RNG every
+		-- round from a value with 1-second granularity, degrading randomness for
+		-- everything else that draws from it (taunt picks, lucky balls, prop
+		-- selection). Garry's Mod already seeds the RNG at startup.
 		for ix = 1, math.random(2, 5) do table.CustomShuffle(plyrTable) end 
 
 		if PHX:GetCVar( "ph_preventconsecutivehunting" ) then
@@ -343,8 +345,22 @@ function GM:CheckTeamBalanceCustom()
 				teamContainingHunters = TEAM_PROPS
 			end
 
-			for _, pl in pairs(team.GetPlayers(teamContainingHunters)) do
-				pl:SetForceAsProp( true )
+			local lastRoundsHunters = team.GetPlayers(teamContainingHunters)
+
+			-- Only honour this if enough players are left to actually fill the
+			-- hunter slots. If everyone played as a Hunter last round they would
+			-- all be flagged, the loop below would find no eligible pick, and the
+			-- round would start with ZERO hunters - CheckPlayerDeathRoundEnd then
+			-- ends it at once and the server spins through rounds. Preventing
+			-- consecutive hunting is a nicety; having hunters is not.
+			if (plyrCount - #lastRoundsHunters) >= hunterCount then
+				for _, pl in pairs(lastRoundsHunters) do
+					pl:SetForceAsProp( true )
+				end
+			else
+				PHX:VerboseMsg("[TeamBalance] Skipping ph_preventconsecutivehunting this round: only "
+					.. (plyrCount - #lastRoundsHunters) .. " of " .. plyrCount
+					.. " players did not hunt last round, and " .. hunterCount .. " hunters are needed.", 2)
 			end
 		end
 
@@ -389,7 +405,11 @@ function GM:CheckTeamBalance( bDontKillPlayer )
 				while team.NumPlayers( id ) < team.NumPlayers( highest ) - 1 do
 				
 					local ply = GAMEMODE:FindLeastCommittedPlayerOnTeam( highest )
-					
+
+					-- base_phx's version breaks here and this override dropped it.
+					-- Without it a nil pick keeps the `while` spinning forever.
+					if !IsValid( ply ) then break end
+
 					if !bDontKillPlayer then ply:Kill() end
 					-- :SetTeam() bug where ply.PHXHasLoadout still true, OnPreRoundRestart will handles it.
 					ply:SetTeam( id )

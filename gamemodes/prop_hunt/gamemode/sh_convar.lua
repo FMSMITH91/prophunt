@@ -15,10 +15,20 @@ local ConVarTranslate = {
 			CreateConVar(name, tostring(value), fcvar, help) -- for string, they don't have min and max convar limit, so we'll use 'function' as our advantage.
 			SetGlobalString(name, tostring(value))
 			
+			-- Always keep the replicated global in step, under an identifier of its
+			-- own. A custom callback used to REPLACE this branch rather than add to
+			-- it, so every cvar supplying one had to re-implement the sync by hand;
+			-- ph_min_waitforplayers forgot, and a cvar whose global never updates is
+			-- a cvar that silently does nothing. The distinct id matters: the custom
+			-- callbacks register as phx.cv<type>_<name>, and AddChangeCallback
+			-- replaces an existing callback that shares an identifier. Reading the
+			-- ConVar rather than the handed-in `new` keeps this correct regardless of
+			-- callback order, including when a custom callback clamps an out-of-range
+			-- value by calling RunConsoleCommand.
+			cvars.AddChangeCallback(name, function() SetGlobalString(name, GetConVar(name):GetString()) end, "phx.sync_" .. name)
+			
 			if (data and data ~= nil) then
 				if type(data) == "function" then data( name, value ) end
-			else
-				cvars.AddChangeCallback(name, function(_,_,new) SetGlobalString(name, tostring(new)) end, "phx.cvstr_" .. name)
 			end
 		end,
 		Get = function(name, value)
@@ -30,10 +40,20 @@ local ConVarTranslate = {
 			CreateConVar(name, value, fcvar, help, 0, 1) -- Forcing boolean's min max convar limit to "always 0 and 1".
 			SetGlobalBool(name, tobool(value))
 			
+			-- Always keep the replicated global in step, under an identifier of its
+			-- own. A custom callback used to REPLACE this branch rather than add to
+			-- it, so every cvar supplying one had to re-implement the sync by hand;
+			-- ph_min_waitforplayers forgot, and a cvar whose global never updates is
+			-- a cvar that silently does nothing. The distinct id matters: the custom
+			-- callbacks register as phx.cv<type>_<name>, and AddChangeCallback
+			-- replaces an existing callback that shares an identifier. Reading the
+			-- ConVar rather than the handed-in `new` keeps this correct regardless of
+			-- callback order, including when a custom callback clamps an out-of-range
+			-- value by calling RunConsoleCommand.
+			cvars.AddChangeCallback(name, function() SetGlobalBool(name, GetConVar(name):GetBool()) end, "phx.sync_" .. name)
+			
 			if (data and data ~= nil) then
 				if type(data) == "function" then data( name, value ) end
-			else
-				cvars.AddChangeCallback(name, function(_,_,new) SetGlobalBool(name, tobool(new)) end, "phx.cvbool_" .. name)
 			end
 		end,
 		Get = function(name, value)
@@ -49,10 +69,20 @@ local ConVarTranslate = {
 			end
 			SetGlobalInt(name, tonumber(value))
 			
+			-- Always keep the replicated global in step, under an identifier of its
+			-- own. A custom callback used to REPLACE this branch rather than add to
+			-- it, so every cvar supplying one had to re-implement the sync by hand;
+			-- ph_min_waitforplayers forgot, and a cvar whose global never updates is
+			-- a cvar that silently does nothing. The distinct id matters: the custom
+			-- callbacks register as phx.cv<type>_<name>, and AddChangeCallback
+			-- replaces an existing callback that shares an identifier. Reading the
+			-- ConVar rather than the handed-in `new` keeps this correct regardless of
+			-- callback order, including when a custom callback clamps an out-of-range
+			-- value by calling RunConsoleCommand.
+			cvars.AddChangeCallback(name, function() SetGlobalInt(name, GetConVar(name):GetInt()) end, "phx.sync_" .. name)
+			
 			if (f and f ~= nil) then
 				if type(f) == "function" then f( name, value ) end
-			else
-				cvars.AddChangeCallback(name, function(_,_,new) SetGlobalInt(name, tonumber(new)) end, "phx.cvnum_" .. name)
 			end
 		end,
 		Get = function(name, value)
@@ -68,10 +98,20 @@ local ConVarTranslate = {
 			end
 			SetGlobalFloat(name, value)
 			
+			-- Always keep the replicated global in step, under an identifier of its
+			-- own. A custom callback used to REPLACE this branch rather than add to
+			-- it, so every cvar supplying one had to re-implement the sync by hand;
+			-- ph_min_waitforplayers forgot, and a cvar whose global never updates is
+			-- a cvar that silently does nothing. The distinct id matters: the custom
+			-- callbacks register as phx.cv<type>_<name>, and AddChangeCallback
+			-- replaces an existing callback that shares an identifier. Reading the
+			-- ConVar rather than the handed-in `new` keeps this correct regardless of
+			-- callback order, including when a custom callback clamps an out-of-range
+			-- value by calling RunConsoleCommand.
+			cvars.AddChangeCallback(name, function() SetGlobalFloat(name, GetConVar(name):GetFloat()) end, "phx.sync_" .. name)
+			
 			if (f and f ~= nil) then
 				if type(f) == "function" then f( name, value ) end
-			else
-				cvars.AddChangeCallback(name, function(_,_,new) SetGlobalFloat(name, tonumber(new)) end, "phx.cvflt_" .. name)
 			end
 		end,
 		Get = function(name, value)

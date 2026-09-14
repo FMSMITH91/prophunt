@@ -57,25 +57,39 @@ end
 local state = false
 local disabledcolor = Color(100,100,100,255)
 
-local xAdd = pos.x + 165
-local yAdd = pos.y + 142.5
+local xAdd, yAdd
 local tbl = {}
 
--- todo: do a better math next time. Also hey, Paralellogram!
-tbl.hp = {
-	{ x = xAdd,			y = yAdd + 30 },	-- a
-	{ x = xAdd + 15,	y = yAdd + 15 },	-- b
-	{ x = xAdd,			y = yAdd + 15 },	-- c end
-	{ x = xAdd,			y = yAdd + 30 }		-- d end
-}
+-- All of this is derived from ScrW()/ScrH(), and used to be computed once when
+-- the file loaded. Changing resolution (or going windowed) left the HUD anchored
+-- to the old screen until the next map change. Recomputed on demand instead, and
+-- again whenever the screen size actually changes.
+local function RecalculateLayout()
+	pos.x,  pos.y  = 0, ScrH() - 230
+	posw.x, posw.y = ScrW() - 480, ScrH() - 130
 
-local yArmorAdd = yAdd + 22.5
-tbl.Armor = {
-	{ x = xAdd - 10,	y = yArmorAdd + 20 },
-	{ x = xAdd - 5,		y = yArmorAdd + 15 },
-	{ x = xAdd,			y = yArmorAdd + 15 },
-	{ x = xAdd,			y = yArmorAdd + 20 }
-}
+	xAdd = pos.x + 165
+	yAdd = pos.y + 142.5
+
+	-- todo: do a better math next time. Also hey, Paralellogram!
+	tbl.hp = {
+		{ x = xAdd,			y = yAdd + 30 },	-- a
+		{ x = xAdd + 15,	y = yAdd + 15 },	-- b
+		{ x = xAdd,			y = yAdd + 15 },	-- c end
+		{ x = xAdd,			y = yAdd + 30 }		-- d end
+	}
+
+	local yArmorAdd = yAdd + 22.5
+	tbl.Armor = {
+		{ x = xAdd - 10,	y = yArmorAdd + 20 },
+		{ x = xAdd - 5,		y = yArmorAdd + 15 },
+		{ x = xAdd,			y = yArmorAdd + 15 },
+		{ x = xAdd,			y = yArmorAdd + 20 }
+	}
+end
+
+RecalculateLayout()
+hook.Add("OnScreenSizeChanged", "PHX.HUDRelayout", RecalculateLayout)
 
 local hpx	= 0
 local armx	= 0

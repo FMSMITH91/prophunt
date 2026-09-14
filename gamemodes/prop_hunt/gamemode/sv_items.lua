@@ -275,6 +275,7 @@ PHX.DEVIL_BALL = {
 					pl:ChatPrint("[Devil Crystal] super speed power up exhausted...")
 					pl:SendLua("surface.PlaySound('prop_idbs/generic_exhaust.wav')")
 					pl:SetWalkSpeed( pl._OriginalWSpeed )
+					pl._OriginalWSpeed = nil	-- else it leaks onto a later class with a different base speed
 					pl.ph_fastspeed = false
 				end)
 			end
@@ -307,6 +308,7 @@ PHX.DEVIL_BALL = {
 					pl:ChatPrint("[Devil Crystal] slow down power up exhausted...")
 					pl:SendLua("surface.PlaySound('prop_idbs/generic_exhaust.wav')")
 					pl:SetWalkSpeed( pl._OriginalWSpeed )
+					pl._OriginalWSpeed = nil	-- ditto
 					pl.ph_slowspeed = false
 				end)
 			end
@@ -602,6 +604,7 @@ local function ResetEverything()
 			
 			if v:Alive() then
 				if v:Team() == TEAM_PROPS && v._OriginalWSpeed then v:SetWalkSpeed(v._OriginalWSpeed) end
+				v._OriginalWSpeed = nil		-- a new round re-applies the class walk speed
 				if v:Team() == TEAM_PROPS && IsValid(v.ph_prop) then v.ph_prop:DrawShadow(true); v.ph_prop:SetMaterial(""); end
 				if v:IsFrozen() then v:Freeze(false) end
 			end

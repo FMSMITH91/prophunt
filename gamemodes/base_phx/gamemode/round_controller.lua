@@ -122,12 +122,12 @@ function GM:AddRoundTime( iAddedTime )
 	SetGlobalFloat( "RoundEndTime", GetGlobalFloat( "RoundEndTime", CurTime() ) + iAddedTime );
 	timer.Adjust( "RoundEndTimer", GetGlobalFloat( "RoundEndTime" ) - GetGlobalFloat( "RoundStartTime" ), 0, function() GAMEMODE:RoundTimerEnd() end );
 	
-	local rf = RecipientFilter()
-	rf:AddAllPlayers()
-
-	umsg.Start( "RoundAddedTime", rf ); // send a umsg so you can do something with the HUD
-		umsg.Float( iAddedTime ); // time added
-	umsg.End();
+	// Was umsg, which Garry's Mod removed - calling this errored rather than
+	// adding time. Nothing in-tree calls AddRoundTime, so the breakage only ever
+	// showed up for an addon using this Fretta API.
+	net.Start( "PHX.RoundAddedTime" )
+		net.WriteFloat( iAddedTime )
+	net.Broadcast()
 
 end
 

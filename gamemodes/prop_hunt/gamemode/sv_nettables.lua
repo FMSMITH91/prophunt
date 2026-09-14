@@ -50,7 +50,10 @@ local nets = {
 	"PHX.scan_SendTauntLists",
 
     -- X2Z Very-first Tutorial Window
-	"phx_showVeryFirstTutorial"
+	"phx_showVeryFirstTutorial",
+
+	-- Fretta's GM:AddRoundTime. Was a umsg, which Garry's Mod removed.
+	"PHX.RoundAddedTime"
 }
 
 for _,init in pairs(nets) do

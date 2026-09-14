@@ -77,6 +77,10 @@ jobs:
           ls "$SRCDS_DIR/garrysmod/gamemodes"
 
       - name: Install the CI probe
+        env:
+          # Via env, not ${{ }} interpolation: a workflow_dispatch input pasted
+          # straight into the shell is a script-injection sink.
+          SMOKE_SECONDS: ${{ inputs.seconds || '30' }}
         run: |
           mkdir -p "$SRCDS_DIR/garrysmod/lua/autorun/server"
           # Named zzz_ so it loads after everything else. CI-only, never committed.
@@ -84,21 +88,30 @@ jobs:
           hook.Add( "InitPostEntity", "ci_smoke_boot", function()
               MsgN( "CI_SMOKE_BOOTED gamemode=" .. tostring( engine.ActiveGamemode() ) )
 
-              timer.Simple( ${{ inputs.seconds || '30' }}, function()
+              timer.Simple( __SMOKE_SECONDS__, function()
                   MsgN( "CI_SMOKE_DONE map=" .. game.GetMap() )
                   timer.Simple( 1, function() engine.CloseServer() end )
               end )
           end )
           LUA
+          # Substituted after the heredoc, so the value never reaches a shell parser.
+          python3 - "$SRCDS_DIR/garrysmod/lua/autorun/server/zzz_ci_smoke.lua" <<'PY'
+          import re, sys
+          p = sys.argv[1]
+          secs = re.sub(r'[^0-9.]', '', __import__('os').environ.get('SMOKE_SECONDS', '30')) or '30'
+          open(p, 'w').write(open(p).read().replace('__SMOKE_SECONDS__', secs))
+          PY
 
       - name: Boot the server
+        env:
+          SMOKE_MAP: ${{ inputs.map || 'gm_construct' }}
         run: |
           cd "$SRCDS_DIR"
           set +e
           timeout --signal=INT 600 ./srcds_run \
             -game garrysmod -console -norestart -nohltv \
             +sv_lan 1 +maxplayers 12 \
-            +gamemode prop_hunt +map "${{ inputs.map || 'gm_construct' }}" \
+            +gamemode prop_hunt +map "$SMOKE_MAP" \
             2>&1 | tee "$GITHUB_WORKSPACE/console.log"
           echo "srcds exited with ${PIPESTATUS[0]}"
 
