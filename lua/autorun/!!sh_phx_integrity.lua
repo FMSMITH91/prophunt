@@ -367,12 +367,19 @@ hook.Add("InitPostEntity", "PHX.CheckIntegrity", function()
 		return
 	end
 
+	-- phx_integrity_check_fretta only scopes the Fretta comparison. This used to
+	-- `return` here, which skipped the core-file checks and the whole addon
+	-- conflict lookup as well - anyone silencing the Fretta warning lost the
+	-- entire checker. The Fretta result is already gated on this flag below.
 	if (not CheckBaseFretta) then
 		print("[PH:X Integrity Check] WARNING: Ignoring Fretta checks - this can't guarantee PH:X from working due to fretta version differences!")
-		return
 	end
-	
-	local CachedWSID = ManageData( false )
+
+	-- No `local`: FETCH_CONFLICT_WSID closes over the CachedWSID declared at the
+	-- top of this file. Shadowing it here meant the cached list was read into a
+	-- variable nothing else could see, so on every boot inside the two-day
+	-- cooldown the conflict check ran against nil and found nothing, ever.
+	CachedWSID = ManageData( false )
 	
 	timer.Simple(1, function()
 		-- so this mostly happens if we're on Listen Server with 2 similar addons loaded (mostly from Workshop)
