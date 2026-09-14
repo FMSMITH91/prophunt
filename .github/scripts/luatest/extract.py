@@ -30,6 +30,12 @@ import sys
 REPO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
 
 
+# Matched at an offset with .match(src, i) rather than against src[i:] - slicing
+# inside a per-character loop copies the rest of the file on every character,
+# which is quadratic on the larger gamemode files.
+LONG_BRACKET = re.compile(r'(--)?\[(=*)\[')
+
+
 def split_code_and_literals(src):
     """Yield (kind, text) where kind is 'code' | 'lit'. 'lit' is never rewritten."""
     out, i, n, buf = [], 0, len(src), []
@@ -43,10 +49,10 @@ def split_code_and_literals(src):
         c = src[i]
         two = src[i:i + 2]
 
-        m = re.match(r'(--)?\[(=*)\[', src[i:])
+        m = LONG_BRACKET.match(src, i)
         if m and (m.group(1) or c == '['):
             close = ']' + m.group(2) + ']'
-            end = src.find(close, i + m.end())
+            end = src.find(close, m.end())   # m.end() is absolute here
             end = n if end == -1 else end + len(close)
             flush()
             out.append(("lit", src[i:end]))
