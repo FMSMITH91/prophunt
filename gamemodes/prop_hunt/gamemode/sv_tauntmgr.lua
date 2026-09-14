@@ -71,8 +71,13 @@ net.Receive("CL2SV_PlayThisTaunt", function(len, ply)
 	
 	local isPitchEnabled = PHX:GetCVar( "ph_taunt_pitch_enable" )
 	
-	if (ply and IsValid(ply)) then
-	
+	-- Dead players must not taunt. The client already closes the taunt window on
+	-- death (PH_ForceCloseTauntWindow) and the menu refuses to open, but none of
+	-- that binds a crafted packet: without this check a dead prop could keep
+	-- emitting taunts from wherever their roaming spectator camera had moved to,
+	-- and fake taunts from props anywhere on the map.
+	if (ply and IsValid(ply) and ply:Alive()) then
+
 		local delay 		= IsDelayed(ply)
 		local isDelay 		= delay[1]
 		local TauntTime 	= delay[2]

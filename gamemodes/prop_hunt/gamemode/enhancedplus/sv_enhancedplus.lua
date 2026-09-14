@@ -74,6 +74,8 @@ hook.Add("PlayerSay", "PH_UnstuckCommand", function(pl, text)
 end)
 
 function GM:TeleportPlayerToClosestSpawnpoint(pl)
+	if not IsValid( pl ) or not IsValid( pl.ph_prop ) then return end
+
 	local playerPos = pl:GetPos()
 	local closestPos = nil
 
@@ -147,7 +149,14 @@ function GM:UnstuckPlayer(pl)
 	if (not PHX:GetCVar( "ph_use_unstuck" )) then return end
 
 	if pl:Team() ~= TEAM_PROPS then return end
-	
+
+	-- Every path below dereferences pl.ph_prop, and a dead prop does not have
+	-- one: class_prop:OnDeath calls RemoveProp(), which nils it. The keybind
+	-- path in init.lua already checks Alive(); the !unstuck chat command did
+	-- not, so a dead player typing it errored the server.
+	if not pl:Alive() then return end
+	if not IsValid( pl.ph_prop ) then return end
+
 	if pl:GetVar("unstuckRecently", false) then
 		pl:PHXChatInfo("NOTICE", "UNSTUCK_PLEASE_WAIT", PHX:GetCVar( "ph_unstuck_waittime" ))
 		return
@@ -162,6 +171,9 @@ function GM:UnstuckPlayer(pl)
 		local origZ = pos.z
 
 		timer.Simple(0.2, function()
+			-- Re-check: the player can die or disconnect inside this window.
+			if not IsValid( pl ) or not pl:Alive() or not IsValid( pl.ph_prop ) then return end
+
 			local newZ = pl:GetPos().z
 			if math.abs(origZ - newZ) > 0.1 then
 				pl:PHXChatInfo("NOTICE", "UNSTUCK_NOT_STUCK_JITTER")
@@ -202,6 +214,9 @@ function GM:UnstuckPlayer(pl)
 end
 
 function GM:TryNormalUnstuck(pl)
+	-- Callable on its own, and reached from a deferred timer, so re-validate.
+	if not IsValid( pl ) or not IsValid( pl.ph_prop ) then return end
+
 	local hullCheckHeight = 10
 
 	local initialPos = GAMEMODE:PosOnGround(pl)

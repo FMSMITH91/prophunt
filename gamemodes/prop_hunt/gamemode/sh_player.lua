@@ -216,6 +216,10 @@ if SERVER then
         self.ph_prop = ents.Create("ph_prop")
         if !IsValid(self.ph_prop) then
             PHX:VerboseMsg("[Prop] Failed to create ph_prop entity - entity limit reached?", 4)
+            -- Leave it nil rather than NULL: callers test `self.ph_prop` as well
+            -- as IsValid(), and reading a field off NULL is a hard error.
+            self.ph_prop = nil
+            self:SetNWEntity("PlayerPropEntity", NULL)
             return
         end
         self.ph_prop:SetPos( self:GetPos() )
