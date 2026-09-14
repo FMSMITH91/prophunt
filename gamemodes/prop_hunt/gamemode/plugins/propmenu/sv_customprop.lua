@@ -65,7 +65,7 @@ net.Receive("PCR.RequestServerGameContents", function(len, ply)
 	if CheckUser(ply) then
 		
 		net.Start("PCR.TheServerGameContents")
-			net.WriteUInt(gameSize,16)
+			net.WriteUInt(gameSize,32)
 			net.WriteData(gameData,gameSize)
 		net.Send(ply)
 		

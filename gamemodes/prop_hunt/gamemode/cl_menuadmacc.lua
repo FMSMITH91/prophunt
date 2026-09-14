@@ -174,12 +174,12 @@ function ug:CreatePanel( tab )
                 
                 -- net data here.
 				net.Start("PHX.CLMutedGroupInfo") --send this first
-                    net.WriteUInt(len2,16)
+                    net.WriteUInt(len2,32)
                     net.WriteData(dMute,len2)
                 net.SendToServer()
 				
                 net.Start("PHX.CLAdminGroupInfo")
-                    net.WriteUInt(len1,16)
+                    net.WriteUInt(len1,32)
                     net.WriteData(dAdmin,len1)
                 net.SendToServer()
             
@@ -240,7 +240,7 @@ hook.Add("PH_CustomTabMenu", "PHX.AdminManageUserGroup", function(tab, pVgui, Pa
 end)
 
 net.Receive("PHX.MutedGroupInfo", function()
-    local byte = net.ReadUInt(16)
+    local byte = net.ReadUInt(32)
     local data = net.ReadData(byte)
     
     local t = util.PHXQuickDecompress( data )
@@ -251,7 +251,7 @@ net.Receive("PHX.MutedGroupInfo", function()
 end)
 
 net.Receive("PHX.AdminGroupInfo", function()
-    local byte = net.ReadUInt(16)
+    local byte = net.ReadUInt(32)
     local data = net.ReadData(byte)
     
     local t = util.PHXQuickDecompress( data )

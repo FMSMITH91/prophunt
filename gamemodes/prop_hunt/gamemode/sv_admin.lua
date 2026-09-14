@@ -30,7 +30,7 @@ function PHX:ManageGroupInfo( bLoadSave, bUseNet, stblKey, fileName, netName )
 					local len = c:len()
 					
 					net.Start( netName )
-					  net.WriteUInt(len,16)
+					  net.WriteUInt(len,32)
 					  net.WriteData(c,len)
 					net.Broadcast()
 					
@@ -64,7 +64,7 @@ end
 net.Receive("PHX.CLAdminGroupInfo", function( l, ply )
 	if ( ply:PHXIsStaff() ) then
 		
-		local byte = net.ReadUInt(16)
+		local byte = net.ReadUInt(32)
 		local data = net.ReadData(byte)
 		
 		local t = util.PHXQuickDecompress( data )
@@ -91,7 +91,7 @@ end)
 net.Receive("PHX.CLMutedGroupInfo", function( l, ply )
 	if ( ply:PHXIsStaff() ) then
 		
-		local byte = net.ReadUInt(16)
+		local byte = net.ReadUInt(32)
 		local data = net.ReadData(byte)
 		
 		local t = util.PHXQuickDecompress( data )

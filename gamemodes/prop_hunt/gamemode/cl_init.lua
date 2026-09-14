@@ -718,7 +718,7 @@ end
 
 net.Receive("PHX.UpdatePropbanInfo", function()
 	local key = net.ReadString()
-	local size = net.ReadUInt(16)
+	local size = net.ReadUInt(32)
 	local comp = net.ReadData(size)
 	
 	local data = util.PHXQuickDecompress( comp )

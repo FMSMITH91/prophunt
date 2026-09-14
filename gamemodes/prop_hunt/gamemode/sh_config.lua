@@ -745,7 +745,7 @@ local function UpdatePropBansInfo( PHXKey, tbl )
 	
 	net.Start( "PHX.UpdatePropbanInfo" )
 		net.WriteString( PHXKey )
-		net.WriteUInt( len, 16 )
+		net.WriteUInt( len, 32 )
 		net.WriteData( compress, len )
 	net.Broadcast()
 end

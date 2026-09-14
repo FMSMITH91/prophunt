@@ -114,13 +114,13 @@ end
 local function sendGroupInfo( ply )
 	local data,size = util.PHXQuickCompress( PHX.IgnoreMutedUserGroup )
     net.Start("PHX.MutedGroupInfo")
-        net.WriteUInt(size,16)
+        net.WriteUInt(size,32)
         net.WriteData(data,size)
     net.Send( ply )
 
     local data,size = util.PHXQuickCompress( PHX.SVAdmins )
     net.Start("PHX.AdminGroupInfo")
-        net.WriteUInt(size,16)
+        net.WriteUInt(size,32)
         net.WriteData(data,size)
     net.Send( ply )
 end

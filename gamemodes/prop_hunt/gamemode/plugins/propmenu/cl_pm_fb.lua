@@ -8,7 +8,7 @@ hook.Add("InitPostEntity", "reqServerContent", function()
 end)
 
 net.Receive("PCR.TheServerGameContents", function()
-	local size = net.ReadUInt(16)
+	local size = net.ReadUInt(32)
 	local data = net.ReadData(size)
 	
 	local tblGames = util.JSONToTable(util.Decompress(data))
