@@ -1379,7 +1379,11 @@ hook.Add("PlayerButtonDown", "PlayerButton_ControlTaunts", function(pl, key)
 		if (key == TauntKey or (plTeam == TEAM_PROPS and ( tobool(isRightClickMode) and key == MOUSE_RIGHT ) )) then
 			if tauntmode == 1 then
 				pl:ConCommand("ph_showtaunts")
-			elseif tauntmode == 0 or tauntmode == 2 and pl:GetLastTauntTime( "LastTauntTime" ) + tauntdelay <= CurTime() then
+			-- Brackets matter: `and` binds tighter than `or`, so this used to read
+			-- `(mode == 0) or (mode == 2 and cooldown_ok)`. In mode 0 the first
+			-- operand short-circuited the whole thing and ph_normal_taunt_delay
+			-- was never consulted, letting F3 emit a taunt on every keypress.
+			elseif (tauntmode == 0 or tauntmode == 2) and pl:GetLastTauntTime( "LastTauntTime" ) + tauntdelay <= CurTime() then
 				-- Random taunts rules: Use Cached; includes range from: [custom, stock, externals]. That's it.
 				local TauntPath = true
 				if ( table.IsEmpty(PHX.CachedTaunts[plTeam]) or TAUNT_FALLBACK ) then

@@ -518,50 +518,84 @@ end
 function PHX:AddCustomTaunt( idTeam, category, tblTaunt )
 	self:CheckCache( tblTaunt, category )
 
-	if (idTeam ~= TEAM_PROPS or idTeam ~= TEAM_HUNTERS) and (!tblTaunt or tblTaunt == nil) and (!istable(tblTaunt)) then
-		print("[Taunts] Error: Cannot add taunt category from team: "..team.GetName(idTeam).."!" )
+	-- `or` between the two team tests matched every id (nothing can equal both),
+	-- so the guard let anything through; the argument checks were chained with
+	-- `and` and only rejected a value that failed all of them at once.
+	if (idTeam ~= TEAM_PROPS and idTeam ~= TEAM_HUNTERS) then
+		print("[Taunts] Error: Cannot add taunt category from team: "..tostring(idTeam).."!" )
 		return
 	end
-	
-	if self.TAUNT[category] ~= nil then
-		self.TAUNTS[category][idTeam] = tblTaunt
-		self:AddToCache(idTeam, tblTaunt)
-		AddResources( tblTaunt )
-	else
-		print("[Taunts] Error: Cannot add taunt category "..category.." because category is exists! Try with different name." )
+
+	if (not isstring(category)) or category == "" or (not istable(tblTaunt)) or table.IsEmpty(tblTaunt) then
+		print("[Taunts] Error: A category name and a non-empty taunt table are required." )
+		return
 	end
-	
+
+	-- Was `self.TAUNT[category]` - a typo for TAUNTS that is never assigned, so
+	-- this errored before adding anything. Create the category if it is new
+	-- (that is the normal case for an addon) and refuse only a genuine clash.
+	self.TAUNTS[category] = self.TAUNTS[category] or {}
+
+	if self.TAUNTS[category][idTeam] ~= nil then
+		print("[Taunts] Error: Category "..category.." already holds "..team.GetName(idTeam).."'s taunts! Try a different name." )
+		return
+	end
+
+	self.TAUNTS[category][idTeam] = tblTaunt
+	self:AddToCache(idTeam, tblTaunt)
+	if SERVER then AddResources( tblTaunt ) end
+
 end
 
 function PHX:AddSingleTaunt(idTeam, category, name, path)
-	if (idTeam ~= TEAM_PROPS or idTeam ~= TEAM_HUNTERS) and (!name and !path) and (type(name) ~= "string" and type(path) ~= "string") then
+	-- Same inverted guard as AddCustomTaunt: `or` between the team tests is true
+	-- for every id, and the argument checks were `and`ed so a single valid
+	-- argument satisfied them all.
+	if (idTeam ~= TEAM_PROPS and idTeam ~= TEAM_HUNTERS) or
+		(not isstring(category)) or category == "" or
+		(not isstring(name)) or name == "" or
+		(not isstring(path)) or path == "" then
 		print("[Taunts] Error: All required arguments must be a string, required and thus cannot be empty!" )
 		return
 	end
-	
-	if self.TAUNTS[category] == nil then
-		self.TAUNTS[category] = {}	-- create empty category table instead.
-	end
-	
+
+	-- Create the per-team table as well. Creating only the category and then
+	-- indexing [idTeam][name] straight after was an index of nil, so adding a
+	-- taunt to a new category always errored.
+	self.TAUNTS[category] = self.TAUNTS[category] or {}
+	self.TAUNTS[category][idTeam] = self.TAUNTS[category][idTeam] or {}
+
 	-- Singular proccess.
-	if self.TAUNTS[category][idTeam][name] ~= nil and self.CachedTaunts[idTeam][name] ~= nil and
-		!table.HasValue(self.TAUNTS[category][idTeam][name], path) and !table.HasValue( self.CachedTaunts[idTeam][name], path ) then
-		
-		self.TAUNTS[category][idTeam][name]	= path
-		self.CachedTaunts[idTeam][name] 	= path
-		if SERVER then
-			resource.AddFile("sound/"..path)
-		end
+	-- These tables map a name to ONE path string, so compare the value. The old
+	-- table.HasValue() call ran pairs() over that string and raised.
+	if self.TAUNTS[category][idTeam][name] == path or self.CachedTaunts[idTeam][name] == path then
+		self:VerboseMsg("[Taunts] Taunt '"..name.."' already points at "..path..", ignoring.", 2)
+		return
+	end
+
+	self.TAUNTS[category][idTeam][name]	= path
+	self.CachedTaunts[idTeam][name] 	= path
+	if SERVER then
+		resource.AddFile("sound/"..path)
 	end
 end
 
 function PHX:RemoveTauntByPath( idTeam, category, strTaunt )
 	if (!idTeam or !category) then
 		print("[Taunts] Error: Team ID or Category is Invalid!")
+		return false	-- was missing, so it fell through into the lookup below
 	end
 
-	if table.HasValue(self.TAUNT[category][idTeam], strTaunt) then 
-		table.RemoveByValue(self.TAUNT[category][idTeam], strTaunt)
+	-- Was `self.TAUNT` (never assigned). Check the category and its per-team
+	-- table exist too, rather than indexing blindly.
+	local cat = self.TAUNTS[category]
+	if (not cat) or (not cat[idTeam]) then
+		print("[Taunts] Category "..tostring(category).." holds no taunts for "..team.GetName(idTeam)..".")
+		return false
+	end
+
+	if table.HasValue(cat[idTeam], strTaunt) then
+		table.RemoveByValue(cat[idTeam], strTaunt)
 		table.RemoveByValue(self.CachedTaunts[idTeam], strTaunt)
 		return true
 	else
