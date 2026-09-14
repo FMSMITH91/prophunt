@@ -6,7 +6,7 @@
 # both pass code that errors the instant a player touches it; this is the layer
 # that catches that.
 set -uo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 
 LUA=${LUA:-luajit}
 if ! command -v "$LUA" >/dev/null 2>&1; then
@@ -20,7 +20,8 @@ echo "=== behaviour tests ($LUA) ==="
 for t in t_*.lua; do
   out=$("$LUA" "$t" 2>&1)
   if echo "$out" | grep -qE "^  FAIL|^${LUA}:|EMPTY (EXTRACT|CHUNK)"; then
-    echo "--- $t"; echo "$out" | sed 's/^/  /'; rc=1
+    # Indent via parameter expansion rather than sed (ShellCheck SC2001).
+    echo "--- $t"; echo "  ${out//$'\n'/$'\n'  }"; rc=1
   else
     printf '  ok  %-20s %s\n' "$t" "$(echo "$out" | grep -E 'passed,' | tr -d ' ')"
   fi
