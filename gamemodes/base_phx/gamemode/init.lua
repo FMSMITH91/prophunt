@@ -132,9 +132,12 @@ function GM:PlayerInitialSpawn( pl )
 
 end
 
+// UniqueID() is deprecated (and collides); SteamID is the stable identity.
+// Keyed rather than a list, so the lookup is O(1) and the table cannot grow a
+// duplicate entry per disconnect the way table.insert did.
 function GM:CheckPlayerReconnected( pl )
 
-	if table.HasValue( GAMEMODE.ReconnectedPlayers, pl:UniqueID() ) then
+	if ( GAMEMODE.ReconnectedPlayers[ pl:SteamID() ] ) then
 		GAMEMODE:PlayerReconnected( pl )
 	end
 
@@ -152,7 +155,7 @@ end
 
 function GM:PlayerDisconnected( pl )
 
-	table.insert( GAMEMODE.ReconnectedPlayers, pl:UniqueID() )
+	GAMEMODE.ReconnectedPlayers[ pl:SteamID() ] = true
 
 	self.BaseClass:PlayerDisconnected( pl )
 

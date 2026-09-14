@@ -209,13 +209,18 @@ if SERVER then
 		end
 	
 		if !ply.HasTauntScannedData then
+			-- Claim the slot NOW, not inside the timer. Setting it there left a
+			-- 0.1s window in which every extra request from the same client
+			-- queued another full compressed send of the whole taunt table.
+			ply.HasTauntScannedData = true
+
 			PHX:VerboseMsg("[TauntScanner] Sending Taunt Scanner Data to player: " .. plName .. ", Size: " .. tostring(CompressedTauntSize) .. " Bytes")
 		    timer.Simple(0.1, function()
+				if !IsValid(ply) then return end
 				net.Start(netRecv)
-				net.WriteUInt(CompressedTauntSize, 16)
+				net.WriteUInt(CompressedTauntSize, 32)
 				net.WriteData(CompressedTaunt, CompressedTauntSize)
 				net.Send(ply)
-				ply.HasTauntScannedData = true
 			end)
 		else
 			ply:PrintMessage(HUD_PRINTCONSOLE, "[PHX] Request Rejected: You have requested Taunt Scanner data ONCE. To refresh, please reconnect to the server!")
@@ -244,7 +249,10 @@ if CLIENT then
 		PHX:VerboseMsg("[TauntScanner] Received taunt scanner data, Processing...")
 
 		-- Set TAUNT_FALLBACK to nil
-		local size = net.ReadUInt(16)
+		-- 32 bits to match the server. At 16 the length silently wrapped once a
+		-- server's compressed taunt list passed 64KB, and the client then read
+		-- the wrong number of bytes and decompressed garbage.
+		local size = net.ReadUInt(32)
 		local taunts = net.ReadData(size)
 		local Conv = util.PHXQuickDecompress( taunts )
 		

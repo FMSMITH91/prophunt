@@ -33,3 +33,13 @@ jobs:
 
       - name: Sender validation on server net.Receive handlers
         run: python3 .github/scripts/check_net_receivers.py
+
+      # This one IS a gate. It executes the shipped functions under a stubbed
+      # Garry's Mod, which is the only check here that can catch a runtime error
+      # or a wrong gameplay rule - glualint and Codacy both pass code that errors
+      # the instant a player touches it.
+      - name: Install LuaJIT
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends luajit
+
+      - name: Lua behaviour tests
+        run: .github/scripts/luatest/run.sh
