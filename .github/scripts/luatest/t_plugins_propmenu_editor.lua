@@ -112,5 +112,14 @@ save(B, { LB })
 check("lock free: save written", table.HasValue(PCR.CustomProp, LB), true)
 S.pump(1)
 check("lock free: told it succeeded", confirmation(B), false)
+check("lock free: the new list is broadcast (normal play)", sentTo("pcr.PropListData", "all"), 1)
+
+print("\n== #211 a save whose list is too big to send is reported as failed ==")
+util.Compress = function() return string.rep("x", 60001) end
+S.net.sent = {}
+save(B, { LB }); S.pump(1)
+check("oversized list after a save: not broadcast", sentTo("pcr.PropListData", "all"), 0)
+check("oversized list after a save: the editor is told it failed", confirmation(B), true)
+util.Compress = function(s) return s end
 
 report()

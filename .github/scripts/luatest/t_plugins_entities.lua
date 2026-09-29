@@ -335,6 +335,19 @@ mb:AcceptInput("RemoveBans")
 check("second RemoveBans: the perma-ban still stays", has(MOUSE), true)
 check("second RemoveBans: the map's ban is lifted again", has(CHAIR), false)
 
+print("\n== #34 ph_model_bans: a mixed-case model matches the lowercase list ==")
+PHX.BANNED_PROP_MODELS = { MOUSE }
+local mixed = newEnt("ph_model_bans", BANS)
+mixed:KeyValue("model1", "Models/Props/CS_Office/Computer_Mouse.mdl")
+mixed:KeyValue("model2", "models/props/CS_Office/Chair_Office.mdl")
+mixed:GetBannedList()
+mixed:AcceptInput("AddBans")
+check("mixed-case copy of a server ban: not added again", #PHX.BANNED_PROP_MODELS, 2)
+check("mixed-case new ban: stored lowercase", has(CHAIR), true)
+mixed:AcceptInput("RemoveBans")
+check("RemoveBans: the mixed-case map ban is lifted", has(CHAIR), false)
+check("RemoveBans: the server's ban stays", has(MOUSE), true)
+
 print("\n== #204/#68 ph_prop damage: armor floor and hunter kill bonus ==")
 local PROP = loadENT("ph_prop.lua")
 local weapon = { __valid = true, GetClass = function() return "weapon_smg1" end }
@@ -394,6 +407,27 @@ RunConsoleCommand("ph_hunter_kill_bonus", "0")
 h = killWith(50)
 check("kill bonus 0: health unchanged (normal play)", h:Health(), 50)
 RunConsoleCommand("ph_hunter_kill_bonus", "25")
+
+print("\n== #242 prop freeze cam: a prop respawned in blind time is left alone ==")
+function S.PlyMeta:Spectate(m) self._obs = m end
+function S.PlyMeta:SpectateEntity(e) self._spec = e end
+S.timers = {}
+local killer, frozen = killWith(100)
+S.pump(0.6)
+check("still dead at 0.5s: freeze cam (normal play)", frozen._obs, OBS_MODE_FREEZECAM)
+check("still dead at 0.5s: watching the killer (normal play)", frozen._spec == killer, true)
+S.pump(4)
+check("still dead at 4.5s: chase cam (normal play)", frozen._obs, OBS_MODE_CHASE)
+local _, back = killWith(100)
+S.pump(0.4); back:Spawn()                     -- the blind-time respawn (0.45s in game)
+S.pump(0.2)
+check("respawned before 0.5s: no freeze cam", back._obs, nil)
+check("respawned before 0.5s: InFreezeCam stays off", back:GetNWBool("InFreezeCam", false), false)
+-- Guard on the 4.5s timer alone: alive again while InFreezeCam is still set.
+local _, late = killWith(100)
+S.pump(0.6); late:Spawn(); late._obs = nil
+S.pump(4)
+check("alive again with InFreezeCam set: no chase cam at 4.5s", late._obs, nil)
 
 print("\n== #202 team item spawner: a target name that matches nothing ==")
 local ITEMS = loadENT("ph_teamitem_spawner.lua")

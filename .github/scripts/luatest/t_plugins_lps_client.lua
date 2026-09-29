@@ -162,4 +162,13 @@ check("holstering allowed -> hint shown (normal play)", hint(true), "LPS_HOLSTER
 check("holstering disallowed -> hint hidden", hint(false), nil)
 check("disallowed but still holstered -> hint shown to unholster", hint(false, true), "LPS_HOLSTER_HELPER_TEXT")
 
+print("\n== the HUD font can draw translated (non-Latin) text ==")
+S.fonts = {}
+surface.CreateFont = function(name, data) S.fonts[name] = data end
+language, killicon = { Add = function() end }, { Add = function() end }
+loadblocks("sh_load.lua@CLIENT", extract(LPS .. "sh_load.lua", [[^if CLIENT then]]))
+local font = S.fonts["PHX.LPS.IndicatorFont"] or {}
+check("PHX.LPS.IndicatorFont is created (normal play)", font.font, "Roboto")
+check("PHX.LPS.IndicatorFont is extended", font.extended, true)
+
 report()

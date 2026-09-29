@@ -154,6 +154,21 @@ local function InformEditor( ply, bool )
 	net.Send(ply)
 end
 
+-- Rebuild the lists and send them to everyone, then confirm to the editor. The editor is
+-- told it failed if a list was too big to send (SendPropNetData logs why), as players
+-- would not see the change.
+local function SendUpdatedProps( ply )
+	PCR:PopulateProp( true )
+	-- Broadcast to Players First
+	local sent = PCR:SendPropNetData("pcr.PropListData", PCR.propDatajson, PCR.propDataSize)
+	-- Send Custom Props for Editing
+	if !table.IsEmpty(PCR.CustomProp) then
+		sent = PCR:SendPropNetData("pcr.EditorCustomData", PCR.customPropJson, PCR.customPropSize) and sent
+	end
+	-- Confirm To Last Editor (who may have left during the delay)
+	if IsValid( ply ) then InformEditor(ply, !sent) end
+end
+
 net.Receive("PCR.EditedCustomPropData", function(len, ply)
 	if CheckUser(ply) then
 		
@@ -193,23 +208,7 @@ net.Receive("PCR.EditedCustomPropData", function(len, ply)
 			-- Saving counts as activity, so an editor who keeps working keeps the lock.
 			if ply == editor then editSince = CurTime() end
 			
-			timer.Simple(1, function()
-				PCR:PopulateProp( true )
-				-- Broadcast to Players First
-				net.Start("pcr.PropListData")
-				net.WriteUInt(PCR.propDataSize, 32)
-				net.WriteData(PCR.propDatajson, PCR.propDataSize)
-				net.Broadcast()
-				-- Send Custom Props for Editing
-				if !table.IsEmpty(PCR.CustomProp) then
-					net.Start("pcr.EditorCustomData")
-					net.WriteUInt(PCR.customPropSize, 32)
-					net.WriteData(PCR.customPropJson, PCR.customPropSize)
-					net.Broadcast()
-				end
-				-- Confirm To Last Editor (who may have left during the delay)
-				if IsValid( ply ) then InformEditor(ply, false) end
-			end)
+			timer.Simple(1, function() SendUpdatedProps( ply ) end)
 		else
 			-- Inform to the Last Editor that, something is causing Error.
 			InformEditor(ply, true)

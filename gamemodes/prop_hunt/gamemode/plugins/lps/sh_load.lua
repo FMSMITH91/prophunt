@@ -78,7 +78,8 @@ if CLIENT then
 		font = "Roboto",
 		size = 17,
 		weight = 750,
-		antialias = true
+		antialias = true,
+		extended = true	-- it draws translated text, so it needs non-Latin glyphs
 	})
 
 	language.Add("ph_lps_weapon", "Prop LPS Gun")

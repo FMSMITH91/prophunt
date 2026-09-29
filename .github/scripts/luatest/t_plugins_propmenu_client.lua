@@ -140,6 +140,32 @@ PCR:OpenPropMenu()
 check("key again: reopens", fr:IsVisible(), true)
 check("same window throughout", #S.frames, 1)
 
+print("\n== #34 a banned model's tile is red whatever its case ==")
+-- A custom prop keeps the case it was saved with; the ban list is lowercase.
+local icons = {}
+local baseCreate = vgui.Create
+vgui.Create = function(cls) local pnl = baseCreate(cls); if cls == "SpawnIcon" then icons[#icons + 1] = pnl end return pnl end
+function Panel:Add(cls) local c = vgui.Create(cls); c._parent = self; return c end
+function Panel:SetBackgroundColor(c) self._bg = c end
+function Panel:SetModel(m) self._mdl = m end
+function Panel:SetTooltip(t) self._tip = t end
+local function tile(mdl) for _, ic in ipairs(icons) do if ic._mdl == mdl then return ic._parent._bg.r, ic._tip end end end
+local function reopen() icons = {}; S.receivers["pcr.ForceCloseMenu"](); PCR:OpenPropMenu() end
+PHX.BANNED_PROP_MODELS = { "models/props/banned.mdl", "models/props_junk/mixed_case.mdl" }
+PCR.PropList = { "models/props_junk/Mixed_Case.mdl", "models/props/banned.mdl", "models/props/a.mdl", "models/props/c.mdl" }
+PCR.CustomProp = { "models/props/c.mdl" }
+reopen()
+check("mixed-case banned model: red tile, 'banned' tooltip", table.concat({ tile("models/props_junk/Mixed_Case.mdl") }, " "),
+  "120 PCR_CL_TOOLTIP_BANNED")
+check("lowercase banned model: red tile (normal play)", (tile("models/props/banned.mdl")), 120)
+check("custom prop: blue-grey tile (normal play)", (tile("models/props/c.mdl")), 112)
+check("other model: grey tile, model tooltip (normal play)", table.concat({ tile("models/props/a.mdl") }, " "),
+  "100 PCR_CL_TOOLTIP_MODEL")
+set("ph_banned_models", 0)
+reopen()
+check("ph_banned_models 0: no red tile (normal play)", (tile("models/props_junk/Mixed_Case.mdl")), 100)
+set("ph_banned_models", 1)
+
 print("\n== the editor's save confirmation reaches an editor re-granted the lock ==")
 -- PHXPM_openFileBrowser (cl_fb_core.lua) builds the window only when it is not already
 -- open (`if !f.isOpen then ... return f end`) and otherwise returns nothing.

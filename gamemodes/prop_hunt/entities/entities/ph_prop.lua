@@ -171,7 +171,7 @@ if SERVER then
 						pl:PrintMessage(HUD_PRINTCONSOLE, "!! WARNING: Something went wrong with the Freeze Camera, but it's still enabled!")
 					else
 						timer.Simple(0.5, function()
-							if IsValid(pl) && IsValid(attacker) && !pl:GetNWBool("InFreezeCam", false) then
+							if IsValid(pl) && !pl:Alive() && IsValid(attacker) && !pl:GetNWBool("InFreezeCam", false) then -- !Alive: a 0.45s blind-time respawn can beat this
 								-- Play the good old Freeze Cam sound
 								net.Start("PlayFreezeCamSound")
 								net.Send(pl)
@@ -184,7 +184,7 @@ if SERVER then
 						end)
 						
 						timer.Simple(4.5, function()
-							if IsValid(pl) && pl:GetNWBool("InFreezeCam", false) then
+							if IsValid(pl) && !pl:Alive() && pl:GetNWBool("InFreezeCam", false) then
 								pl:SetNWBool("InFreezeCam", false)
 								pl:Spectate( OBS_MODE_CHASE )
 								pl:SpectateEntity( nil )

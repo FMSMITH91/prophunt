@@ -101,8 +101,10 @@ function ENT:GetBannedList()
 	local t={}
 	for i=1,16 do
 	
+		-- Lowercase, like the rest of PHX.BANNED_PROP_MODELS: the ban checks compare
+		-- lowercased names, so a mixed-case entry from the map never matched.
 		local KeyVal = kvs["model"..i]
-		if (KeyVal) then table.insert(t, KeyVal); end
+		if (KeyVal) then table.insert(t, string.lower(KeyVal)); end
 		
 	end
 	

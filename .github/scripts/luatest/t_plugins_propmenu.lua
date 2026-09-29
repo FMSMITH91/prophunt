@@ -168,6 +168,21 @@ disconnect(p)
 local errs = S.pump(0)
 check("request then leave: no timer error", errs[1], nil)
 
+print("\n== #211 a prop list too big for one net message is refused, not sent ==")
+local function requestSized(size)
+  local data = PCR.propDatajson
+  PCR.propDatajson, PCR.propDataSize, S.net.sent, S.errors = string.rep("x", size), size, {}, 0
+  local pl = S.Player{}
+  S.fire("PlayerInitialSpawn", pl); S.receivers["pcr.ClientRequestPropData"](0, pl); S.pump(0)
+  PCR.propDatajson, PCR.propDataSize = data, #data
+  return sentTo("pcr.PropListData", pl), S.errors
+end
+local n, e = requestSized(60001)
+check("60001 bytes: not sent", n, 0)
+check("60001 bytes: the server logs why", e, 1)
+n, e = requestSized(60000)
+check("60000 bytes: sent, no error (normal play)", n .. "/" .. e, "1/0")
+
 print("\n== the ban list matches map models whatever their case ==")
 set("pcr_enable_prop_ban", 1)
 S.fileExists["phx_data/prop_model_bans/model_bans.txt"] = true
@@ -195,6 +210,36 @@ S.json["phx_data/prop_chooser_custom/models.txt"] = { "models/balloons/balloon_d
 PCR:PopulateProp()
 check("custom prop: listed", table.HasValue(PCR.PropList, "models/balloons/balloon_dog.mdl"), true)
 check("prohibited custom prop: not listed", table.HasValue(PCR.PropList, "models/props_collectables/piepan.mdl"), false)
+
+print("\n== #34 the server ban list stops a model whatever its case ==")
+-- A custom prop keeps the case the editor saved it with, and so does the temp prop's GetModel().
+local MIXED = "models/props_junk/Mixed_Case.mdl"
+table.insert(PCR.PropList, MIXED); S.fileExists[MIXED] = true
+PHX.BANNED_PROP_MODELS = { "models/banned.mdl", string.lower(MIXED) }
+p = player(); pick(p, MIXED)
+check("mixed-case model on the ban list: refused as banned", said(p, "PCR_PROPBANNED"), true)
+check("mixed-case model on the ban list: disguise and use kept", p.ph_prop:GetModel() .. p:CheckUsage(), "models/start.mdl3")
+set("ph_banned_models", 0)
+p = player(); pick(p, MIXED)
+check("ph_banned_models 0: the same model is used (normal play)", p.ph_prop:GetModel(), MIXED)
+set("ph_banned_models", 1)
+table.insert(PCR.PropList, "models/banned.mdl"); S.fileExists["models/banned.mdl"] = true
+p = player(); pick(p, "models/banned.mdl")
+check("lowercase model on the ban list: refused (normal play)", said(p, "PCR_PROPBANNED"), true)
+
+print("\n== the refusals before the temp prop still refuse (normal play) ==")
+resetCounts()
+set("pcr_only_allow_certain_groups", 1)
+p = player(); pick(p, "models/props/a.mdl")
+check("group-only menu, player in no group: told so", said(p, "PCR_ONLY_GROUP"), true)
+set("pcr_only_allow_certain_groups", 0)
+S.fileExists["models/props/a.mdl"] = false
+p = player(); pick(p, "models/props/a.mdl")
+check("model missing from the server: told so", said(p, "PCR_MODEL_DONT_EXISTS"), true)
+S.fileExists["models/props/a.mdl"] = true
+p = player(); p.Crouching = function() return true end; pick(p, "models/props/a.mdl")
+check("crouching prop, must stand: told to stand", said(p, "PCR_STAY_ON_GROUND"), true)
+check("none of these made a temp prop", created, 0)
 
 print("\n== AddToGroup matches CheckUserGroup's lowercase lookup ==")
 p = S.Player{}

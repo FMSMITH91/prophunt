@@ -71,6 +71,17 @@ function PCR:RefreshList()
     end
 end
 
+-- Tooltip and tile colour for one model. The ban list is lowercase, while a custom prop
+-- keeps the spelling it was saved with, so compare lowercased.
+local function PropTileStyle( p )
+	if PHX:GetCVar( "ph_banned_models" ) and table.HasValue( PHX.BANNED_PROP_MODELS, string.lower( p ) ) then
+		return PHX:FTranslate("PCR_CL_TOOLTIP_BANNED"), Color(120,20,20)
+	elseif table.HasValue( PCR.CustomProp, p ) then
+		return PHX:FTranslate( "PCR_CL_TOOLTIP_MODEL", p ), Color(112,120,140)
+	end
+	return PHX:FTranslate( "PCR_CL_TOOLTIP_MODEL", p ), Color(100,100,100)
+end
+
 function PCR:MainWindow()
     
     local str = "0"
@@ -137,16 +148,9 @@ function PCR:MainWindow()
 		
 		for _,p in pairs( self.PropList ) do
 			local pan = vgui.Create("DPanel")
-			local tooltext = PHX:FTranslate( "PCR_CL_TOOLTIP_MODEL", p )
+			local tooltext, bgcolor = PropTileStyle( p )
 			pan:SetSize(64,64)
-			if PHX:GetCVar( "ph_banned_models" ) and table.HasValue( PHX.BANNED_PROP_MODELS, p ) then
-				tooltext = PHX:FTranslate("PCR_CL_TOOLTIP_BANNED")
-				pan:SetBackgroundColor(Color(120,20,20))
-			elseif table.HasValue( PCR.CustomProp, p ) then
-				pan:SetBackgroundColor(Color(112,120,140))
-			else
-				pan:SetBackgroundColor(Color(100,100,100))
-			end
+			pan:SetBackgroundColor(bgcolor)
 			
 			local icon = pan:Add("SpawnIcon")
 			icon:SetModel(Model(p))
