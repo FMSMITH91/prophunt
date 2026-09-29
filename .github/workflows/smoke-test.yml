@@ -1,15 +1,14 @@
 name: Server smoke test
 
-# Boots a headless Garry's Mod dedicated server with this gamemode mounted and
-# fails if the gamemode does not reach InitPostEntity, or if anything throws a
-# Lua error while it runs.
+# Boots a headless Garry's Mod dedicated server with this gamemode mounted,
+# adds bots so rounds, blind time and team logic actually run, and fails if the
+# gamemode does not load, if no round starts, if the run does not reach its
+# end, or if anything throws a Lua error while it runs.
 #
-# Deliberately NOT run on push: the SteamCMD download is several GB and the job
-# takes ~10 minutes on a cold cache. Run it before you push to a live server.
-#
-# Caveat: this repo ships no ph_* map, and neither team's spawn-point list
-# includes info_player_start, so players cannot actually spawn on a stock map.
-# This is a load-time smoke test, not a gameplay test.
+# Not run on every push: the SteamCMD download is several GB and a cold run
+# takes ~10 minutes. It runs weekly, on demand, and on pull requests that change
+# this file, so an edit to it is exercised before it merges rather than by the
+# next Monday cron. Run it before you push to a live server.
 
 on:
   workflow_dispatch:
@@ -19,14 +18,20 @@ on:
         type: string
         default: 'gm_construct'
       seconds:
-        description: 'How long to let the server run before shutting down'
+        description: 'How long to let the server run before shutting down (whole seconds)'
         type: string
-        default: '30'
+        default: '60'
+  pull_request:
+    paths:
+      - '.github/workflows/smoke-test.yml'
   schedule:
     - cron: '0 6 * * 1'   # Mondays 06:00 UTC
 
+permissions:
+  contents: read
+
 concurrency:
-  group: smoke-test
+  group: smoke-test-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -35,39 +40,69 @@ env:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    name: smoke
+    # Pinned rather than ubuntu-latest: the package names below are 24.04's,
+    # and the move to 24.04 is what removed libncurses5:i386 under this job.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: repo
+          persist-credentials: false
 
       - name: Install 32-bit runtime libraries
         run: |
+          # steamcmd and srcds_linux are 32-bit and link only libc, libm, libdl,
+          # libpthread, libstdc++ and libgcc_s. These two pull in all of them.
           sudo dpkg --add-architecture i386
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            lib32gcc-s1 lib32stdc++6 libncurses5:i386 libcurl4-gnutls-dev:i386
+          sudo apt-get install -y --no-install-recommends lib32gcc-s1 lib32stdc++6
 
-      - name: Cache dedicated server
+      - name: Cache key for this week
+        id: week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      # A key that rolls weekly, restored from any older week, so the server
+      # is updated incrementally instead of frozen at the first cached build.
+      - name: Restore the dedicated server
         id: srcds-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.SRCDS_DIR }}
-          key: srcds-${{ env.GMOD_APPID }}-${{ runner.os }}-v1
+          key: srcds-${{ env.GMOD_APPID }}-${{ runner.os }}-${{ steps.week.outputs.week }}
+          restore-keys: srcds-${{ env.GMOD_APPID }}-${{ runner.os }}-
 
-      - name: Install SteamCMD and the Garry's Mod dedicated server
-        if: steps.srcds-cache.outputs.cache-hit != 'true'
+      - name: Install or update SteamCMD and the Garry's Mod dedicated server
         run: |
           mkdir -p "$RUNNER_TEMP/steamcmd" "$SRCDS_DIR"
-          curl -sSL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" \
+          curl -fsSL --retry 3 "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" \
             | tar zxf - -C "$RUNNER_TEMP/steamcmd"
-          "$RUNNER_TEMP/steamcmd/steamcmd.sh" \
-            +force_install_dir "$SRCDS_DIR" \
-            +login anonymous \
-            +app_update "$GMOD_APPID" validate \
-            +quit
+          # SteamCMD fails transiently now and then; on a restored cache this
+          # only downloads what changed.
+          for attempt in 1 2 3; do
+            if "$RUNNER_TEMP/steamcmd/steamcmd.sh" +force_install_dir "$SRCDS_DIR" \
+                 +login anonymous +app_update "$GMOD_APPID" +quit; then
+              break
+            fi
+            if [ "$attempt" = 3 ]; then echo "::error::SteamCMD failed 3 times"; exit 1; fi
+            echo "::warning::SteamCMD attempt $attempt failed, retrying"
+          done
+          test -x "$SRCDS_DIR/srcds_run"
+          # Where srcds looks for the Steam client library.
+          mkdir -p "$HOME/.steam/sdk32"
+          ln -sf "$RUNNER_TEMP/steamcmd/linux32/steamclient.so" "$HOME/.steam/sdk32/steamclient.so"
+
+      # Saved before anything is mounted or run, so the cache only ever holds
+      # the stock server: no gamemode files from an old commit, no probe, and
+      # no srcds runtime state (data/, sv.db, cfg).
+      - name: Save the stock server
+        if: steps.srcds-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.SRCDS_DIR }}
+          key: ${{ steps.srcds-cache.outputs.cache-primary-key }}
 
       - name: Mount the gamemode
         run: |
@@ -77,54 +112,116 @@ jobs:
           ls "$SRCDS_DIR/garrysmod/gamemodes"
 
       - name: Install the CI probe
+        id: probe
         env:
           # Via env, not ${{ }} interpolation: a workflow_dispatch input pasted
           # straight into the shell is a script-injection sink.
-          SMOKE_SECONDS: ${{ inputs.seconds || '30' }}
+          SMOKE_SECONDS: ${{ inputs.seconds || '60' }}
         run: |
-          mkdir -p "$SRCDS_DIR/garrysmod/lua/autorun/server"
+          probe="$SRCDS_DIR/garrysmod/lua/autorun/server/zzz_ci_smoke.lua"
+          mkdir -p "$(dirname "$probe")"
           # Named zzz_ so it loads after everything else. CI-only, never committed.
-          cat > "$SRCDS_DIR/garrysmod/lua/autorun/server/zzz_ci_smoke.lua" <<'LUA'
-          hook.Add( "InitPostEntity", "ci_smoke_boot", function()
-              MsgN( "CI_SMOKE_BOOTED gamemode=" .. tostring( engine.ActiveGamemode() ) )
+          cat > "$probe" <<'LUA'
+          local SMOKE_SECONDS = __SMOKE_SECONDS__
 
-              timer.Simple( __SMOKE_SECONDS__, function()
-                  MsgN( "CI_SMOKE_DONE map=" .. game.GetMap() )
+          hook.Add( "InitPostEntity", "ci_smoke_boot", function()
+              -- The gamemode that actually loaded, not the one asked for: srcds
+              -- falls back to another gamemode when it cannot find prop_hunt.
+              MsgN( "CI_SMOKE_BOOTED gamemode=" .. tostring( GAMEMODE and GAMEMODE.FolderName ) )
+
+              -- Bots, so rounds, blind time and deaths run instead of an empty
+              -- server idling through the whole test.
+              timer.Simple( 1, function()
+                  for i = 1, 4 do player.CreateNextBot( "ci_bot" .. i ) end
+              end )
+
+              timer.Create( "ci_smoke_round", 1, 0, function()
+                  if !GAMEMODE:InRound() then return end
+                  timer.Remove( "ci_smoke_round" )
+                  MsgN( "CI_SMOKE_ROUND hunters=" .. team.NumPlayers( TEAM_HUNTERS ) ..
+                      " props=" .. team.NumPlayers( TEAM_PROPS ) )
+              end )
+
+              timer.Simple( SMOKE_SECONDS, function()
+                  MsgN( "CI_SMOKE_DONE map=" .. game.GetMap() .. " players=" .. player.GetCount() )
                   timer.Simple( 1, function() engine.CloseServer() end )
               end )
           end )
           LUA
-          # Substituted after the heredoc, so the value never reaches a shell parser.
-          python3 - "$SRCDS_DIR/garrysmod/lua/autorun/server/zzz_ci_smoke.lua" <<'PY'
-          import re, sys
-          p = sys.argv[1]
-          secs = re.sub(r'[^0-9.]', '', __import__('os').environ.get('SMOKE_SECONDS', '30')) or '30'
-          open(p, 'w').write(open(p).read().replace('__SMOKE_SECONDS__', secs))
-          PY
+          # Whole seconds only, so the value can never reach the Lua or the
+          # shell as anything but a number; anything else gets the default.
+          secs=$SMOKE_SECONDS
+          [[ "$secs" =~ ^[0-9]{1,4}$ ]] || { echo "::warning::seconds is not a whole number, using 60"; secs=60; }
+          sed -i "s/__SMOKE_SECONDS__/$secs/" "$probe"
+          grep -qx "local SMOKE_SECONDS = $secs" "$probe" || { echo "::error::probe substitution failed"; exit 1; }
+          echo "seconds=$secs" >> "$GITHUB_OUTPUT"
+          # -systemtest (see the next step) includes this file and logs an
+          # [ERROR] if it is missing or empty.
+          mkdir -p "$SRCDS_DIR/garrysmod/lua/includes"
+          echo "-- CI smoke test: srcds -systemtest includes this file." \
+            > "$SRCDS_DIR/garrysmod/lua/includes/dev_server_test.lua"
+          # -systemtest also adds a bot that hibernation drops at boot. With
+          # mv_change_when_no_player at its default of 1, RTV answers that
+          # "server emptied" with a map vote that can change level mid-run.
+          # server.cfg runs after the gamemode creates the cvar, so this
+          # reaches it.
+          printf '\nmv_change_when_no_player 0\n' >> "$SRCDS_DIR/garrysmod/cfg/server.cfg"
 
       - name: Boot the server
         env:
           SMOKE_MAP: ${{ inputs.map || 'gm_construct' }}
+          SMOKE_SECONDS: ${{ steps.probe.outputs.seconds }}
         run: |
-          cd "$SRCDS_DIR"
+          cd "$SRCDS_DIR" || exit 1
           set +e
-          timeout --signal=INT 600 ./srcds_run \
-            -game garrysmod -console -norestart -nohltv \
-            +sv_lan 1 +maxplayers 12 \
+          # -condebug: on the runner, srcds prints only its Steam start-up
+          # lines to stdout, not the game console, so the checks read the
+          # engine's own log, garrysmod/console.log. That file is appended to,
+          # so delete any old copy first, or its lines could pass the checks
+          # for a server that never booted. The cache cannot supply one (it is
+          # saved before the server first runs), but nothing else rules it out.
+          rm -f garrysmod/console.log
+          # +sv_hibernate_think 1: with no human players the server otherwise
+          # hibernates, and no timer, Think or round code runs at all.
+          # -systemtest: without it engine.CloseServer() only prints a message.
+          # Its startup bot is why the probe step turns off
+          # mv_change_when_no_player.
+          # The timeout is a backstop for a server that hangs.
+          timeout --signal=INT "$((SMOKE_SECONDS + 240))" ./srcds_run \
+            -game garrysmod -console -condebug -norestart -nohltv -systemtest \
+            +sv_lan 1 +maxplayers 12 +sv_hibernate_think 1 \
             +gamemode prop_hunt +map "$SMOKE_MAP" \
             2>&1 | tee "$GITHUB_WORKSPACE/console.log"
           echo "srcds exited with ${PIPESTATUS[0]}"
-
-      - name: Check the gamemode actually loaded
-        run: |
-          if ! grep -q 'CI_SMOKE_BOOTED' console.log; then
-            echo "::error::The server never reached InitPostEntity - the gamemode failed to load."
-            tail -n 120 console.log
-            exit 1
+          # The stdout above stays in the log, for a crash before the console
+          # starts. Where both carry the console, lines appear twice.
+          if [ -s garrysmod/console.log ]; then
+            echo "===== garrysmod/console.log (-condebug) =====" >> "$GITHUB_WORKSPACE/console.log"
+            cat garrysmod/console.log >> "$GITHUB_WORKSPACE/console.log"
+            echo "Last 150 lines of garrysmod/console.log:"
+            tail -n 150 garrysmod/console.log
+          else
+            echo "::warning::srcds wrote no garrysmod/console.log, so only its stdout can be checked."
           fi
-          grep 'CI_SMOKE_BOOTED\|CI_SMOKE_DONE' console.log
 
+      - name: Check the gamemode loaded and ran to the end
+        run: |
+          grep 'CI_SMOKE_' console.log || true
+          fail=0
+          if ! grep -q 'CI_SMOKE_BOOTED gamemode=prop_hunt' console.log; then
+            echo "::error::The server never reached InitPostEntity with prop_hunt loaded."; fail=1
+          fi
+          if ! grep -q 'CI_SMOKE_ROUND' console.log; then
+            echo "::error::No round started with four bots on the server."; fail=1
+          fi
+          if ! grep -q 'CI_SMOKE_DONE' console.log; then
+            echo "::error::The run never reached its end - the server hung, crashed or stopped running timers."; fail=1
+          fi
+          if [ "$fail" -ne 0 ]; then tail -n 150 console.log; exit 1; fi
+
+      # Runs even when the check above failed: the Lua error is usually the cause.
       - name: Check for Lua errors
+        if: ${{ !cancelled() && hashFiles('console.log') != '' }}
         run: |
           PATTERN='\[ERROR\]|Couldn.t include file|Timer Error|Hook .* Failed|attempt to (index|call|compare|perform|concatenate)|Tried to use a NULL entity|bad argument'
           if grep -nEi "$PATTERN" console.log; then
@@ -135,7 +232,7 @@ jobs:
 
       - name: Upload console log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: srcds-console-log
           path: console.log

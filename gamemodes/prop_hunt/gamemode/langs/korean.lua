@@ -141,7 +141,7 @@ L["HUD_TargetID"] = "플레이어: %s (%d%%)" -- Player: <NAME> (<HEALTH>%)
 L["HUD_BLINDED"] = "%s가 %s초 후에 풀려납니다"
 L["HUD_UNBLINDED"] = "준비됐든 말든, 시작합니다!"
 
-L["BLIND_RESPAWN_TEAM"] = "눈가림 시간 동안 %d초 후에 %s 팀으로 부활되었습니다."
+L["BLIND_RESPAWN_TEAM"] = "눈가림 시간 동안 %s 팀으로 %d초 후에 부활되었습니다."
 L["BLIND_RESPAWN"] = "눈가림 시간 동안 %d초 후에 부활되었습니다."
 
 L["MISC_ACCEPT"] = "승인"

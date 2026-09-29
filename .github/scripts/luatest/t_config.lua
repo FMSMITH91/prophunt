@@ -4,10 +4,12 @@ print("\n== ConVarTranslate: a custom callback must not lose the global sync =="
 -- Every PH:X cvar read goes through PHX:GetCVar -> GetGlobal*, so a cvar whose
 -- change never reaches the global is a cvar that silently does nothing. Four
 -- cvars in sh_convar.lua supply their own callback; none of them may drop it.
--- Constants block, then the ConVarTranslate table by name so this does not
+-- The constants, then the ConVarTranslate table, each by name so this does not
 -- re-break every time a line is added above it.
-local head = extract("gamemodes/prop_hunt/gamemode/sh_convar.lua", "1-10")
-  .. "\n" .. extract("gamemodes/prop_hunt/gamemode/sh_convar.lua", [[^local ConVarTranslate = \{]])
+local head = extractAll("gamemodes/prop_hunt/gamemode/sh_convar.lua", {
+  [[^CVAR_SERVER_ONLY\s*=]], [[^CVAR_SERVER_ONLY_NO_NOTIFY\s*=]], [[^CVAR_SERVER_HIDDEN\s*=]],
+  [[^CTYPE_STRING\s*=]], [[^CTYPE_NUMBER\s*=]], [[^CTYPE_BOOL\s*=]], [[^CTYPE_FLOAT\s*=]],
+  [[^local ConVarTranslate = \{]] })
 
 local function loadCVar(entrySpec)
   S.cvars, S.cvarcb, S.globals = {}, {}, {}
@@ -46,7 +48,8 @@ check("ph_usable_prop_type syncs", GetGlobalInt("ph_usable_prop_type", -1), 3)
 
 print("\n== mv_cooldown must be honourable ==")
 local f = loadchunk("local MapVote = ...\n"
-  .. extract("gamemodes/prop_hunt/gamemode/mapvote/sv_mapvote.lua", "188-193")
+  .. extractAll("gamemodes/prop_hunt/gamemode/mapvote/sv_mapvote.lua", {
+    [[^\tlocal cooldown\s*=]], [[^\tif cooldown == nil then]] })
   .. "\nreturn cooldown", "sv_mapvote.lua")
 check("mv_cooldown 1 -> cooldown on", f{ PHXConfig = { EnableCooldown = true } }, true)
 check("mv_cooldown 0 -> cooldown off", f{ PHXConfig = { EnableCooldown = false } }, false)

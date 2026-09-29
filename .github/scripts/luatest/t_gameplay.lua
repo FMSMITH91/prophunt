@@ -12,6 +12,7 @@ S.boolCVar("ph_use_unstuck", "1"); CreateConVar("ph_unstuck_waittime", "5")
 CreateConVar("ph_unstuckrange", "250"); S.boolCVar("ph_disabletpunstuckinround", "0")
 SetGlobalBool("InRound", true)
 
+local last   -- the player from the latest unstuck() call
 local function unstuck(opts)
   opts = opts or {}
   local p = S.Player{ team = opts.team or TEAM_PROPS, alive = (opts.alive ~= false),
@@ -21,8 +22,13 @@ local function unstuck(opts)
     p.ph_prop = { GetPropSize = function() return 16, 16, 32 end, __valid = true }
   end
   S.players = { p }
-  local ok, err = pcall(function() S.fire("PlayerSay", p, "!unstuck") end)
-  if not ok then return tostring(err) end
+  last = p
+  -- The hook swallows the chat line ("") when it handles the command. Without
+  -- asserting that, a renamed cvar or a mangled command table skips the code
+  -- under test and every "no error" check below passes vacuously.
+  local ok, ret = pcall(S.fire, "PlayerSay", p, "!unstuck")
+  if not ok then return tostring(ret) end
+  if ret ~= "" then return "PlayerSay hook did not handle !unstuck" end
   local errs = S.pump(0.3)
   return errs[1]
 end
@@ -33,6 +39,10 @@ check("hunter (ignored by design)", unstuck{ team = TEAM_HUNTERS }, nil)
 check("spectator", unstuck{ team = TEAM_SPECTATOR }, nil)
 check("DEAD prop, grounded", unstuck{ alive = false }, nil)
 check("DEAD prop, airborne", unstuck{ alive = false, onground = false }, nil)
+-- And prove the path actually runs: a living prop on open ground reaches
+-- TryNormalUnstuck, which finds nothing in the way and says so.
+unstuck{}
+check("living prop, grounded -> reaches TryNormalUnstuck", last.chat[1] and last.chat[1][2], "UNSTUCK_NOT_STUCK_TOOBAD")
 
 print("\n== hunter loadout across the whole ph_hunter_blindlock_time range ==")
 loadblocks("sh_player.lua@PHSetColor",
@@ -45,13 +55,16 @@ S.boolCVar("ph_give_grenade_near_roundend", "0"); CreateConVar("ph_smggrenadecou
 S.boolCVar("ph_enable_devil_balls", "0"); S.boolCVar("ph_use_custom_plmodel", "0")
 
 local function armed(blindTime)
+  S.timers = {}                               -- only this spawn's timers
   SetGlobalBool("PHX.BlindStatus", true)      -- PostCleanupMap sets this before spawning
   SetGlobalInt("unBlind_Time", blindTime)
   local p = S.Player{ team = TEAM_HUNTERS, info = { cl_playercolor = "1 1 1" } }
   S.players = { p }
   HUNTER:OnSpawn(p)
-  S.pump(blindTime + 2)
-  return #p.weapons > 0
+  -- The loadout is given inside the unblind timer, where an error after the
+  -- Give calls would otherwise be swallowed by the pump and still read "armed".
+  local errs = S.pump(blindTime + 2)
+  return errs[1] or #p.weapons > 0
 end
 for _, t in ipairs{ 0, 1, 2, 3, 15, 30, 60 } do
   check(("blindlock %-2d -> hunter ends up armed"):format(t), armed(t), true)
