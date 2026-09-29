@@ -59,6 +59,7 @@ L["HUD_KILLED"]				= "杀了"
 L["HUD_TIME"] 				= "时间"
 L["HUD_ROUND"]				= "回合"
 L["HUD_WAITPLY"]				= "正在等待玩家..."
+L["HUD_WAITROUND"]				= "正在等待回合开始"
 L["HUD_DEAD"]				= "(死亡) "
 
 L["HUD_TEAMWIN"]				= "%s 胜利!"
@@ -81,6 +82,7 @@ L["DERMA_NAME"]				= "名称"
 L["DERMA_KILLS"]				= "击杀"
 L["DERMA_DEATHS"]			= "死亡"
 L["DERMA_PING"]				= "Ping"
+L["DERMA_MUTE"]				= "静音"
 L["DERMA_SERVER_TAG"]		= "SV" --Fix Me
 L["DERMA_BOT_TAG"]			= "BOT" -- Fix Me
 L["DERMA_GAMEMODE_CREDITS"]	= "%s | Version: %s - Rev. %s" -- Fix Me
@@ -350,7 +352,7 @@ L["PHXM_MV_TIMELIMIT"]			= "投票时作为默认的地图投票时间(秒)."
 L["PHXM_MV_MAPBEFOREREVOTE"]		= "重新出现地图所需的地图更改数"
 L["PHXM_MV_RTVCOUNT"]			= "需要多少人才能发起撼动投票(Rock the Vote)"
 
-L["PHXM_MV_EXPLANATION1"]		= "要设置列出相对应的地图，请在控制台中使用(举例)[ mv_map_prefix 'phx_,ph_,cs_,de_' ]."
+L["PHXM_MV_EXPLANATION1"]		= "要设置列出相对应的地图，请在控制台中使用(举例)[ mv_map_prefix \"phx_,ph_,cs_,de_\" ]."
 L["PHXM_MV_EXPLANATION2"]		= "如果你使用ULX，请使用map_vote. 若不是，请使用mv_start."
 L["PHXM_MV_EXPLANATION3"]		= "地图投票操作(要取消，需在控制台中输入!unmap_vote(ULX)或mv_stop.)"
 
@@ -808,7 +810,7 @@ L["PHX_ROTATE_TEAM_RESET"]			= "Rotation Team Offset has been reset."
 L["UNSTUCK_YOURE_UNSTUCK"]			= "You should be unstuck!"
 L["UNSTUCK_BAD_SPAWNPOINT"]			= "Error: The closest spawnpoint might get you stuck again. If it does, try to unstuck again."
 L["UNSTUCK_RESCUE_SPAWNPOINT"]		= "This spawnpoint is extremely close, so you might still be stuck. Try unstucking again if you are."
-L["UNSTUCK_NO_SPAWNPOINTS"]			= "For unknown reasons, no spawnpoint could be found. As a backup strategy, you will be teleported to (0, 0, 0). There is a very high chance that you will be stuck, so if you are please try unstucking again."
+L["UNSTUCK_NO_SPAWNPOINTS"]			= "由于未知原因，找不到任何重生点。如果你仍然卡住，请再次尝试脱困，或等待本回合结束。"
 L["UNSTUCK_PLEASE_WAIT"]				= "Please wait %d seconds between each unstuck attempt."
 L["UNSTUCK_NOT_ON_GROUND"] 			= "Not on ground, checking..."
 L["UNSTUCK_NOT_STUCK_JITTER"]		= "You're not stuck. If you really are, wait until your prop no longer moves/jitters (try pressing ALT) then try again."

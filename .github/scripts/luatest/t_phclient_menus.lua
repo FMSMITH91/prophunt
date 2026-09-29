@@ -130,6 +130,44 @@ help:Remove()
 GAMEMODE:ShowHelp()
 check("after closing it, F1 opens a new one", splashes, 2)
 
+print("\n== [#12] F1 footer with no game time limit (ph_game_time 0) ==")
+-- GetTimeLimit is -1 then; GetGameTimeLeft passes that through, and the footer
+-- returns on it before the "game will end after this round" test.
+loadblocks("shared.lua@TimeLimit", extractAll("gamemodes/base_phx/gamemode/shared.lua",
+  { [[^function GM:GetTimeLimit]], [[^function GM:GetGameTimeLeft]] }))
+GAMEMODE.RoundBased = true
+local footerSrc = extract("gamemodes/prop_hunt/gamemode/cl_init.lua", [[^\s*Help\.lblFooterText\.Think = function]])
+local function footer(gameLength, now)
+  local savedNow = _G.CURTIME
+  GAMEMODE.GameLength, _G.CURTIME = gameLength, now
+  PHCLIENT_Help = Panel("splash"); PHCLIENT_Help.lblFooterText = Panel("label")
+  loadblocks("cl_init.lua@FooterThink", footerSrc, "local Help = PHCLIENT_Help")
+  PHCLIENT_Help.lblFooterText:Think()
+  _G.CURTIME = savedNow
+  return PHCLIENT_Help.lblFooterText.texts[1] or "none"
+end
+check("no time limit, 2 h into the map: footer untouched", footer(0, 7200), "none")
+check("30 min limit, 10 min in: time left", footer(30, 600), "MISC_TIMELEFT")
+check("30 min limit, 40 min in: last round", footer(30, 2400), "MISC_GAMEEND")
+
+print("\n== [#214] prop ban lists: an emptied list replaces the client's copy ==")
+net.ReadData = function() return table.remove(S.net.readq, 1) end
+util.PHXQuickDecompress = function(d) return d end   -- the payload is the decoded table
+loadblocks("cl_init.lua@UpdatePropbanInfo",
+  extract("gamemodes/prop_hunt/gamemode/cl_init.lua", [[^net\.Receive\("PHX\.UpdatePropbanInfo"]]))
+local function banInfo(key, data)
+  S.net.readq = { key, 1, data }
+  return attempt(S.receivers["PHX.UpdatePropbanInfo"])
+end
+PHX.PROP_PLMODEL_BANS = { "models/player.mdl" }
+check("list with models: ok", banInfo("PROP_PLMODEL_BANS", { "models/a.mdl", "models/b.mdl" }), "ok")
+check("list with models: replaced", table.concat(PHX.PROP_PLMODEL_BANS, ","), "models/a.mdl,models/b.mdl")
+check("emptied list: ok", banInfo("PROP_PLMODEL_BANS", {}), "ok")
+check("emptied list: client copy cleared", #PHX.PROP_PLMODEL_BANS, 0)
+PHX.BANNED_PROP_MODELS = { "models/chefhat.mdl" }
+check("unreadable payload: ok", banInfo("BANNED_PROP_MODELS", nil), "ok")
+check("unreadable payload: current list kept", PHX.BANNED_PROP_MODELS[1], "models/chefhat.mdl")
+
 print("\n== [#254] team menu keeps your own team's button disabled ==")
 S.teamFull = {}
 GAMEMODE.AllowSpectating = true

@@ -289,6 +289,20 @@ check("19/18 (chambered round): capped at full", w, 260)
 _, w = ammoBar(-1, -1, 5)
 check("clipless with reserve ammo: 0, not NaN", w, 0)
 
+print("\n== [#226] alive-team count starts from zero ==")
+loadblocks("cl_hud.lua@PopulateAliveTeam",
+  extract("gamemodes/prop_hunt/gamemode/cl_hud.lua", [[^local function PopulateAliveTeam]])
+  .. "\nPHCLIENT_PopulateAliveTeam = PopulateAliveTeam")
+local savedPlayers = S.players
+S.players = { S.Player{ team = TEAM_PROPS }, S.Player{ team = TEAM_PROPS, alive = false },
+              S.Player{ team = TEAM_PROPS }, S.Player{ team = TEAM_HUNTERS } }
+liveply = 7   -- a stray global of the same name, from an addon or the console
+check("2 of 3 props alive, stray global liveply", PHCLIENT_PopulateAliveTeam(TEAM_PROPS), 2)
+liveply = nil
+check("1 hunter alive", PHCLIENT_PopulateAliveTeam(TEAM_HUNTERS), 1)
+check("empty team", PHCLIENT_PopulateAliveTeam(TEAM_SPECTATOR), 0)
+S.players = savedPlayers
+
 print("\n== [#159] avatar follows a resolution change ==")
 ME = S.Player{ team = TEAM_HUNTERS }
 PHX.HUD.ava = nil

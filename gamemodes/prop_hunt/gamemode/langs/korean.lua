@@ -57,6 +57,7 @@ L["HUD_KILLED"] = "님이 살해한"
 L["HUD_TIME"] = "시간"
 L["HUD_ROUND"] = "라운드"
 L["HUD_WAITPLY"] = "플레이어를 기다리는 중..."
+L["HUD_WAITROUND"] = "라운드 시작을 기다리는 중"
 L["HUD_DEAD"] = "(사망) "
 
 L["HUD_TEAMWIN"] = "%s 승리!"
@@ -79,6 +80,7 @@ L["DERMA_NAME"] = "이름"
 L["DERMA_KILLS"] = "처치"
 L["DERMA_DEATHS"] = "사망"
 L["DERMA_PING"] = "핑"
+L["DERMA_MUTE"] = "음소거"
 L["DERMA_SERVER_TAG"]		= "서버" 
 L["DERMA_BOT_TAG"]			= "봇" 
 L["DERMA_GAMEMODE_CREDITS"]	= "%s | 버전: %s - 수정. %s" 
@@ -367,7 +369,7 @@ L["PHXM_MV_MAPBEFOREREVOTE"] = "맵이 다시 나올때까지 필요한 맵 변�
 L["PHXM_MV_RTVCOUNT"] = "RTV (Rock the Vote)를 사용하는 데 필요한 플레이어 수"
 
 L["PHXM_MV_EXPLANATION1"] =
-    "어느 맵을 목록에 표시할지 지정하려면, 다음을 콘솔에 입력하시기 바랍니다. (예시) [ mv_mapprefix 'ph_,cs_,de_' ]"
+    "어느 맵을 목록에 표시할지 지정하려면, 다음을 콘솔에 입력하시기 바랍니다. (예시) [ mv_map_prefix \"phx_,ph_,cs_,de_\" ]"
 L["PHXM_MV_EXPLANATION2"] =
     "ULX를 사용하는 경우 map_vote를 입력하시고, 그렇지 않은 경우 mv_start를 입력하세요."
 L["PHXM_MV_EXPLANATION3"] =
@@ -819,7 +821,7 @@ L["FORCEH2P_ALREADY"]				= "%s has already been defined as a Prop for next round
 L["UNSTUCK_YOURE_UNSTUCK"]			= "You should be unstuck!"
 L["UNSTUCK_BAD_SPAWNPOINT"]			= "Error: The closest spawnpoint might get you stuck again. If it does, try to unstuck again."
 L["UNSTUCK_RESCUE_SPAWNPOINT"]		= "This spawnpoint is extremely close, so you might still be stuck. Try unstucking again if you are."
-L["UNSTUCK_NO_SPAWNPOINTS"]			= "For unknown reasons, no spawnpoint could be found. As a backup strategy, you will be teleported to (0, 0, 0). There is a very high chance that you will be stuck, so if you are please try unstucking again."
+L["UNSTUCK_NO_SPAWNPOINTS"]			= "알 수 없는 이유로 부활 지점을 찾을 수 없습니다. 아직 끼어 있다면 다시 시도하거나 라운드가 끝날 때까지 기다려 주세요."
 L["UNSTUCK_PLEASE_WAIT"]				= "Please wait %d seconds between each unstuck attempt."
 L["UNSTUCK_NOT_ON_GROUND"] 			= "Not on ground, checking..."
 L["UNSTUCK_NOT_STUCK_JITTER"]		= "You're not stuck. If you really are, wait until your prop no longer moves/jitters (try pressing ALT) then try again."

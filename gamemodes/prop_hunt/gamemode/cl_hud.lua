@@ -45,7 +45,7 @@ net.Receive("PHX.rotateState", function() Rstate = net.ReadUInt(1) end)
 
 local function PopulateAliveTeam(tm)
 	local tim = team.GetPlayers(tm)
-	local liveply = liveply or 0
+	local liveply = 0
 	
 	for _,pl in pairs(tim) do
 		if IsValid(pl) && pl:Alive() then liveply = liveply + 1 end

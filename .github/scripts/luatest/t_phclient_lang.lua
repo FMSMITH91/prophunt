@@ -83,6 +83,21 @@ PHX.LANGUAGES.en_us.PHCLIENT_ENONLY_TBL = { "only english" }
 check("table missing from tr -> English table", as("tr", PHX.GetRandomTranslated, "PHCLIENT_ENONLY_TBL"), "only english")
 check("undefined table still reported", as("tr", PHX.GetRandomTranslated, "PHCLIENT_NO_TBL"), "cannot find PHCLIENT_NO_TBL table.")
 
+print("\n== reworded strings, as each language file decodes ==")
+local badExample, badUnstuck = {}, {}
+for code, L in pairs(PHX.LANGUAGES) do
+  -- Single quotes are break characters in the Source console, so they ended up
+  -- in the cvar value; korean.lua also named a cvar that does not exist.
+  if not (L.PHXM_MV_EXPLANATION1 or ""):find('mv_map_prefix "phx_,ph_,cs_,de_"', 1, true) then
+    badExample[#badExample + 1] = code
+  end
+  -- The player is no longer sent to the world origin when no spawn is found.
+  if (L.UNSTUCK_NO_SPAWNPOINTS or "0, 0, 0"):find("0, 0, 0", 1, true) then badUnstuck[#badUnstuck + 1] = code end
+end
+table.sort(badExample); table.sort(badUnstuck)
+check("mv_map_prefix example: real cvar, double quotes", table.concat(badExample, ","), "")
+check("no-spawnpoint unstuck text: no (0, 0, 0) promise", table.concat(badUnstuck, ","), "")
+
 print("\n== [#165] a language table without Name does not abort the setup ==")
 list.Set("PHX.CustomExternalLanguage", "vi", { code = "vi", HUD_HP = "MAU" })
 check("Initialize with a nameless external language", boot(), "ok")

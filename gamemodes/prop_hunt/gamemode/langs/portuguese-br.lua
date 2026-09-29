@@ -48,6 +48,7 @@ L["HUD_KILLED"]				= "matou"
 L["HUD_TIME"] 				= "TEMPO"
 L["HUD_ROUND"]				= "RODADA"
 L["HUD_WAITPLY"]				= "Aguardando por jogadores..."
+L["HUD_WAITROUND"]				= "Aguardando o início da rodada"
 L["HUD_DEAD"]				= "(MORTO) "
 
 L["HUD_TEAMWIN"]				= "%s ganharam!"
@@ -70,6 +71,7 @@ L["DERMA_NAME"]				= "Nome"
 L["DERMA_KILLS"]				= "Kills"
 L["DERMA_DEATHS"]			= "Mortes"
 L["DERMA_PING"]				= "Latência"
+L["DERMA_MUTE"]				= "Silenciar"
 L["DERMA_SERVER_TAG"]		= "SV" --Fix Me
 L["DERMA_BOT_TAG"]			= "BOT" -- Fix Me
 L["DERMA_GAMEMODE_CREDITS"]	= "%s | Version: %s - Rev. %s" -- Fix Me
@@ -339,7 +341,7 @@ L["PHXM_MV_TIMELIMIT"]			= "Tempo em segundos padrão para votação."
 L["PHXM_MV_MAPBEFOREREVOTE"]		= "Mudanças de mapa necessária para um mapa reaparecer"
 L["PHXM_MV_RTVCOUNT"]			= "Quantos jogadores serão necessários para usar RTV (Rock the Vote)"
 
-L["PHXM_MV_EXPLANATION1"]		= "Para selecionar quais mapas devem ser listados, use (por exemplo)[ mv_map_prefix 'phx_,ph_,cs_,de_' ] no console."
+L["PHXM_MV_EXPLANATION1"]		= "Para selecionar quais mapas devem ser listados, use (por exemplo)[ mv_map_prefix \"phx_,ph_,cs_,de_\" ] no console."
 L["PHXM_MV_EXPLANATION2"]		= "Se você tiver usando ULX ULX, use map_vote. Use map_vote, senão use mv_start."
 L["PHXM_MV_EXPLANATION3"]		= "Ação de votação de mapa (Para cancelar, digite !unmap_vote (ULX) ou mv_stop no console)"
 
@@ -796,7 +798,7 @@ L["PHX_ROTATE_TEAM_RESET"]			= "Rotation Team Offset has been reset."
 L["UNSTUCK_YOURE_UNSTUCK"]			= "You should be unstuck!"
 L["UNSTUCK_BAD_SPAWNPOINT"]			= "Error: The closest spawnpoint might get you stuck again. If it does, try to unstuck again."
 L["UNSTUCK_RESCUE_SPAWNPOINT"]		= "This spawnpoint is extremely close, so you might still be stuck. Try unstucking again if you are."
-L["UNSTUCK_NO_SPAWNPOINTS"]			= "For unknown reasons, no spawnpoint could be found. As a backup strategy, you will be teleported to (0, 0, 0). There is a very high chance that you will be stuck, so if you are please try unstucking again."
+L["UNSTUCK_NO_SPAWNPOINTS"]			= "Por motivos desconhecidos, nenhum ponto de renascimento foi encontrado. Se você ainda estiver preso, tente novamente ou aguarde o fim da rodada."
 L["UNSTUCK_PLEASE_WAIT"]				= "Please wait %d seconds between each unstuck attempt."
 L["UNSTUCK_NOT_ON_GROUND"] 			= "Not on ground, checking..."
 L["UNSTUCK_NOT_STUCK_JITTER"]		= "You're not stuck. If you really are, wait until your prop no longer moves/jitters (try pressing ALT) then try again."

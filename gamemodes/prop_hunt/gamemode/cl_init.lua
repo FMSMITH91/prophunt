@@ -723,11 +723,13 @@ net.Receive("PHX.UpdatePropbanInfo", function()
 	
 	local data = util.PHXQuickDecompress( comp )
 	
-	if !data or istable(data) and table.IsEmpty(data) then
-		PHX:VerboseMsg( "[Model Ban] Warning: Retreiving an empty prop ban data! Reverting to default bans!", 2)
+	if !istable(data) then
+		PHX:VerboseMsg( "[Model Ban] Warning: Could not read the prop ban data, keeping the current list.", 2)
 		return
 	end
-	-- Replace the data anyway.
+	-- An empty list is a real update, not an error: the server resends after
+	-- ph_refresh_plmodel_ban / ph_refresh_propmodel_ban, so emptying a ban file
+	-- has to clear the client's copy as well.
 	PHX[key]	= {}
 	for _,mdl in pairs( data ) do
 		table.insert(PHX[key], mdl)
