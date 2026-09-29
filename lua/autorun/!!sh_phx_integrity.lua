@@ -314,9 +314,17 @@ local function FETCH_CONFLICT_WSID()
 
 end
 
+-- THIRDPARTY only covers addons/ and Workshop content, so a gamemode installed
+-- straight into garrysmod/gamemodes/ read as missing and a working server
+-- reported itself broken. GAME covers both; THIRDPARTY stays first so an
+-- addon's copy is still the one checked.
+local function ReadGamemodeTXT( txtFile )
+	return file.Read( txtFile, "THIRDPARTY" ) or file.Read( txtFile, "GAME" )
+end
+
 local function CheckGamemodeTXT()
-	local FrettaInfo = file.Read( "gamemodes/base_phx/base_phx.txt", "THIRDPARTY" ) --"GAME"
-	local PropHuntInfo = file.Read( "gamemodes/prop_hunt/prop_hunt.txt", "THIRDPARTY" ) --"GAME"
+	local FrettaInfo = ReadGamemodeTXT( "gamemodes/base_phx/base_phx.txt" )
+	local PropHuntInfo = ReadGamemodeTXT( "gamemodes/prop_hunt/prop_hunt.txt" )
 	local addErr = 0
 	
 	if (FrettaInfo) then

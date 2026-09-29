@@ -241,6 +241,14 @@ end
 ---------------------------------------------------------*/
 function GM:GetTimeLimit()
 
+	// A client's GameLength is ph_game_time from when it joined, which can differ
+	// from the server's map-load copy, so use the limit the server published.
+	// That is never 0, so 0 means it hasn't arrived yet.
+	if ( CLIENT ) then
+		local iLimit = GetGlobalInt( "PHX.TimeLimit", 0 )
+		if ( iLimit != 0 ) then return iLimit end
+	end
+
 	if( GAMEMODE.GameLength > 0 ) then
 		return GAMEMODE.GameLength * 60;
 	end

@@ -453,7 +453,6 @@ L["HUD_AUTOTAUNT_WAITFORUPDATE"]	=	"자동 도발 동기화 중..."
 --[[
 	MapVote: Late Addition: Revision: 16.09.21/X2Z
 ]]
-L["PHXM_MV_VOTEROCKED"]				= " 투표 진행이 결정되었습니다. 라운드가 끝나면 맵 투표가 시작됩니다."
 L["PHXM_MV_VOTEROCKED_IMMINENT"]		= "투표 진행이 결정되었습니다. 곧 맵 투표가 시작됩니다."
 L["PHXM_MV_VOTEROCKED_PLY_TOTAL"]	= "%s님이 투표 진행에 표를 던졌습니다. ( %d / %d )"
 

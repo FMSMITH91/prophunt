@@ -74,8 +74,8 @@ S.globals.RoundWaitingToStart = true
 check("the wait starting rebuilds the HUD", GAMEMODE:HUDNeedsUpdate(), true)
 check("no wait: the round result shows",
   hud{ RoundResult = 2, RRText = "HUD_TEAMWIN", InRound = false }, "T:HUD_TEAMWIN")
-check("dead before the first round: translated text",
-  hud({ InRound = false }, { alive = false }), "T:HUD_WAITPLY")
+check("dead before the first round: waiting for the round, not for players",
+  hud({ InRound = false }, { alive = false }), "T:HUD_WAITROUND")
 
 print("\n== a round paused by ph_waitforplayers ==")
 local t = hud{ InRound = true, RoundWaitForPlayers = true }
@@ -91,5 +91,39 @@ baseHUD, onPaint = 0, 0
 GAMEMODE:HUDPaint()
 check("base HUDPaint once", baseHUD, 1)
 check("OnHUDPaint once", onPaint, 1)
+
+print("\n== before the first round, in the player's language (shipped cl_lang.lua) ==")
+local repo = (debug.getinfo(1, "S").source:match("@(.*/)") or "./") .. "../../../"
+local function loadLang(rel)
+  local f = assert(io.open(repo .. rel, "r"))
+  local src = f:read("*a")
+  f:close()
+  loadchunk(src, rel)()
+end
+function PHX:GetCLCVar(n) return PHX:GetCVar(n) end
+S.boolCVar("ph_use_lang", "0"); CreateConVar("ph_force_lang", "en_us"); CreateConVar("ph_cl_language", "en_us")
+loadblocks("cl_lang.lua", extract("gamemodes/prop_hunt/gamemode/cl_lang.lua", "1-999999"))
+PHX.LANGUAGES = {}
+loadLang("gamemodes/prop_hunt/gamemode/langs/english.lua")
+loadLang("gamemodes/prop_hunt/gamemode/langs/german.lua")
+local EN, DE = PHX.LANGUAGES.en_us, PHX.LANGUAGES.de
+-- RefreshHUD keeps the old layout while nothing it watches has changed, and
+-- this text is set once at build time, so step through another state first.
+local function fresh(g, who) hud{ InRound = true }; return hud(g, who) end
+local before = { InRound = false }
+check("en_us: dead", fresh(before, { alive = false }), EN.HUD_WAITROUND)
+check("en_us: spectating", fresh(before, { alive = false, obs = true }), EN.HUD_WAITROUND)
+S.cvars["ph_cl_language"].v = "de"
+check("de: the German text", fresh(before, { alive = false }), DE.HUD_WAITROUND)
+check("  ...which is not the English one", DE.HUD_WAITROUND ~= EN.HUD_WAITROUND, true)
+check("de, held for players: still says so",
+  fresh({ InRound = false, RoundWaitingToStart = true }, { alive = false }), DE.HUD_WAITPLY)
+-- FTranslate hands back the key itself for a string no language defines.
+local de, en = DE.HUD_WAITROUND, EN.HUD_WAITROUND
+DE.HUD_WAITROUND, EN.HUD_WAITROUND = nil, nil
+check("key in no language: English fallback, not the key",
+  fresh(before, { alive = false }), "Waiting for round start")
+DE.HUD_WAITROUND, EN.HUD_WAITROUND = de, en
+S.cvars["ph_cl_language"].v = "en_us"
 
 report()

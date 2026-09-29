@@ -1,10 +1,21 @@
+-- Sends a group file to everyone as it is on disk. One too big for a net message
+-- is refused with an error (see sv_nettables.lua), and clients keep the list they had.
+local function BroadcastGroupFile( netName, json )
+	if !netName then
+		ErrorNoHalt( "sv_admin.lua -> 'netName' is empty or invalid. Not pooling any network messages!" )
+		return
+	end
+
+	local c = util.Compress( json )
+	util.PHXSendCompressed( netName, c, c:len() )
+end
+
 -- User Management
 function PHX:ManageGroupInfo( bLoadSave, bUseNet, stblKey, fileName, netName )
 
-	if !stblKey or stblKey == nil or
-		!fileName or fileName == nil then
-			ErrorNoHalt( "Table Key and File Name is required!" )
-			return
+	if !stblKey or !fileName then
+		ErrorNoHalt( "Table Key and File Name is required!" )
+		return
 	end
 
 	local data = nil
@@ -18,27 +29,12 @@ function PHX:ManageGroupInfo( bLoadSave, bUseNet, stblKey, fileName, netName )
 		local f = file.Read( cfg, "DATA" )
 		local t = util.JSONToTable(f)
 		
-		if t and t ~= nil then
+		if t then
 			
 			data = t
 			
 			if (bUseNet) then
-			
-				if netName or netName ~= nil then
-			
-					local c = util.Compress(f)
-					local len = c:len()
-					
-					net.Start( netName )
-					  net.WriteUInt(len,32)
-					  net.WriteData(c,len)
-					net.Broadcast()
-					
-				else
-				
-					ErrorNoHalt( "sv_admin.lua -> 'netName' is empty or invalid. Not pooling any network messages!" )
-					
-				end
+				BroadcastGroupFile( netName, f )
 			end
 			
 			self[stblKey] = data

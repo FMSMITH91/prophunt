@@ -425,7 +425,6 @@ L["HUD_AUTOTAUNT_WAITFORUPDATE"]	=	"Auto Taunt est entrain de synchroniser..."
 --[[
 	MapVote: Late Addition: Revision: 16.09.21/X2Z
 ]]
-L["PHXM_MV_VOTEROCKED"]				= "Le vote est terminé, le vote sera effectif à la fin de la manche"
 L["PHXM_MV_VOTEROCKED_IMMINENT"]		= "Le vote est terminé, changement de Map imminent!"
 L["PHXM_MV_VOTEROCKED_PLY_TOTAL"]	= "%s a utilisé la commande Rock the Vote. ( %d / %d )"
 

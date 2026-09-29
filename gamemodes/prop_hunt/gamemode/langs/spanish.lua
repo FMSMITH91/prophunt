@@ -434,7 +434,6 @@ L["HUD_AUTOTAUNT_WAITFORUPDATE"]	=	"Sincronizando burla automática..."
 --[[
 	MapVote: Late Addition: Revision: 16.09.21/X2Z
 ]]
-L["PHXM_MV_VOTEROCKED"]				= "Se ha aprobado la votación, comenzará cuando acabe la ronda"
 L["PHXM_MV_VOTEROCKED_IMMINENT"]		= "Se ha aprobado la votación, cambio de mapa inminente"
 L["PHXM_MV_VOTEROCKED_PLY_TOTAL"]	= "%s ha pedido realizar una votación. ( %d / %d )"
 

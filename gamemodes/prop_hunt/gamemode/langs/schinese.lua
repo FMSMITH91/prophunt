@@ -436,7 +436,6 @@ L["HUD_AUTOTAUNT_WAITFORUPDATE"]	=	"正在同步自动嘲讽..."
 --[[
 	MapVote: Late Addition: Revision: 16.09.21/X2Z
 ]]
-L["PHXM_MV_VOTEROCKED"]				= " 投票已撼动,本轮结束后将开始地图投票"
 L["PHXM_MV_VOTEROCKED_IMMINENT"]		= "投票已撼动,即将开始地图投票"
 L["PHXM_MV_VOTEROCKED_PLY_TOTAL"]	= "%s 支持撼动投票. ( %d / %d )"
 

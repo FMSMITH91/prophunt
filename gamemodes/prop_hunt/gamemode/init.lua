@@ -113,18 +113,13 @@ local function ClearTimer()
 	
 end
 
+-- A list too big for one net message is refused with an error (see sv_nettables.lua).
 local function sendGroupInfo( ply )
 	local data,size = util.PHXQuickCompress( PHX.IgnoreMutedUserGroup )
-    net.Start("PHX.MutedGroupInfo")
-        net.WriteUInt(size,32)
-        net.WriteData(data,size)
-    net.Send( ply )
+	util.PHXSendCompressed( "PHX.MutedGroupInfo", data, size, ply )
 
-    local data,size = util.PHXQuickCompress( PHX.SVAdmins )
-    net.Start("PHX.AdminGroupInfo")
-        net.WriteUInt(size,32)
-        net.WriteData(data,size)
-    net.Send( ply )
+	data,size = util.PHXQuickCompress( PHX.SVAdmins )
+	util.PHXSendCompressed( "PHX.AdminGroupInfo", data, size, ply )
 end
 
 -- Player Join/Leave message
@@ -761,6 +756,16 @@ function GM:PlayerSetModel(pl)
 	pl:SetModel(player_model)
 end
 
+-- A map prop keeps the map's spelling of its model, and addons can add ban entries
+-- in any case, so both sides are compared lowercased.
+local function IsBannedPropModel( mdl )
+	mdl = string.lower( mdl )
+	for _, v in pairs( PHX.BANNED_PROP_MODELS ) do
+		if isstring( v ) && string.lower( v ) == mdl then return true end
+	end
+	return false
+end
+
 -- The [E] & Mouse Click 1 behaviour is now moved in here!
 function GM:PlayerExchangeProp(pl, ent)
 
@@ -773,7 +778,7 @@ function GM:PlayerExchangeProp(pl, ent)
 	if pl:Team() == TEAM_PROPS && PHX:IsUsablePropEntity(ent:GetClass()) && ent:GetModel() then
 		-- Prop Launcher: Don't allow if Prop is a Trash (Residue of PROP Launcher item/LPS)
 		if (ent._PropTrash) then return end
-		if PHX:GetCVar( "ph_banned_models" ) and table.HasValue(PHX.BANNED_PROP_MODELS, ent:GetModel()) then
+		if PHX:GetCVar( "ph_banned_models" ) and IsBannedPropModel(ent:GetModel()) then
 			pl:PHXChatInfo("ERROR", "PHX_PROP_IS_BANNED")
 		elseif IsValid(ent:GetPhysicsObject()) && (pl.ph_prop:GetModel() != ent:GetModel() || pl.ph_prop:GetSkin() != ent:GetSkin()) then
         

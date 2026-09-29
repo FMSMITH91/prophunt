@@ -270,4 +270,10 @@ check("mv_mapbeforerevote slider spans the ConVar",
       (function() local d = madeWhere(function(m) return m.c == "mv_mapbeforerevote" end).d return d.min .. "-" .. d.max end)(),
       mvBounds.mv_mapbeforerevote.min .. "-" .. mvBounds.mv_mapbeforerevote.max)
 
+-- ph_game_time 0 is no time limit. A slider starting at 20 showed a server on 0
+-- as 20, and touching it switched the limit back on.
+local gameTime = madeWhere(function(m) return m.typ == "slider" and m.c == "ph_game_time" end)
+check("ph_game_time slider reaches 0 (no time limit)", gameTime and gameTime.d.min, 0)
+check("ph_game_time slider still goes up to 300", gameTime and gameTime.d.max, 300)
+
 report()

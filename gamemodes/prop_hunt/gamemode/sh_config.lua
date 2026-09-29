@@ -640,8 +640,14 @@ function PHX:GetAllTeamTaunt( teamid, category )
 end
 
 -- Broadcasts, or sends to one player when `ply` is given (a late joiner).
+-- A list compressed past 60000 bytes (util.PHXSendCompressed's limit, sv_nettables.lua)
+-- would never arrive, so it is refused with an error; clients keep the list they have.
 local function UpdatePropBansInfo( PHXKey, tbl, ply )
 	local compress,len = util.PHXQuickCompress( tbl )
+	if len > 60000 then
+		ErrorNoHalt( "[PHX] Not sending PHX.UpdatePropbanInfo (" .. PHXKey .. "): it is " .. len .. " bytes compressed, over the 60000 byte net message limit.\n" )
+		return
+	end
 	
 	net.Start( "PHX.UpdatePropbanInfo" )
 		net.WriteString( PHXKey )

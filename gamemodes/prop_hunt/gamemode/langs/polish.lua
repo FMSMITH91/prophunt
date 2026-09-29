@@ -439,7 +439,6 @@ L["HUD_AUTOTAUNT_WAITFORUPDATE"]		=	"Synchronizowanie auto-podpowiedzi..."
 --[[
 	MapVote: Late Addition: Revision: 16.09.21/X2Z
 ]]
-L["PHXM_MV_VOTEROCKED"]						= " Zwołano głosowanie za zmianą mapy, które rozpocznie się po zakończeniu rundy"
 L["PHXM_MV_VOTEROCKED_IMMINENT"]		= "Nadchodzi głosowanie za zmianą mapy"
 L["PHXM_MV_VOTEROCKED_PLY_TOTAL"]	= "%s chce rozpocząć głosowanie. ( %d / %d )"
 
