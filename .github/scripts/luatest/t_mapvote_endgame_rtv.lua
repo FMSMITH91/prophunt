@@ -4,11 +4,11 @@ local F = dofile(here .. "mapvote_fixture.lua")
 local boot, run, count, offered, players, vote, timerAt =
   F.boot, F.run, F.count, F.offered, F.players, F.vote, F.timerAt
 
--- RTV meeting the end of the game. GM:EndOfGame starts its own vote after
--- GAMEMODE.VotingDelay, so once the game is over RTV has nothing left to start,
--- and a built-in vote already open (or decided) when the game ends is the one
--- that changes map rather than being started over. Setup is shared with the
--- other map vote tests in mapvote_fixture.lua.
+-- RTV meeting the end of the game. GM:EndOfGame(true) starts its own vote after
+-- GAMEMODE.VotingDelay, so RTV has nothing to start until then, and a built-in
+-- vote already open (or decided) when the game ends is the one that changes
+-- map rather than being started over. Setup is shared with the other map vote
+-- tests in mapvote_fixture.lua.
 
 local NOCANCEL = "PHXM_MV_ENDGAME_NOCANCEL"
 
@@ -227,6 +227,57 @@ do
   local _, r = logged(function() return PHX.MV.PHXCancel() end)
   check("PHXCancel from Lua at the end of the game runs", r, "ok")
   check("  ...and clears the countdown too", timerAt("PHX.RTV.Start"), nil)
+end
+
+------------------------------------------------------------------------------
+print("\n== RTV waits only while the end-of-game vote is due ==")
+------------------------------------------------------------------------------
+do
+  -- EndOfGame(false): an addon ends the game and schedules no vote. No round
+  -- starts again, so RTV is the players' only way to one.
+  local ps = fresh()
+  GAMEMODE:EndOfGame(false)
+  run(GAMEMODE.VotingDelay)
+  check("EndOfGame(false): no vote opens by itself", count("PHX.MV.Start"), 0)
+  rock(ps, 3)
+  check("  ...rtv is counted", lastMsg(ps[3]), "PHXM_MV_VOTEROCKED_PLY_TOTAL")
+  say(ps[4], "rtv")
+  check("  ...and rocks the vote", lastMsg(ps[1]), "PHXM_MV_VOTEROCKED_IMMINENT")
+  run(4)
+  check("  ...which opens", count("PHX.MV.Start") == 1 and PHX.MV.Allow, true)
+  vote(ps[2], 2)
+  check("  ...and changes to the voted map", finish(), offered()[2])
+
+  -- Custom command mode: the end-of-game vote goes to the addon, and PH:X
+  -- cannot see it after that. If it never opened, rtv asks the addon again.
+  ps = fresh(6, { customCmd = true, concmd = "addon_mapvote 15" })
+  GAMEMODE:EndOfGame(true)
+  say(ps[1], "rtv")
+  check("custom command mode, voting delay: rtv waits", lastMsg(ps[1]), "CHAT_STARTING_MAPVOTE")
+  run(GAMEMODE.VotingDelay)
+  check("  ...the addon is asked when the delay is up", #S.consolecmds, 1)
+  rock(ps)
+  check("  after that rtv counts again", lastMsg(ps[1]), "PHXM_MV_VOTEROCKED_IMMINENT")
+  run(4)
+  check("  ...and asks the addon again", #S.consolecmds, 2)
+  check("  ...never with a built-in vote alongside", count("PHX.MV.Start"), 0)
+end
+
+------------------------------------------------------------------------------
+print("\n== mv_stop in custom mode stops an RTV countdown ==")
+------------------------------------------------------------------------------
+do
+  for _, o in ipairs{ { customCmd = true, concmd = "addon_mapvote 15" }, { custom = true, func = "print('addon')" } } do
+    local mode = o.customCmd and "command" or "function"
+    local ps = fresh(6, o)
+    rock(ps)
+    check(mode .. " mode, rtv rocked: the countdown is armed", timerAt("PHX.RTV.Start") ~= nil, true)
+    check("  ...mv_stop runs", stop(ps[1]), "ok")
+    check("  ...clears the countdown", timerAt("PHX.RTV.Start"), nil)
+    check("  ...and the tally", PHX.MV.RTV.TotalVotes, 0)
+    run(4)
+    check("  ...so the addon is never asked", #S.consolecmds + #S.runstrings, 0)
+  end
 end
 
 ------------------------------------------------------------------------------

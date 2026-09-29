@@ -468,7 +468,19 @@ local function StartDisabledVote()
 	return false
 end
 
+-- GM:EndOfGame(true) runs PHX.StartMapVote after GAMEMODE.VotingDelay, and RTV
+-- holds off until then. EndOfGame(false) schedules nothing, so RTV stays the
+-- players' way to a vote.
+hook.Add( "OnEndOfGame", "PHX.MV.EndOfGame", function( bGamemodeVote )
+	if ( bGamemodeVote ) then MapVote.EndOfGameDue = true end
+end )
+
 function PHX.StartMapVote()
+
+	-- A vote is starting, so none is due. From here a built-in one holds RTV
+	-- off by itself; an external one PH:X cannot see, so RTV has to be free
+	-- to ask for it again if it never opens.
+	MapVote.EndOfGameDue = nil
 
 	-- The game ended with a built-in vote already open or decided (staff
 	-- started one in the voting delay, or an addon ended the game mid-vote).

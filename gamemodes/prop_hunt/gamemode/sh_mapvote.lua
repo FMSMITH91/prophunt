@@ -78,8 +78,11 @@ if SERVER then
 		if ( util.IsStaff( ply ) ) then
 			
 			-- A running vote is PH:X's own even in custom mode: that falls back
-			-- to it when the custom settings point back at PH:X.
-			if !MapVote.Allow and ( PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) ) then
+			-- to it when the custom settings point back at PH:X. So is RTV's
+			-- countdown, which starts the custom vote when it runs out; refused
+			-- here, it survived the Stop and started it anyway.
+			local ours = MapVote.Allow or ( MapVote.RTV and MapVote.RTV.Pending )
+			if !ours and ( PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) ) then
 				Reply(ply, "Couldn't stop PH:X MapVote because Custom External MapVote is currently enabled!")
 				return
 			end

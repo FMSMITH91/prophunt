@@ -31,7 +31,9 @@ net.Receive("PHX.MV.Start", function()
     
     MapVote.Panel = vgui.Create( cvarModern:GetBool() and "PHXMapVote" or "PHXMapVoteClassic" )
     MapVote.Panel:SetMaps(MapVote.CurrentMaps)
-    
+    // Keyed on the panel: GMod passes it in and drops the hook once it is gone.
+    hook.Add( "Think", MapVote.Panel, MapVote.RecheckCancel )
+
     // GM:OnEndOfGame force-opens the scoreboard just before the vote starts.
     // Close it now the panel exists, so it cannot sit on top of the vote.
     if ( GAMEMODE && GAMEMODE.ScoreboardHide ) then GAMEMODE:ScoreboardHide() end
@@ -77,6 +79,13 @@ end, nil, "Show the map vote screen again after hiding it." )
 // the server refuses to cancel it (MapVote.PHXCancel), which is the real guard.
 function MapVote.CanCancel( winner )
     return !winner && !GetGlobalBool( "IsEndOfGame", false )
+end
+
+// Both screens lay the button out once, but a vote open when the game ends is
+// kept (PHX.StartMapVote), not started again, so no new layout comes. Run every
+// frame while the screen exists, this drops the button when the game ends.
+function MapVote.RecheckCancel( pnl )
+    if ( !MapVote.CanCancel( pnl.Winner ) ) then pnl.CancelBtn:SetVisible( false ) end
 end
 
 local PANEL = {}

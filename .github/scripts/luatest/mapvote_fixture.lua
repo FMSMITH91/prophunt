@@ -87,7 +87,14 @@ ulx = { fancyLogAdmin = function() end,
           return c
         end }
 IS_PHX = true
-gamemode = { Call = function(name, ...) return GAMEMODE[name](GAMEMODE, ...) end }
+-- As engine gamemode.Call/hook.Call run it: hooks first (sv_mapvote.lua listens
+-- on OnEndOfGame), then the GM function unless a hook returned something.
+gamemode = { Call = function(name, ...)
+  if GAMEMODE[name] == nil then return false end
+  local r = hook.Run(name, ...)
+  if r ~= nil then return r end
+  return GAMEMODE[name](GAMEMODE, ...)
+end }
 GAMEMODE.VotingDelay = 5
 
 ------------------------------------------------------------------------------

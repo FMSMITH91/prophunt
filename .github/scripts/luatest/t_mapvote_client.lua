@@ -197,6 +197,8 @@ do
     for k, v in pairs(ClassicLayout) do c[k] = v end
     c:Init()
     c.CancelBtn.GetParent = function() return Panel() end
+    -- The Stub would answer this with a function; the classic screen has none.
+    c.Winner = false
     return c
   end
   local function modern(winner)
@@ -226,6 +228,28 @@ do
   check("modern, end-of-game vote: staff do not", shown(modern(), staff, true), false)
   check("modern, once a map has won: gone, as before", shown(modern(2), staff), false)
   check("modern, mid-game vote: players never did", shown(modern(), pleb), false)
+
+  -- A mid-game vote kept when the game ends gets no new layout. Opening a
+  -- screen hooks Think on it, and GMod calls that with the panel.
+  loadblocks(CLV, extractAll(CLV, { [[^function MapVote\.RecheckCancel]], [[^net\.Receive\("PHX\.MV\.Start"]] }),
+    "local MapVote = PHX.MV\nlocal cvarModern = { GetBool = function() return true end }\n")
+  for _, kind in ipairs{ "classic", "modern" } do
+    local pnl = kind == "classic" and classic() or modern()
+    pnl.SetMaps = function() end
+    vgui.Create = function() return pnl end
+    S.net.readq = { 1, "ph_b", 30 }
+    S.receivers["PHX.MV.Start"]()
+    local think = S.hooks.Think and S.hooks.Think[pnl]
+    check(kind .. ": opening the vote hooks Think on its screen", type(think), "function")
+    if think then
+      shown(pnl, staff)
+      think(pnl)
+      check("  ...mid-game, staff keep Cancel", pnl.CancelBtn:IsVisible(), true)
+      SetGlobalBool("IsEndOfGame", true)
+      think(pnl)
+      check("  ...the game ends under it: Cancel goes", pnl.CancelBtn:IsVisible(), false)
+    end
+  end
 
   SetGlobalBool("IsEndOfGame", nil)
   vgui, chat, LocalPlayer = realVgui, realChat, realLP
