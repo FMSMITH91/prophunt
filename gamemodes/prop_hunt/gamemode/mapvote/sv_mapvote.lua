@@ -212,7 +212,8 @@ end
 
 -- Original: MapVote.Start
 -- force skips the ph_enable_mapvote check. Only PHX.StartMapVote passes it, as
--- the fallback when the vote is off and nothing else will change the map.
+-- the end-of-game fallback when the vote is off and nothing else will change
+-- the map.
 function MapVote.PHXStart(length, current, limit, prefix, force)
 
 	if (not force and not PHX:GetCVar( "ph_enable_mapvote" )) then
@@ -294,6 +295,10 @@ function MapVote.PHXStart(length, current, limit, prefix, force)
     MapVote.CurrentMaps = vote_maps
     MapVote.Votes = {}
 
+    -- A vote started in the last one's 4 s grace replaces its result, so that
+    -- changelevel must not fire in the middle of this one.
+    timer.Remove("PHX.MV.Change")
+
     -- A vote is running now, however it was started, so any RTV countdown or
     -- tally is spent.
     if MapVote.RTV then MapVote.RTV.Reset() end
@@ -339,7 +344,7 @@ function MapVote.PHXStart(length, current, limit, prefix, force)
         -- while changelevel is pending.
         MapVote.ChangingMap = map
 
-        timer.Simple(4, function()
+        timer.Create("PHX.MV.Change", 4, 1, function()
             hook.Run("MapVoteChange", map)
             RunConsoleCommand("changelevel", map)
         end)
@@ -363,7 +368,7 @@ function MapVote.PHXCancel()
 	if MapVote.RTV then MapVote.RTV.Reset() end
 
 	-- With the setting off a built-in vote can still be running: it is the
-	-- fallback PHX.StartMapVote uses when nothing handles PH_OverrideMapVote.
+	-- end-of-game fallback when nothing handles PH_OverrideMapVote.
 	if (not PHX:GetCVar( "ph_enable_mapvote" )) and not MapVote.Allow then
 		MsgAll("PH:X MapVote is disabled.\n")
 		return
@@ -428,10 +433,13 @@ function PHX.StartMapVote()
 
         -- Nothing else will change the map, and at the end of the game that
         -- leaves every player frozen. PHXStart refuses while the setting is
-        -- off, so force it.
-        MsgAll("WARNING: Detected no external Map Votes Call from [PH_OverrideMapVote] hook, Falling back to the built-in vote!\n")
-        MapVote.PHXStart(nil, nil, nil, nil, true)
-        return
+        -- off, so force it there. Mid-game (RTV, the server emptying) the
+        -- setting still means no vote.
+        if (GAMEMODE and GAMEMODE.IsEndOfGame) then
+            MsgAll("WARNING: Detected no external Map Votes Call from [PH_OverrideMapVote] hook, Falling back to the built-in vote!\n")
+            MapVote.PHXStart(nil, nil, nil, nil, true)
+            return
+        end
 	end
 	
 	MapVote.PHXStart()

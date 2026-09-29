@@ -77,7 +77,9 @@ if SERVER then
 	concommand.Add("mv_stop", function(ply)
 		if ( util.IsStaff( ply ) ) then
 			
-			if PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) then
+			-- A running vote is PH:X's own even in custom mode: that falls back
+			-- to it when the custom settings point back at PH:X.
+			if !MapVote.Allow and ( PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) ) then
 				Reply(ply, "Couldn't stop PH:X MapVote because Custom External MapVote is currently enabled!")
 				return
 			end

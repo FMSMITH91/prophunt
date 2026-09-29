@@ -381,11 +381,46 @@ do
   players(2)
   check("other self-reference: no recursion", attempt(PHX.StartMapVote), "ok")
   check("other self-reference: exactly one vote", count("PHX.MV.Start"), 1)
+  -- Without the guard the fallback still ends in one vote, but only after
+  -- nesting until the stack gives out.
+  check("other self-reference: RunString'd once", #S.runstrings, 1)
+  check("other self-reference: nothing logged", S.errors, 0)
 
   boot{ custom = true, ulxmaps = { "ph_a", "ph_b" } }
   local admin = players(1)[1]; admin._staff = true
   check("ulx map_vote with defaults: no recursion", attempt(S.ulx["ulx map_vote"], admin, 25, false), "ok")
   check("ulx map_vote with defaults: built-in vote", count("PHX.MV.Start"), 1)
+
+  boot{ customCmd = true, ulxmaps = { "ph_a", "ph_b" } }
+  admin = players(1)[1]; admin._staff = true
+  check("ulx map_vote, command mode on its default: no error", attempt(S.ulx["ulx map_vote"], admin, 25, false), "ok")
+  check("  ...mv_start not run as NULL", #S.consolecmds, 0)
+  check("  ...built-in vote", count("PHX.MV.Start"), 1)
+
+  boot{ customCmd = true, concmd = "addon_mapvote 15", ulxmaps = { "ph_a", "ph_b" } }
+  admin = players(1)[1]; admin._staff = true
+  S.ulx["ulx map_vote"](admin, 25, false)
+  check("ulx map_vote, real addon command: run", S.consolecmds[1], "addon_mapvote 15\n")
+  check("  ...no built-in vote", count("PHX.MV.Start"), 0)
+
+  -- Custom mode on its defaults runs PH:X's own vote, so mv_stop (and the
+  -- vote screen's Cancel button, which runs it) must be able to stop it.
+  for _, mode in ipairs{ "custom", "customCmd" } do
+    boot{ [mode] = true, ulxmaps = { "ph_a", "ph_b" } }
+    admin = players(2)[1]; admin._staff = true
+    PHX.StartMapVote()
+    S.concommands["mv_stop"].fn(admin, "mv_stop", {})
+    check(mode .. " on its default: mv_stop stops the built-in vote", PHX.MV.Allow, false)
+    check("  ...and tells clients", count("PHX.MV.Cancel"), 1)
+  end
+
+  boot{ customCmd = true, concmd = "addon_mapvote 15", ulxmaps = { "ph_a", "ph_b" } }
+  admin = players(1)[1]; admin._staff = true
+  PHX.StartMapVote()
+  S.concommands["mv_stop"].fn(admin, "mv_stop", {})
+  check("real addon command: mv_stop still says it is not PH:X's vote",
+    (admin.chat[#admin.chat] or {})[1], "Couldn't stop PH:X MapVote because Custom External MapVote is currently enabled!")
+  check("  ...and cancels nothing", count("PHX.MV.Cancel"), 0)
 
   -- The server console is NULL; so is game.ConsoleCommand's caller.
   boot{ custom = true }
@@ -545,9 +580,9 @@ local function leave(p)
   return capture(run, 0.1)
 end
 local function lastMsg(p) return p.chat[#p.chat] and p.chat[#p.chat][2] end
-local function rtvBoot(n, bots)
+local function rtvBoot(n, bots, enable)
   S.files = {}
-  boot{ map = "ph_a", ulxmaps = { "ph_a", "ph_b", "ph_c", "ph_d" } }
+  boot{ map = "ph_a", ulxmaps = { "ph_a", "ph_b", "ph_c", "ph_d" }, enable = enable }
   local ps = players(n, bots)
   _G.CURTIME = _G.CURTIME + 61      -- past RTV.Wait
   return ps
@@ -675,6 +710,40 @@ do
 end
 
 ------------------------------------------------------------------------------
+print("\n== #14/#48: ph_enable_mapvote 0 forces a vote only at the end of the game ==")
+------------------------------------------------------------------------------
+do
+  -- Mid-game the setting still means no vote, as before.
+  local ps = rtvBoot(6, 0, false)
+  for i = 1, 4 do say(ps[i], "rtv") end
+  run(4)
+  check("vote off, mid-game rtv: no vote", count("PHX.MV.Start"), 0)
+  run(60); run(4)   -- vote timer, then the changelevel it schedules
+  check("  ...and no map change", S.changelevel, nil)
+  say(ps[5], "rtv")
+  check("  ...and rtv is not stuck on a vote in progress", lastMsg(ps[5]), "PHXM_MV_VOTEROCKED_PLY_TOTAL")
+
+  ps = rtvBoot(2, 0, false)
+  leave(ps[1]); leave(ps[2])
+  run(4)
+  check("vote off, server emptied: no vote", count("PHX.MV.Start"), 0)
+  run(60); run(4)   -- vote timer, then the changelevel it schedules
+  check("  ...and no map change", S.changelevel, nil)
+
+  -- The end-of-game fallback is a built-in vote like any other: staff can stop it.
+  S.files = {}
+  boot{ enable = false, ulxmaps = { "ph_a", "ph_b", "ph_c" } }
+  local admin = players(2)[1]; admin._staff = true
+  GAMEMODE:EndOfGame(true); run(GAMEMODE.VotingDelay)
+  check("vote off, end of game: the fallback vote runs", PHX.MV.Allow, true)
+  S.concommands["mv_stop"].fn(admin, "mv_stop", {})
+  check("  ...mv_stop cancels it", PHX.MV.Allow, false)
+  check("  ...and tells clients", count("PHX.MV.Cancel"), 1)
+  run(60); run(4)   -- vote timer, then the changelevel it schedules
+  check("  ...so it never changes map", S.changelevel, nil)
+end
+
+------------------------------------------------------------------------------
 print("\n== ChangingMap contract with the round controller ==")
 ------------------------------------------------------------------------------
 do
@@ -685,8 +754,19 @@ do
   check("set once the result is in", PHX.MV.ChangingMap ~= nil, true)
   S.concommands["mv_start"].fn(admin, "mv_start", {})
   check("cleared when a new vote starts", PHX.MV.ChangingMap, nil)
+  run(4)
+  check("the replaced result's changelevel does not fire mid-vote", S.changelevel, nil)
+  check("  ...and the new vote is still open", PHX.MV.Allow, true)
+  run(30); run(4)
+  check("the new vote changes map when it ends", S.changelevel ~= nil, true)
+
+  boot{ map = "ph_a", ulxmaps = { "ph_a", "ph_b", "ph_c" } }
+  admin = players(2)[1]; admin._staff = true
+  PHX.MV.PHXStart(); run(30)
+  S.concommands["mv_start"].fn(admin, "mv_start", {})
   S.concommands["mv_stop"].fn(admin, "mv_stop", {})
-  check("clear after a cancel", PHX.MV.ChangingMap, nil)
+  run(10)
+  check("replacement vote cancelled in the grace: no changelevel at all", S.changelevel, nil)
 end
 
 report()

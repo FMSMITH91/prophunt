@@ -46,7 +46,8 @@ check("ph_usable_prop_type syncs", GetGlobalInt("ph_usable_prop_type", -1), 3)
 
 print("\n== mv_cooldown must be honourable ==")
 local f = loadchunk("local MapVote = ...\n"
-  .. extractAll("gamemodes/prop_hunt/gamemode/mapvote/sv_mapvote.lua", { [[^\tlocal cooldown\s*=]], [[^\tif cooldown == nil then]] })
+  .. extractAll("gamemodes/prop_hunt/gamemode/mapvote/sv_mapvote.lua", {
+    [[^\tlocal cooldown\s*=]], [[^\tif cooldown == nil then]] })
   .. "\nreturn cooldown", "sv_mapvote.lua")
 check("mv_cooldown 1 -> cooldown on", f{ PHXConfig = { EnableCooldown = true } }, true)
 check("mv_cooldown 0 -> cooldown off", f{ PHXConfig = { EnableCooldown = false } }, false)

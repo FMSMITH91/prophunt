@@ -123,4 +123,33 @@ do
   check("order of the remaining icons kept", c.Voters[1] == iStay and c.Voters[2] == iOdd, true)
 end
 
+------------------------------------------------------------------------------
+print("\n== #50: the classic screen's close button hands the cursor back too ==")
+------------------------------------------------------------------------------
+do
+  -- Init builds Derma children; any call it makes on them is a no-op here.
+  local function Stub()
+    return setmetatable(Panel(), { __index = function() return function() end end })
+  end
+  local realVgui = vgui
+  vgui = { Create = function() return Stub() end }
+
+  local ClassicInit = chunkReturningPanel(CLV, { [[^function PANEL:Init]] })
+  local c = Stub()
+  for k, v in pairs(ClassicInit) do c[k] = v end
+  check("classic screen builds", attempt(c.Init, c), "ok")
+
+  S.clicker, g_ScoreBoard = {}, nil
+  check("classic close button runs", attempt(c.closeButton.DoClick), "ok")
+  check("the classic screen is hidden", c:IsVisible(), false)
+  check("classic close: the cursor is handed back", S.clicker[1], false)
+
+  S.clicker = {}
+  g_ScoreBoard = Panel()
+  c:SetVisible(true)
+  c.closeButton.DoClick()
+  check("classic close, scoreboard open: it keeps the cursor", #S.clicker, 0)
+  vgui = realVgui
+end
+
 report()

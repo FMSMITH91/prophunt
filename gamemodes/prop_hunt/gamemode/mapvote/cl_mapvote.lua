@@ -104,6 +104,7 @@ function PANEL:Init()
     self.closeButton.DoClick = function()
         print("Map Voting has been started...")
         self:SetVisible(false)
+        MapVote.ReleaseCursor()
     end
 
     self.maximButton = vgui.Create("DButton", self.Canvas)
