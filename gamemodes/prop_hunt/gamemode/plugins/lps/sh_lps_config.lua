@@ -220,7 +220,8 @@ PHX.LPS.WEAPON_NEW = {
             util.Effect( "phx_blaster_charge", ChargeFX )
             
             timer.Simple(self.Delay, function()
-                if IsValid(ply) and ply:Alive() and IsValid( WepEnt ) then
+                -- Leave a holstered gun alone: READY would bring the gun model and halo back over a hidden prop.
+                if IsValid(ply) and ply:Alive() and IsValid( WepEnt ) and !ply:IsLPSHolstered() then
                     ply:SetLPSWeaponState( LPS_WEAPON_READY )
                 end
             end)
@@ -331,7 +332,8 @@ PHX.LPS.WEAPON_NEW = {
             util.Effect( "ChopperMuzzleFlash", FireFX ) --Alternatively you can use "GunshipMuzzleFlash" or "HunterMuzzleFlash" (if you have EP2 installed)
 			
             timer.Simple(self.Delay, function()
-                if IsValid(ply) and ply:Alive() and IsValid( WepEnt ) then
+                -- See the blaster: don't un-holster the gun behind the player's back.
+                if IsValid(ply) and ply:Alive() and IsValid( WepEnt ) and !ply:IsLPSHolstered() then
                   if ply:GetLPSAmmo() > 0 or ply:GetLPSAmmo() == -1 then
                     ply:SetLPSWeaponState( LPS_WEAPON_READY )
                   else
@@ -446,6 +448,7 @@ if CLIENT then
 
     local LaserTexture  = Material( "trails/laser" )
     local LaserColor    = color_white
+    local LaserColorStr -- cvar string LaserColor was parsed from.
     
     -- Currently it's the only proper way to show lasers.
     -- if Anyone had better solution, please let me know!
@@ -456,11 +459,16 @@ if CLIENT then
         for _,v in pairs(team.GetPlayers(TEAM_PROPS)) do
             if v:Alive() and v:IsLastStanding() and v:LPSFiringStatus() and v:GetLPSWeaponName() == "laser" then
             
-                if !v:LPSCheckEntityCanShoot() then return end                
+                if !v:LPSCheckEntityCanShoot() then continue end -- skip this prop, not every prop's beam.
                 local tr = v:LPSCreatePropTrace()
                 local ent = v:GetLPSWeaponEntity()
                 
-                LaserColor = PHX.LPS:LaserColorTranslate()
+                -- Parsing every frame printed the invalid-hex warning every frame; only re-parse on change.
+                local ColorStr = PHX:GetCVar( "lps_laser_color" )
+                if ColorStr == "rainbow" or ColorStr ~= LaserColorStr then
+                    LaserColorStr = ColorStr
+                    LaserColor = PHX.LPS:LaserColorTranslate()
+                end
                 
                 if IsValid(ent) then
                     local att = ent:GetAttachment(1)

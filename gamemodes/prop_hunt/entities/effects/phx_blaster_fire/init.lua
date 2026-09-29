@@ -2,6 +2,15 @@
 local matBulge 		= Material("Effects/strider_bulge_dudv")
 local matBlueBeam	= Material("Effects/blueblacklargebeam")
 
+-- Vector() is (0,0,0), so the old `Vector()*size` padding added nothing, and the two
+-- corners were never ordered. Order them, then pad by the sprite size.
+local function SetBeamRenderBounds(ent, a, b, size)
+	local mins, maxs = Vector(a), Vector(b) -- copies: OrderVectors swaps in place.
+	OrderVectors(mins, maxs)
+	local pad = Vector(size,size,size)
+	ent:SetRenderBoundsWS(mins - pad, maxs + pad)
+end
+
 function EFFECT:Init(data)
 	
 	self.Ent        = data:GetEntity()
@@ -21,6 +30,7 @@ function EFFECT:Init(data)
 	self.BeamWidth      = 32
 
 	local Muzzle    = 	self.WeaponEnt:GetAttachment(self.Attachment)
+	if not Muzzle then return end -- e.g. error.mdl when the workshop content is missing.
 	
 	self.RenderAng  = Muzzle.Pos - self.EndPos 
 	self.RenderDist = self.RenderAng:Length()
@@ -29,7 +39,7 @@ function EFFECT:Init(data)
 	self.Duration   = self.RenderDist/8000
 	self.KillTime   = CurTime() + self.Duration
 	
-	self:SetRenderBoundsWS(Muzzle.Pos + Vector()*280, self.EndPos - Vector()*280)
+	SetBeamRenderBounds(self, Muzzle.Pos, self.EndPos, 280)
 	
 	self.ShouldRender = true
 
@@ -55,7 +65,7 @@ function EFFECT:Render()
 	local intrplt       = 1 - invintrplt
 	
 	local RenderPos     = self.EndPos + self.RenderAng*(self.RenderDist*invintrplt)
-	self:SetRenderBoundsWS(RenderPos + Vector()*280,self.EndPos - Vector()*280)
+	SetBeamRenderBounds(self, RenderPos, self.EndPos, 280)
 	
 	matBulge:SetFloat("$refractamount", 0.16)
 	render.SetMaterial(matBulge)

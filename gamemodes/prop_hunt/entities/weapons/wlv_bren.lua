@@ -254,8 +254,9 @@ else
 		end
 
 		local punch = {}
-		punch.x = math.random(-0.7,-0.2)
-		punch.y = math.random(-0.1, 0.1)
+		-- math.Rand: math.random floors fractional bounds (-0.7 or 0.3, -0.1 or 0.9).
+		punch.x = math.Rand(-0.7,-0.2)
+		punch.y = math.Rand(-0.1, 0.1)
 		punch.z = 0
 
 		self:EmitSound( self.Primary.Sound )
@@ -270,6 +271,7 @@ else
 	
 	function SWEP:Deploy()
 		self:SetDeploySpeed(1)
+		return true -- as weapon_base does; the return value is what lets lastinv switch away.
 	end
 
 end

@@ -174,7 +174,6 @@ function Player:LPSShootBullets()
         if ( self:LPSNextFireDelay() > CurTime() ) then return end
         
         self:LPSNextFire( wepdata.Delay )
-        self:SetLPSAmmoCount( self:GetLPSAmmo() )
 
         local wepEntity      = self:GetLPSWeaponEntity()
         if !IsValid(wepEntity) then return end
@@ -185,7 +184,6 @@ function Player:LPSShootBullets()
         local shootOrg       = att.Pos
         local shootAng       = self:EyeAngles()
         local aimTraceResult = util.LPSgetAccurateAim( { ph_prop }, self:EyePos(), shootOrg, shootAng, plmaxs.z )
-        local AmmoCount      = util.LPSgetConValue( wepdata.AmmoCount )
         local bullet = {}
             bullet.Num          = wepdata.Num
             bullet.Src          = shootOrg
@@ -219,10 +217,13 @@ function Player:LPSShootBullets()
         end
         local viewpunchAng = wepdata.ViewPunch
         if viewpunchAng and viewpunchAng ~= nil then
-            self:ViewPunch( Angle( math.random(viewpunchAng.x[1],viewpunchAng.x[2]), math.random(viewpunchAng.y[1],viewpunchAng.y[2]), 0 ) )
+            -- math.Rand, not math.random: the ranges are fractional (see util.LPSgetSpread).
+            self:ViewPunch( Angle( math.Rand(viewpunchAng.x[1],viewpunchAng.x[2]), math.Rand(viewpunchAng.y[1],viewpunchAng.y[2]), 0 ) )
         end
         
-        if AmmoCount > 0 then
+        -- Count down what the player holds (-1 = unlimited), not the cvar, which an admin
+        -- can change mid-event: -1 then counted -2, -3..., and a finite count never dropped.
+        if self:GetLPSAmmo() > 0 then
             self:LPSSubAmmoCount()
         end
         
@@ -241,18 +242,15 @@ function Player:LPSShootBullets()
         end
 		
 		self:LPSNextFire( wepdata.Delay )
-        self:SetLPSAmmoCount( self:GetLPSAmmo() )
         
         if !wepdata.Reload and self:GetLPSAmmo() > 0 or self:GetLPSAmmo() == -1 then
             self:SetLPSWeaponState( LPS_WEAPON_READY )
         end
         
-        local AmmoCount = util.LPSgetConValue( wepdata.AmmoCount )
-        
         -- Judy, do the thing!
         wepdata:Function( self )
         
-        if AmmoCount > 0 then
+        if self:GetLPSAmmo() > 0 then -- see the weapon branch above.
             self:LPSSubAmmoCount()
         end
         

@@ -15,7 +15,8 @@ function util.LPSgetSpread( val )
     if isnumber(val) then
         return Vector(val, val, 0)
     elseif istable(val) then
-        return Vector(math.random(val[1],val[2]), math.random(val[1],val[2]), 0)
+        -- math.Rand: math.random floors fractional bounds, so {0.02,0.05} gave 0.02 or a 45-degree 1.02.
+        return Vector(math.Rand(val[1],val[2]), math.Rand(val[1],val[2]), 0)
     end
     return Vector(0,0,0)
 end

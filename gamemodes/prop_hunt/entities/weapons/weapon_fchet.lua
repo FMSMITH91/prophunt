@@ -58,12 +58,12 @@ function SWEP:Initialize()
 end
 
 function SWEP:Reload()
-	if ( self:Clip1() < self:GetMaxClip1() ) then
+	-- Nothing gives AlyxGun reserve, so this used to be a 3 s lockout (and a reload sound) on every R
+	-- press or empty clip. DefaultReload sets the next-fire times itself when it really reloads.
+	if ( self:Clip1() >= self:GetMaxClip1() or self:Ammo1() <= 0 ) then return end
+	if ( self:DefaultReload( ACT_VM_RELOAD ) ) then
 		self:EmitSound( Sound( "wlv.guardgun_reload" ) )
 	end
-	self:SetNextPrimaryFire( CurTime() + 3 )
-	self:SetNextSecondaryFire( CurTime() + 3 )
-	self:DefaultReload( ACT_VM_RELOAD )
 end
 
 function SWEP:CanBePickedUpByNPCs()
@@ -119,7 +119,7 @@ function SWEP:SecondaryAttack()
         
         if SERVER then
 		
-			for i=0,360,30 do
+			for i=0,330,30 do -- not 360: that is 0 again, a doubled flechette.
 		
 				SuppressHostEvents( NULL ) -- Do not suppress the flechette effects
 
