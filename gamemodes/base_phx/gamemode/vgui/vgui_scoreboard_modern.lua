@@ -745,6 +745,47 @@ function PANEL:RebuildCells()
 
 end
 
+// True while the cell's last value still stands. Otherwise books the next
+// refresh and returns false. An UpdateRate of 0 asks just once.
+local function CustomCellFresh( row, cell )
+
+	local now    = RealTime()
+	local rate   = tonumber( cell.UpdateRate ) or 1
+	local nextAt = row.NextCol[ cell.id ]
+
+	if ( nextAt != nil && ( rate == 0 || nextAt > now ) ) then return true end
+	row.NextCol[ cell.id ] = now + rate
+
+	return false
+
+end
+
+// Embeds a Panel the column returned, removing the one it replaces.
+local function AdoptCustomPanel( row, cell, value )
+
+	if ( !IsValid( value ) ) then return end
+
+	local old = row.CustomPanels[ cell.id ]
+	if ( IsValid( old ) && old != value ) then old:Remove() end
+
+	value:SetParent( row )
+	row.CustomPanels[ cell.id ] = value
+	row.ColText[ cell.id ] = nil
+	row:InvalidateLayout()
+
+end
+
+// Caches a plain value for painting, removing any panel it replaces.
+local function SetCustomText( row, cell, value )
+
+	local old = row.CustomPanels[ cell.id ]
+	if ( IsValid( old ) ) then old:Remove() end
+
+	row.CustomPanels[ cell.id ] = nil
+	row.ColText[ cell.id ] = tostring( value )
+
+end
+
 /*
 	Asks a custom column for this row's value, at most once per UpdateRate
 	seconds (0 = once), the way the classic board does. Rows paint every frame,
@@ -759,36 +800,17 @@ local function UpdateCustomCell( row, cell, ply )
 	row.NextCol = row.NextCol or {}
 	row.ColText = row.ColText or {}
 
-	local now    = RealTime()
-	local rate   = tonumber( cell.UpdateRate ) or 1
-	local nextAt = row.NextCol[ cell.id ]
-
-	if ( nextAt != nil && ( rate == 0 || nextAt > now ) ) then return end
-	row.NextCol[ cell.id ] = now + rate
+	if ( CustomCellFresh( row, cell ) ) then return end
 
 	// Third-party code, so never let it take the whole scoreboard down.
 	local ok, value = pcall( cell.fncValue, ply )
 	if ( !ok || value == nil ) then return end
 
-	local old = row.CustomPanels[ cell.id ]
-
 	if ( type( value ) == "Panel" ) then
-
-		if ( !IsValid( value ) ) then return end
-		if ( IsValid( old ) && old != value ) then old:Remove() end
-
-		value:SetParent( row )
-		row.CustomPanels[ cell.id ] = value
-		row.ColText[ cell.id ] = nil
-		row:InvalidateLayout()
-
-		return
-
+		AdoptCustomPanel( row, cell, value )
+	else
+		SetCustomText( row, cell, value )
 	end
-
-	if ( IsValid( old ) ) then old:Remove() end
-	row.CustomPanels[ cell.id ] = nil
-	row.ColText[ cell.id ] = tostring( value )
 
 end
 
