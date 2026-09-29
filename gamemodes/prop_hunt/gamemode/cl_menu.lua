@@ -851,8 +851,8 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 		PHX.UI:CreateVGUIType("","spacer",nil,grid,"" )
 		PHX.UI:CreateVGUIType("", "label", false, grid, "PHXM_MV_EXPLANATION3")
 		
-		PHX.UI:CreateVGUIType("", "btn", {
-			[1] = {"PHXM_MV_START", function(self) 
+		local buttons = {
+			[1] = {"PHXM_MV_START", function(self)
 				if (ulx and ulx ~= nil) then
 					LocalPlayer():ConCommand("ulx map_vote")
 				else
@@ -869,7 +869,11 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 				end
 				PHX.UI.MainForm:Close()
 			end}
-			}, grid,"")
+			}
+		-- No Stop once the game has ended: that vote is the only way off the
+		-- map, and the server refuses to cancel it (MapVote.PHXCancel).
+		if GetGlobalBool( "IsEndOfGame", false ) then buttons[2] = nil end
+		PHX.UI:CreateVGUIType("", "btn", buttons, grid,"")
 	
 		local PanelModify = PHX.UI.PnlTab:AddSheet("", panel, "vgui/ph_iconmenu/m_map.png")
 		PHX.UI.PaintTabButton(PanelModify, PHX:FTranslate("PHXM_TAB_MAPVOTE"))

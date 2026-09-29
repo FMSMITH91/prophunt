@@ -153,7 +153,7 @@ end
 ---------------------------------------------------------------- cl_menu
 print("\n== cl_menu: F1 menu (ph_x_menu) ==")
 -- Record the menu types instead of building them; they are covered above.
-local made = {}
+local made, realCLUI = {}, PHX.CLUI
 PHX.CLUI = setmetatable({}, { __index = function(_, typ)
   return function(c, d, _, l) made[#made + 1] = { typ = typ, c = c, d = d, l = l }; return D.create("DPanel") end
 end })
@@ -275,5 +275,35 @@ check("mv_mapbeforerevote slider spans the ConVar",
 local gameTime = madeWhere(function(m) return m.typ == "slider" and m.c == "ph_game_time" end)
 check("ph_game_time slider reaches 0 (no time limit)", gameTime and gameTime.d.min, 0)
 check("ph_game_time slider still goes up to 300", gameTime and gameTime.d.max, 300)
+
+-- The Map Vote tab's buttons. Once the game has ended the server refuses to
+-- cancel its vote, so the Stop button goes; mid-game both stay.
+local function mvButtons()
+  local b = madeWhere(function(m) return m.typ == "btn" and m.d and m.d[1] and m.d[1][1] == "PHXM_MV_START" end)
+  local names = {}
+  for i = 1, b and #b.d or 0 do names[i] = b.d[i][1] end
+  return table.concat(names, ","), b
+end
+local function pressed(b, i)
+  local lp = LocalPlayer
+  LocalPlayer, staff.concmds = function() return staff end, {}
+  local res = attempt(b.d[i][2])
+  LocalPlayer = lp
+  return res == "ok" and staff.concmds[#staff.concmds] or res
+end
+SetGlobalBool("IsEndOfGame", nil)
+openMenu(staff)
+local names, btns = mvButtons()
+check("mid-game: the Map Vote tab has Start and Stop", names, "PHXM_MV_START,PHXM_MV_STOP")
+check("  ...Stop still runs mv_stop", btns and pressed(btns, 2), "mv_stop")
+SetGlobalBool("IsEndOfGame", true)
+check("end of game: the menu builds", openMenu(staff), "ok")
+names, btns = mvButtons()
+check("  ...with Start and no Stop", names, "PHXM_MV_START")
+check("  ...Start still runs mv_start", btns and pressed(btns, 1), "mv_start")
+D.all = {}
+realCLUI["btn"]("", btns.d, grid, "")
+check("  ...and cl_menutypes draws the one button", D.count(D.class("DButton")), 1)
+SetGlobalBool("IsEndOfGame", nil)
 
 report()
