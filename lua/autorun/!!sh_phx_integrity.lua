@@ -19,13 +19,6 @@ local CheckBaseFretta = false
 local CheckCVar = CreateConVar( "phx_integrity_check", "1", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Enable PH:X Integrity Checker.", 0, 1 )
 local cvIgnoreFretta = CreateConVar( "phx_integrity_check_fretta", "1", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Enable Checks if there's another fretta base gamemode installed", 0, 1 )
 
-cvars.AddChangeCallback("phx_integrity_check", function(cvar,old,new)
-	EnableChecker = tobool(new)
-end)
-cvars.AddChangeCallback("phx_integrity_check_fretta", function(cvar,old,new)
-	CheckBaseFretta = tobool(new)
-end)
-
 local Errors = 0
 local ErrorList = {}
 
@@ -40,7 +33,9 @@ local function ManageData( bShouldSave, data )
 	if (!file.Exists( path, "DATA" )) then file.Write( path, KnownConflictWSID ) end
 
 	if (bShouldSave) then
-		if (data) and data ~= nil or data ~= "" then
+		-- Was `(data) and data ~= nil or data ~= ""`, which is true for nil and
+		-- "" as well, so the fallback below could never run.
+		if isstring(data) and data ~= "" then
 			file.Write( path, data )
 			if !file.Exists( path, "DATA" ) or file.Size( path, "DATA" ) < 1 then
 				print("[PH:X Integrity Check] It appears data was failed to save! Reverting to Known Conflicted Addon IDs!")
@@ -219,11 +214,9 @@ local function GetConflictingAddons( data )
 		for _,id in pairs( t ) do
 			if (addons[id]) or addons[id] ~= nil then
 				-- Found!
-				local id 	= addons[id].wsid
-				local name 	= addons[id].title
-				local link 	= addons[id].link
+				local addon	= addons[id]
 				
-				result[id]	= { title=name, wsid=id, link=link }
+				result[id]	= { title=addon.title, wsid=id, link=addon.link }
 				
 				found = true --!
 			end
@@ -342,10 +335,15 @@ local function CheckGamemodeTXT()
 		addErr = addErr+1; table.insert( ErrorList, "Cannot read prop_hunt's gamemode txt file, seems to be invalid!" );
 	end
 
-	local _,dir = file.Find( "gamemodes/*", "GAME" )
-	for _,gm in ipairs( dir ) do
-		if (string.find(gm:lower(), "fretta")) then
-			addErr = addErr+1; table.insert( ErrorList, "Detected " .. gm .. " (Default Fretta Base), This can cause PH:X to stop working!" );
+	-- Server only, like sh_init.lua's fretta check: on a client this lists the
+	-- player's own installs, which say nothing about the server, and raised the
+	-- "stopped working" dialog for anyone subscribed to a Fretta gamemode.
+	if SERVER then
+		local _,dir = file.Find( "gamemodes/*", "GAME" )
+		for _,gm in ipairs( dir ) do
+			if (string.find(gm:lower(), "fretta")) then
+				addErr = addErr+1; table.insert( ErrorList, "Detected " .. gm .. " (Default Fretta Base), This can cause PH:X to stop working!" );
+			end
 		end
 	end
 	

@@ -11,12 +11,15 @@ list.Set("DevilBallsAddition", "UniqueName", function(pl)
 	pl:ChatPrint("Hello! Let me change the prop color and revert in 5 seconds!")
 	
 	if IsValid(pl.ph_prop) then
-		pl.ph_prop:SetMaterials("models/shiny")
-		pl.ph_prop:SetColor(255,0,0)
+		pl.ph_prop:SetMaterial("models/shiny")
+		pl.ph_prop:SetColor(Color(255,0,0))
 		
-		pl.RevertColor = timer.Simple(5, function()
-			pl.ph_prop:SetMaterials("")
-			pl.ph_prop:SetColor(255,255,255)
+		timer.Simple(5, function()
+			-- The player may have left or lost the prop in those 5 seconds.
+			if IsValid(pl) and IsValid(pl.ph_prop) then
+				pl.ph_prop:SetMaterial("")
+				pl.ph_prop:SetColor(color_white)
+			end
 		end)
 	end
 end)

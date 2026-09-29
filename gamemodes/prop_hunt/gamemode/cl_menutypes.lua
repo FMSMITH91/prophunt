@@ -333,6 +333,8 @@ end,
 			else
 				-- because this is for client, force this to use ph_cl_language.
 				RunConsoleCommand("ph_cl_language", cbox.selLang)
+				-- An explicit choice: ph_default_lang must never override it (sh_convar.lua).
+				cookie.Set("phx_lang_chosen", "1")
 				chat.AddText( Color(60,220,30), PHX:Translate( "LANGUAGE_CHANGED", cbox.selLangName ) )
 				print("[PHX] Prefered Language has changed to " .. cbox.selLangName )
 				if PHX.UI.MainForm:IsValid() then PHX.UI.MainForm:Close() end
