@@ -86,10 +86,18 @@ function GM:TeleportPlayerToClosestSpawnpoint(pl)
 	trace.mins = Vector(-x, -y, 0)
 	trace.mask = MASK_PLAYERSOLID
 
+	-- The team's own spawns first: navmesh.GetPlayerSpawnName() is info_player_start,
+	-- which many T/CT-only ph_ maps don't have. GetSpawnPoints is cached, so copy it.
+	local candidates = {}
+	table.Add(candidates, team.GetSpawnPoints(pl:Team()) or {})
+	table.Add(candidates, ents.FindByClass(navmesh.GetPlayerSpawnName()))
+
 	local sortedSpawnpoints = {}
-	for _, spawnpoint in pairs(ents.FindByClass(navmesh.GetPlayerSpawnName())) do
-		local pos = spawnpoint:GetPos()
-		sortedSpawnpoints[pos:DistToSqr(playerPos)] = pos
+	for _, spawnpoint in ipairs(candidates) do
+		if IsValid(spawnpoint) then
+			local pos = spawnpoint:GetPos()
+			sortedSpawnpoints[pos:DistToSqr(playerPos)] = pos
+		end
 	end
 
 	local firstPos, rescuePos = nil, nil
@@ -124,6 +132,9 @@ function GM:TeleportPlayerToClosestSpawnpoint(pl)
 	if closestPos ~= nil then
 		pl:SetPos(closestPos + Vector(0, 0, 100))
 	else
+		-- Could cause crash if trying to unstuck from this scope. Let the player handles it.
+		pl:SetVar("unstuckRecently", false)
+
 		if firstPos ~= nil then
 			pl:SetPos(firstPos)
 			pl:PHXChatInfo("ERROR", "UNSTUCK_BAD_SPAWNPOINT")
@@ -131,13 +142,13 @@ function GM:TeleportPlayerToClosestSpawnpoint(pl)
 			pl:SetPos(rescuePos)
 			pl:PHXChatInfo("ERROR", "UNSTUCK_RESCUE_SPAWNPOINT")
 		else
-			pl:SetPos(Vector(0, 0, 0))
+			-- Leave them be: the world origin is usually in the void or inside a brush.
 			pl:PHXChatInfo("ERROR", "UNSTUCK_NO_SPAWNPOINTS")
+			return false
 		end
-
-		-- Could cause crash if trying to unstuck from this scope. Let the player handles it.
-		pl:SetVar("unstuckRecently", false)
 	end
+
+	return true
 end
 
 function GM:PosOnGround(pl)
@@ -164,7 +175,7 @@ function GM:UnstuckPlayer(pl)
 
 	pl:SetVar("unstuckRecently", true)
 	local unstuckWaitTime = PHX:GetCVar( "ph_unstuck_waittime" )
-	timer.Simple(unstuckWaitTime, function() pl:SetVar("unstuckRecently", false) end)
+	timer.Simple(unstuckWaitTime, function() if IsValid( pl ) then pl:SetVar("unstuckRecently", false) end end)
 
 	if not pl:IsOnGround() then
 		local pos = pl:GetPos()
@@ -197,8 +208,14 @@ function GM:UnstuckPlayer(pl)
 						-- Clip Brushes often so thin, or medium sized below 16 source units so there will be a 
 						-- chance that player will get outside of the map. A solution is teleport to cloesest spawn point.
 						pl:PHXChatInfo("ERROR", "UNSTUCK_CANNOT_FIND_SPOT")
-						GAMEMODE:TeleportPlayerToClosestSpawnpoint(pl)
-						pl:SetPos(GAMEMODE:PosOnGround(pl) + Vector(0, 0, 20))
+						-- The same last-resort teleport as TryNormalUnstuck, so the same rule.
+						if PHX:GetCVar( "ph_disabletpunstuckinround" ) and !PHX:IsBlindStatus() then
+							pl:PHXChatInfo("WARNING", "UNSTUCK_SPAWNPOINTS_DISABLED")
+							return
+						end
+						if GAMEMODE:TeleportPlayerToClosestSpawnpoint(pl) then
+							pl:SetPos(GAMEMODE:PosOnGround(pl) + Vector(0, 0, 20))
+						end
 					else
 						pl:SetPos(pos + Vector(0, 0, 20))
 						pl:PHXChatInfo("GOOD", "UNSTUCK_YOURE_UNSTUCK")
@@ -301,8 +318,10 @@ function GM:TryNormalUnstuck(pl)
 		end
 	end
 
-	GAMEMODE:TeleportPlayerToClosestSpawnpoint(pl)
-	pl:SetPos(GAMEMODE:PosOnGround(pl) + Vector(0, 0, 20))
+	-- No spawnpoint found: stay put rather than drop onto whatever is below.
+	if GAMEMODE:TeleportPlayerToClosestSpawnpoint(pl) then
+		pl:SetPos(GAMEMODE:PosOnGround(pl) + Vector(0, 0, 20))
+	end
 end
 
 -- Moved from Fretta to This file.
@@ -318,6 +337,11 @@ function GM:CheckTeamBalanceCustom()
 	local hunterCount = GAMEMODE:GetHunterCount(plyrCount)
 
 	if PHX:GetCVar( "ph_rotateteams" ) then
+		-- Rotate over a stable order. The list above is last round's hunters then
+		-- props, which reshuffles every round, so the window landed on the same
+		-- players again and again while others never hunted.
+		table.sort(plyrTable, function(a, b) return a:UserID() < b:UserID() end)
+
 		local offset = GetGlobalInt("RotateTeamsOffset", 1)
 		SetGlobalInt("RotateTeamsOffset", offset + 1)
 		offset = offset % plyrCount
@@ -339,13 +363,11 @@ function GM:CheckTeamBalanceCustom()
 
 		if PHX:GetCVar( "ph_preventconsecutivehunting" ) then
 
-			local teamContainingHunters = TEAM_HUNTERS
-
-			if PHX:GetCVar( "ph_swap_teams_every_round" ) then
-				teamContainingHunters = TEAM_PROPS
+			-- Recorded by GM:OnPreRoundStart before any swap moved players.
+			local lastRoundsHunters = {}
+			for _, pl in ipairs(plyrTable) do
+				if pl.PHXHuntedLastRound then table.insert(lastRoundsHunters, pl) end
 			end
-
-			local lastRoundsHunters = team.GetPlayers(teamContainingHunters)
 
 			-- Only honour this if enough players are left to actually fill the
 			-- hunter slots. If everyone played as a Hunter last round they would
@@ -419,7 +441,7 @@ function GM:CheckTeamBalance( bDontKillPlayer )
 						if listener == ply then
 							listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCEYOU")
 						else
-							listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCE", ply:Name(), PHX:TranslateName( id, ply ))
+							listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCE", ply:Name(), PHX:TranslateName( id, listener ))
 						end
 					end
 					

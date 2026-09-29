@@ -35,6 +35,10 @@ end
 
 function GM:TeamHasEnoughPlayers( teamid )
 
+	-- Balance applies to the playing teams only. Spectator used to be compared
+	-- with them too, so once it outnumbered a team nobody could spectate.
+	if teamid ~= TEAM_HUNTERS and teamid ~= TEAM_PROPS then return false end
+
 	local PlayerCount = team.NumPlayers( teamid )
 
 	-- Don't let them join a team if it has more players than another team
@@ -99,7 +103,11 @@ function GM:CustomTeamHasEnoughPlayers(teamid, pl)
 end
 
 function GM:PlayerCanJoinTeam(ply, teamid)
-	if SERVER and not self.BaseClass:PlayerCanJoinTeam(ply, teamid) then return false end
+	-- Only the base gamemode's switch cooldown and same-team checks. base_phx's
+	-- version adds the classic "team is full" rule, which ran before the E+
+	-- ratio below and contradicted it: with ph_team_balance_classic 0 and
+	-- force-join on, it refused Props while the ratio refused Hunters.
+	if SERVER and not baseclass.Get("gamemode_base").PlayerCanJoinTeam(self, ply, teamid) then return false end
 
 	if GAMEMODE:CustomTeamHasEnoughPlayers(teamid, ply) then
 		ply:PHXChatInfo("WARNING", "PHX_TEAM_IS_FULL")

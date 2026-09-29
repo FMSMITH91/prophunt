@@ -19,16 +19,17 @@ S.boolCVar("ph_preventconsecutivehunting", "1")
 S.boolCVar("ph_swap_teams_every_round", "1")
 S.boolCVar("ph_enable_teambalance", "1")
 
--- With ph_swap_teams_every_round on, CheckTeamBalanceCustom flags everyone
--- currently on TEAM_PROPS (ie. last round's hunters, post-swap). `flaggedShare`
--- picks how many of the n players sit there: 1.0 is the degenerate all-flagged
--- case, lower values are an ordinary mixed lobby.
+-- CheckTeamBalanceCustom flags last round's hunters, which OnPreRoundStart
+-- records as PHXHuntedLastRound before the swap. `flaggedShare` picks how many
+-- of the n players hunted: 1.0 is the degenerate all-flagged case, lower values
+-- are an ordinary mixed lobby.
 local function balance(n, flaggedShare)
   local flagged = math.floor(n * (flaggedShare or 0.34))
   S.players = {}
   for i = 1, n do
     S.players[i] = S.Player{ name = "p" .. i, idx = i,
                              team = (i <= flagged) and TEAM_PROPS or TEAM_HUNTERS }
+    S.players[i].PHXHuntedLastRound = (i <= flagged)
   end
   GAMEMODE:CheckTeamBalanceCustom()
   local h, p = 0, 0

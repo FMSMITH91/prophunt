@@ -114,16 +114,24 @@ plus.PanelType = {
 		Slider:SetText("")
 		Slider:SetTooltip( PHX:QTrans( l ) )
 		Slider:SetMin(Min)
-		Slider:SetMax(Max)
+		-- Never below the live value: SetValue clamps to the range, and the clamped
+		-- number was sent back, so ph_huntercount 4 became 2 on a quiet server.
+		Slider:SetMax( math.max(Max, GetConVar(c):GetInt()) )
 		Slider:SetValue( GetConVar(c):GetInt() )
 		Slider:SetDecimals(0)
 		function Slider:PerformLayout() self.Label:SetWide( 32 ) end
 		Slider.OnValueChanged = function(self,value)
-			self:SetValue(value)
+			-- SetMin/SetMax/SetValue land here too, and the Think below used to call them
+			-- every frame. Only a drag or a typed value from the admin is a change to send.
+			if !self:IsEditing() then return end
+			local v = math.Round(value)
+			-- A drag fires this on every mouse move; skip repeats the server already has.
+			if v == self.LastSentValue and v == GetConVar(c):GetInt() then return end
+			self.LastSentValue = v
 			net.Start("SvCommandSliderReq")
 				net.WriteString(c)
 				net.WriteBool(false)
-				net.WriteInt(tonumber(self:GetValue()), 16)
+				net.WriteInt(v, 16)
 			net.SendToServer()
 		end
 		
@@ -135,8 +143,9 @@ plus.PanelType = {
 			if d and d ~= nil and isfunction(d) then
 				mn,mx = d()
 			end
-			if mx < 1 then mx = 1 end
-			Slider:SetMin(mn); Slider:SetMax(mx); 
+			mx = math.max(mx, 1, GetConVar(c):GetInt())
+			if mn ~= Slider:GetMin() then Slider:SetMin(mn) end
+			if mx ~= Slider:GetMax() then Slider:SetMax(mx) end
 		end
 	end
 }

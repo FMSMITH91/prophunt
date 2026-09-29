@@ -233,27 +233,18 @@ end
 if SERVER then
 	
 	local function GetTranslation(t, ply, strID)
-		local str="!error"
-		
+		local code
 		if t:GetCVar( "ph_use_lang" ) then
-			local lang = t:GetCVar( "ph_force_lang" )
-			if (t.LANGUAGES[lang]) and t.LANGUAGES[lang][ strID ] then
-				str = t.LANGUAGES[lang][ strID ]
-			else
-				str = t.LANGUAGES["en_us"][ strID ]
-			end
-		else
-			if ply and IsValid(ply) then
-				local clLang = ply:GetInfo("ph_cl_language")
-				if (t.LANGUAGES[clLang]) and t.LANGUAGES[clLang][ strID ] then
-					str = t.LANGUAGES[clLang][ strID ]
-				end
-			else
-				str = t.LANGUAGES["en_us"][ strID ]
-			end
+			code = t:GetCVar( "ph_force_lang" )
+		elseif ply and IsValid(ply) then
+			code = ply:GetInfo("ph_cl_language")
 		end
 
-		return str
+		-- Fall back to English like the client's FTranslate does. The server only has
+		-- the shipped languages (addon ones are merged client-side) and bots have no
+		-- ph_cl_language, so the player's code used to give "!error".
+		local lang = code and t.LANGUAGES[code]
+		return ( lang and lang[ strID ] ) or t.LANGUAGES["en_us"][ strID ] or tostring( strID )
 	end
 
 	function PHX:SVTranslate(ply, strID, ... )
@@ -349,7 +340,10 @@ GM.IS_PROPER_PHX_INSTALLED 	= true
 -- Fretta configuration
 -- Note: NEVER USE PHX:GetCVar() on ANY EARLY VARIABLES or else Settings won't work!
 GM.GameLength				= PHX:QCVar( "ph_game_time" ) -- Same as GetConVar but it's a wrapper and quicker version.
-GM.AddFragsToTeamScore		= true
+-- Team score is the rounds-won tally (OnRoundResult). A hunter's kill of a prop
+-- is a KillSilent, which skips DoPlayerDeath, so frags only ever added props'
+-- kills of hunters - each LPS kill counted as a round won for the props.
+GM.AddFragsToTeamScore		= false
 GM.CanOnlySpectateOwnTeam 	= true
 GM.ValidSpectatorModes 		= { OBS_MODE_CHASE, OBS_MODE_IN_EYE, OBS_MODE_ROAMING }
 GM.Data 					= {}
@@ -442,8 +436,17 @@ function PHX:InitializePlugin()
 	for name,plugin in pairs( list.Get("PHX.Plugins") ) do
 		if (self.PLUGINS[name] ~= nil) then
 			self:VerboseMsg("[Plugin] Not adding "..name.." because it was exists in table. Use different name instead!", 3)
+		elseif !istable(plugin) then
+			self:VerboseMsg("[Plugin] Not adding "..name..": its entry is not a table.", 3)
 		else
 			self:VerboseMsg("[Plugin] Adding & Loading Plugin: "..name)
+			-- The plugin tab and the listing below use these fields unchecked, so one
+			-- plugin without them broke the whole F1 menu. list.Get hands us a copy.
+			plugin.name		= tostring( plugin.name or name )
+			plugin.version	= tostring( plugin.version or "?" )
+			plugin.info		= tostring( plugin.info or "" )
+			if !istable( plugin.settings ) then plugin.settings = {} end
+			if !istable( plugin.client ) then plugin.client = {} end
 			self.PLUGINS[name] = plugin
 		end
 	end

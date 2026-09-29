@@ -254,6 +254,15 @@ if SERVER then
         net.Send(self)
     end
     
+    -- Same message, for a hull that isn't a centred square (custom OBB hulls).
+    function Player:PHSendHullBounds( mins, maxs, health )
+        net.Start( "SetHull" )
+			net.WriteVector( mins )
+			net.WriteVector( maxs )
+            net.WriteInt( health, 9 )
+        net.Send(self)
+    end
+    
     function Player:SetPlayerLockedRot( bool )
         self:SetNWBool("PlayerLockedRotation", bool)
     end
@@ -298,7 +307,8 @@ if SERVER then
 			return
 		end
 	
-		if self:HasFakePropEntity() and self:Alive() and self:Team() == TEAM_PROPS then
+		-- ph_prop is left nil when it could not be created (entity limit)
+		if self:HasFakePropEntity() and self:Alive() and self:Team() == TEAM_PROPS and IsValid(self.ph_prop) then
 			local trace = {}
 			local dist = PHX.DecoyDistance
             local min,max = self:GetHull()
@@ -394,15 +404,12 @@ if SERVER then
 		if !time then time = 8 end
 		if time > 30 then time = 30 end
 		
+		-- No arguments sends an empty table, which the client reads as "no ARG1".
 		local args = {...}
-		if !args then args = { false } end
-		
 		local t = {}
 		for i=1,#args do
 			t["ARG"..i] = args[i]
 		end
-		
-		if !t then t = { ["ARG1"] = false } end
 		
 		net.Start("PHX.bubbleNotify")
 			net.WriteString(msg)
@@ -419,15 +426,12 @@ if SERVER then
 		if !kind then kind = "PRIMARY" end
 		if !msg then msg = "<NO_MESSAGE>" end
 		
+		-- No arguments sends an empty table, which the client reads as "no ARG1".
 		local args = {...}
-		if !args then args = { false } end
-		
 		local t = {}
 		for i=1,#args do
 			t["ARG"..i] = args[i]
 		end
-		
-		if !t then t = { ["ARG1"] = false } end
 		
 		net.Start("PHX.ChatInfo")
 			net.WriteString(msg)

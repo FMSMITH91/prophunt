@@ -45,9 +45,7 @@ local nets = {
 
     "PHX.DeathNoticeDecoy",
 	"PHX.UpdatePropbanInfo",
-    
-	"PHX.scan_ReqTaunts",
-	"PHX.scan_SendTauntLists",
+	-- PHX.scan_ReqTaunts and PHX.scan_SendTauntLists: sh_tauntscanner.lua registers them.
 
     -- X2Z Very-first Tutorial Window
 	"phx_showVeryFirstTutorial",
