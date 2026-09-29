@@ -6,6 +6,7 @@ local LPS = "gamemodes/prop_hunt/gamemode/plugins/lps/"
 SERVER, CLIENT = false, true
 
 -- Engine pieces shim.lua leaves out (kept here: shim.lua is shared with other branches).
+function isfunction(v) return type(v) == "function" end
 math.Rand = function(low, high) return low + (high - low) * math.random() end
 IN_ATTACK, IN_ATTACK2 = 1, 2048
 TEXT_ALIGN_CENTER = 1

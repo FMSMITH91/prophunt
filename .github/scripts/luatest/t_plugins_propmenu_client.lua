@@ -8,6 +8,7 @@ local GMDIR = "gamemodes/prop_hunt/gamemode/"
 SERVER, CLIENT = false, true
 
 -- Engine pieces shim.lua leaves out (kept here: shim.lua is shared with other branches).
+function isfunction(v) return type(v) == "function" end
 function FindMetaTable(n) if n == "Player" then return S.PlyMeta end end
 function LocalPlayer() return S.localPlayer end
 function ScrW() return 1920 end

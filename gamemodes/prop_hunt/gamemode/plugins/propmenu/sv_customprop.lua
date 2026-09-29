@@ -157,6 +157,14 @@ end
 net.Receive("PCR.EditedCustomPropData", function(len, ply)
 	if CheckUser(ply) then
 		
+		-- After a lapse a second editor can be open, and each save replaces the whole list,
+		-- so only the current holder (or anyone while the lock is free) may save.
+		if IsValid( editor ) and ply ~= editor then
+			ply:PHXChatInfo("WARNING", "PCR_EDT_IN_USE")
+			InformEditor(ply, true)
+			return
+		end
+		
 		local var = net.ReadString()
 		local sub = net.ReadString()
 		local size = net.ReadUInt(32)

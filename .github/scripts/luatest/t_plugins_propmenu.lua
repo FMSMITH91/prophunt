@@ -7,6 +7,7 @@ local PCRDIR = "gamemodes/prop_hunt/gamemode/plugins/propmenu/"
 local GMDIR = "gamemodes/prop_hunt/gamemode/"
 
 -- Engine pieces shim.lua leaves out (kept here: shim.lua is shared with other branches).
+function isfunction(v) return type(v) == "function" end
 HUD_PRINTCONSOLE, SOLID_VPHYSICS, SOLID_BBOX = 2, 6, 2
 local EntMeta = {}
 EntMeta.__index = EntMeta
@@ -420,5 +421,48 @@ S.net.sent = {}
 check("editor leaves before the confirmation: no timer error", S.pump(1)[1], nil)
 check("editor leaves before the confirmation: nothing sent to them", sentTo("phxpm.fb_UpdateConfirmed_Editor", A), 0)
 check("editor left: lock free", request(B), true)
+
+print("\n== only the lock holder's save is kept ==")
+-- Every save replaces the whole list, so once a lapsed window and a new holder's window are
+-- both open, the lapsed one must not overwrite the holder's work.
+local function confirmation(pl)             -- the error flag of pl's last save confirmation
+  for i = #S.net.sent, 1, -1 do
+    local m = S.net.sent[i]
+    if m.name == "phxpm.fb_UpdateConfirmed_Editor" and m.to == pl then return m.data[1] end
+  end
+end
+local LA, LB = "models/props_junk/from_a.mdl", "models/props_junk/from_b.mdl"
+S.fileExists[LA], S.fileExists[LB] = true, true
+done(B)
+A = S.Player{ staff = true, name = "A" }
+check("A opens (new entity)", request(A), true)
+S.pump(601)
+check("A idle past the timeout: B granted", request(B), true)
+S.net.sent, A.chat = {}, {}
+check("lapsed editor saves: no error", save(A, { LA }), "ok")
+check("lapsed editor's save: not written", table.HasValue(PCR.CustomProp, LA), false)
+check("lapsed editor's save: told it failed", confirmation(A), true)
+check("lapsed editor's save: told someone else is editing", said(A, "PCR_EDT_IN_USE"), true)
+S.net.sent = {}
+check("holder saves: no error", save(B, { LB }), "ok")
+check("holder's save: written", table.HasValue(PCR.CustomProp, LB), true)
+S.pump(1)
+check("holder's save: told it succeeded", confirmation(B), false)
+-- Normal play: a holder whose lock lapsed with nobody taking over still saves.
+done(B)
+check("A re-opens after B closes", request(A), true)
+S.pump(900)
+S.net.sent = {}
+save(A, { LA })
+check("long session, nobody else: save written", table.HasValue(PCR.CustomProp, LA), true)
+S.pump(1)
+check("long session, nobody else: told it succeeded", confirmation(A), false)
+-- With the lock free (holder closed), a save is taken as before.
+done(A)
+S.net.sent = {}
+save(B, { LB })
+check("lock free: save written", table.HasValue(PCR.CustomProp, LB), true)
+S.pump(1)
+check("lock free: told it succeeded", confirmation(B), false)
 
 report()

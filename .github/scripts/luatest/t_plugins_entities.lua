@@ -7,6 +7,7 @@ local ENTS = "gamemodes/prop_hunt/entities/entities/"
 local GMDIR = "gamemodes/prop_hunt/gamemode/"
 
 -- Engine pieces shim.lua leaves out (kept here: shim.lua is shared with other branches).
+function isfunction(v) return type(v) == "function" end
 SOLID_BBOX, SOLID_VPHYSICS, MOVETYPE_NONE, MOVETYPE_VPHYSICS = 2, 6, 0, 6
 COLLISION_GROUP_NONE, SIMPLE_USE, RENDERGROUP_BOTH, TRANSMIT_ALWAYS = 0, 3, 7, 0
 HUD_PRINTCONSOLE, OBS_MODE_FREEZECAM, OBS_MODE_CHASE, DMG_CRUSH = 2, 2, 5, 1
