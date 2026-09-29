@@ -160,20 +160,25 @@ jobs:
           mkdir -p "$SRCDS_DIR/garrysmod/lua/includes"
           echo "-- CI smoke test: srcds -systemtest includes this file." \
             > "$SRCDS_DIR/garrysmod/lua/includes/dev_server_test.lua"
+          # -systemtest also adds a bot that hibernation drops at boot. With
+          # mv_change_when_no_player at its default of 1, RTV answers that
+          # "server emptied" with a map vote that can change level mid-run.
+          # server.cfg runs after the gamemode creates the cvar, so this
+          # reaches it.
+          printf '\nmv_change_when_no_player 0\n' >> "$SRCDS_DIR/garrysmod/cfg/server.cfg"
 
       - name: Boot the server
         env:
           SMOKE_MAP: ${{ inputs.map || 'gm_construct' }}
           SMOKE_SECONDS: ${{ steps.probe.outputs.seconds }}
         run: |
-          cd "$SRCDS_DIR"
+          cd "$SRCDS_DIR" || exit 1
           set +e
           # +sv_hibernate_think 1: with no human players the server otherwise
           # hibernates, and no timer, Think or round code runs at all.
           # -systemtest: without it engine.CloseServer() only prints a message.
-          # It also adds a bot at startup that hibernation drops again, and
-          # PH:X's RTV answers that disconnect with a map vote; with no ph_ or
-          # phx_ map installed the vote has nothing to change to.
+          # Its startup bot is why the probe step turns off
+          # mv_change_when_no_player.
           # The timeout is a backstop for a server that hangs.
           timeout --signal=INT "$((SMOKE_SECONDS + 240))" ./srcds_run \
             -game garrysmod -console -norestart -nohltv -systemtest \

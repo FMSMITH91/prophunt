@@ -16,7 +16,7 @@ fi
 # Some LuaJIT builds accept GLua's != && || ! themselves. Under one of those a
 # gap in extract.py's translation cannot fail here, only later in CI.
 if echo 'return 1 != 2' | "$LUA" - >/dev/null 2>&1; then
-  echo "::warning::$LUA accepts GLua syntax, so translation mistakes pass here; rerun with LUA=lua5.1 to catch them"
+  echo "::warning::$LUA accepts GLua syntax, so translation mistakes pass here; rerun under a stock LuaJIT (see README.md) to catch them"
 fi
 
 tmp=$(mktemp) || exit 1

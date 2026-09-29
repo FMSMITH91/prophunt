@@ -32,6 +32,7 @@ function isnumber(v) return type(v) == "number" end
 function isstring(v) return type(v) == "string" end
 function istable(v) return type(v) == "table" end
 function isbool(v) return type(v) == "boolean" end
+function isfunction(v) return type(v) == "function" end
 function isvector(v) return type(v) == "table" and v.x ~= nil end
 function tobool(v)
   if v == nil or v == false or v == 0 or v == "0" or v == "false" then return false end

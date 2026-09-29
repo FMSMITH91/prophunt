@@ -76,7 +76,7 @@ CI runs these (`.github/workflows/`):
 
 ### Running them locally
 
-From the repository root, with `python3` and `luajit` (or `lua5.1`):
+From the repository root, with `python3` and `luajit`:
 
 ```sh
 bash .github/scripts/luatest/run.sh                 # behaviour tests + parse check of every Lua file
@@ -88,7 +88,15 @@ glualint --config glualint.json lint .              # if glualint is installed
 
 `run.sh` warns if your LuaJIT accepts GLua syntax (`!=`, `&&`, `!`) itself.
 Under such a build a mistake in the GLua-to-Lua translation cannot fail
-locally, so run it again with `LUA=lua5.1` before relying on the result.
+locally, so before relying on the result run it again under the stock LuaJIT
+that CI uses:
+
+```sh
+docker run --rm -v "$PWD:/src:ro" ubuntu:24.04 bash -c \
+  'apt-get update -qq && apt-get install -y -qq luajit python3 >/dev/null && bash /src/.github/scripts/luatest/run.sh'
+```
+
+Use LuaJIT rather than `lua5.1` where you can: it is what Garry's Mod runs.
 
 ### Behaviour tests
 
