@@ -254,6 +254,15 @@ if SERVER then
         net.Send(self)
     end
     
+    -- Same message, for a hull that isn't a centred square (custom OBB hulls).
+    function Player:PHSendHullBounds( mins, maxs, health )
+        net.Start( "SetHull" )
+			net.WriteVector( mins )
+			net.WriteVector( maxs )
+            net.WriteInt( health, 9 )
+        net.Send(self)
+    end
+    
     function Player:SetPlayerLockedRot( bool )
         self:SetNWBool("PlayerLockedRotation", bool)
     end

@@ -8,7 +8,8 @@ CLASS.WalkSpeed 			= 250
 CLASS.CrouchedWalkSpeed 	= 0.2
 CLASS.RunSpeed				= 325
 CLASS.DuckSpeed				= 0.2
-CLASS.JumpPower				= 300
+-- No JumpPower: PH_PlayerSpawn sets it from ph_*_jumppower, and a class value
+-- would overwrite that on every spawn (meta:OnSpawn runs after the hook).
 CLASS.DrawTeamRing			= false
 
 -- Prevent 'mod_studio: MOVETYPE_FOLLOW with No Models error.'

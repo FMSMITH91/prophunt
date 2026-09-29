@@ -5,7 +5,8 @@ CLASS.WalkSpeed 			= 230
 CLASS.CrouchedWalkSpeed 	= 0.4
 CLASS.RunSpeed				= 290
 CLASS.DuckSpeed				= 0.2
-CLASS.JumpPower				= 200
+-- No JumpPower: PH_PlayerSpawn sets it from ph_*_jumppower, and a class value
+-- would overwrite that on every spawn (meta:OnSpawn runs after the hook).
 CLASS.DrawTeamRing			= false
 
 function CLASS:StartLoadOut( pl )

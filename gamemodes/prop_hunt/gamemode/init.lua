@@ -21,7 +21,6 @@ include("sv_nettables.lua")
 include("sh_init.lua")
 include("sv_items.lua")
 include("enhancedplus/sv_enhancedplus.lua")
-include("sh_config.lua")
 include("sv_admin.lua")
 include("sv_tauntmgr.lua")
 include("sv_bbox.lua")
@@ -39,9 +38,9 @@ PHX.EXPLOITABLE_DOORS = {
 PHX.VOICE_IS_END_ROUND  = 0
 PHX.SPECTATOR_CHECK     = 0
 PHX.CurPlys             = {}
-IS_ROUND_FORCED_END     = false
 
 -- Local Variables
+local IS_ROUND_FORCED_END = false
 local hunterdamagefix = {
 	["func_breakable"]	= true,
 	["func_physbox"]	= true,
@@ -243,6 +242,10 @@ function GM:PlayerCanHearPlayersVoice(listen, speaker)
 	-- NOTE: must come before the "both alive" rule below, otherwise it never matches.
 	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false, false end
 	
+	-- Spectators are alive in Fretta, so a dead player who joins Spectator would pass
+	-- the "both alive" rule below and could call out props to the living mid-round.
+	if PHX.VOICE_IS_END_ROUND == 0 && speaker:Team() == TEAM_SPECTATOR && listen:Team() != TEAM_SPECTATOR && listen:Alive() then return false, false end
+	
 	-- Only alive players can listen other living players.
 	if listen:Alive() && speaker:Alive() then return true, false end
 	
@@ -286,11 +289,16 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 	if (alltalk_cvar > 0) then return true end
 	
 	-- Generic Checks
-	if ( !IsValid( speaker ) || !IsValid( listen ) ) then return false end
+	if ( !IsValid( listen ) ) then return false end
+	-- A NULL speaker is the server console / rcon `say`, which everyone should see.
+	if ( !IsValid( speaker ) ) then return isentity( speaker ) end
 	
 	-- Spectator can only read from themselves.
 	-- NOTE: must come before the "both alive" rule below, otherwise it never matches.
 	if listen:Team() == TEAM_SPECTATOR && listen:Alive() && speaker:Alive() then return false end
+	
+	-- Same as voice: an (alive) spectator can't pass callouts to living players mid-round.
+	if PHX.VOICE_IS_END_ROUND == 0 && speaker:Team() == TEAM_SPECTATOR && listen:Team() != TEAM_SPECTATOR && listen:Alive() then return false end
 	
 	-- Only alive players can see other living players.
 	if listen:Alive() && speaker:Alive() then return true end
@@ -311,11 +319,12 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 end
 
 -- Called when an entity takes damage
-function EntityTakeDamage(ent, dmginfo)
+local function EntityTakeDamage(ent, dmginfo)
 	local att = dmginfo:GetAttacker()
 	
 	-- Code from: https://facepunch.com/showthread.php?t=1500179 , Special thanks from AlcoholicoDrogadicto(http://steamcommunity.com/profiles/76561198082241865/) for suggesting this.
-	if GAMEMODE:InRound() && IsValid(ent) && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && ent.ph_prop then
+	-- IsValid: ph_prop is nil when it hit the entity limit, or NULL after a map cleanup.
+	if GAMEMODE:InRound() && IsValid(ent) && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && IsValid(ent.ph_prop) then
 		-- Prevent Prop 'Friendly Fire'
 		if ( IsValid(att) && att:IsPlayer() && att:Team() == ent:Team() ) then 
 			PHX:VerboseMsg("[TakeDamage] DMGINFO::ATTACKED!!-> "..ent:Nick().."(Victim) <- "..tostring(att).."! DMGTYPE: "..dmginfo:GetDamageType())
@@ -350,6 +359,14 @@ function EntityTakeDamage(ent, dmginfo)
 	end
 end
 hook.Add("EntityTakeDamage", "PH_EntityTakeDamage", EntityTakeDamage)
+
+-- ph_prop only counts hits from players, so fall/drown damage lowered the player's HP
+-- but not ph_prop.health, and the next hit or disguise change restored it.
+hook.Add("PostEntityTakeDamage", "PHX.SyncPropHealth", function(ent, dmginfo, took)
+	if took && IsValid(ent) && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && IsValid(ent.ph_prop) then
+		ent.ph_prop.health = ent:Health()
+	end
+end)
 
 function GM:PlayerShouldTakeDamage(ply, attacker)
 	
@@ -629,23 +646,22 @@ hook.Add("OnPlayerChangedTeam", "TeamChange_switchLimitter", function(ply, old, 
 	if old == TEAM_HUNTERS or old == TEAM_PROPS then ply.m_LastPlayTeam = old end
 	local fromTeam = ply.m_LastPlayTeam
 
-	if MAX_TEAMCHANGE_LIMIT ~= -1 and (not ply:IsBot()) and !ply:PHXIsStaff() then
-		if (new == TEAM_HUNTERS or new == TEAM_PROPS) and fromTeam and new ~= fromTeam then
-			ply.ChangeLimit = ply.ChangeLimit + 1
-			ply:PHXChatInfo("WARNING", "CHAT_SWAPTEAM_WARNING", ply.ChangeLimit, MAX_TEAMCHANGE_LIMIT)
-			PHX:VerboseMsg("[Team] "..ply:Nick().." has switched team "..ply.ChangeLimit.."x.")
+	if MAX_TEAMCHANGE_LIMIT ~= -1 and (not ply:IsBot()) and !ply:PHXIsStaff()
+		and (new == TEAM_HUNTERS or new == TEAM_PROPS) and fromTeam and new ~= fromTeam then
+		ply.ChangeLimit = ply.ChangeLimit + 1
+		ply:PHXChatInfo("WARNING", "CHAT_SWAPTEAM_WARNING", ply.ChangeLimit, MAX_TEAMCHANGE_LIMIT)
+		PHX:VerboseMsg("[Team] "..ply:Nick().." has switched team "..ply.ChangeLimit.."x.")
 
-			if ply.ChangeLimit > MAX_TEAMCHANGE_LIMIT then
-				ply.ChangeLimit = MAX_TEAMCHANGE_LIMIT
-				timer.Simple(0.3, function()
-					if IsValid(ply) and ply:Team() == new then
-						if (ply.PHXHasLoadout) then ply.PHXHasLoadout = false end
-						ply:SetTeam(fromTeam)
-						ply:PHXChatInfo("ERROR", "CHAT_SWAPTEAM_REVERT", PHX:TranslateName(new,ply))
-						PHX:VerboseMsg("[Team] Reverting "..ply:Nick().."\'s team to "..team.GetName(fromTeam))
-					end
-				end)
-			end
+		if ply.ChangeLimit > MAX_TEAMCHANGE_LIMIT then
+			ply.ChangeLimit = MAX_TEAMCHANGE_LIMIT
+			timer.Simple(0.3, function()
+				if IsValid(ply) and ply:Team() == new then
+					if (ply.PHXHasLoadout) then ply.PHXHasLoadout = false end
+					ply:SetTeam(fromTeam)
+					ply:PHXChatInfo("ERROR", "CHAT_SWAPTEAM_REVERT", PHX:TranslateName(new,ply))
+					PHX:VerboseMsg("[Team] Reverting "..ply:Nick().."\'s team to "..team.GetName(fromTeam))
+				end
+			end)
 		end
 	end
 end)
@@ -673,8 +689,13 @@ hook.Add("PostCleanupMap", "PH_ResetStats", function()
     
 end)
 
--- Check if HLA Playermodels exists.
-if (PHX:GetCVar( "ph_add_hla_combine" )) then
+-- Check if HLA Playermodels exists. Done on first use rather than at file load:
+-- at load PHX:GetCVar only knows the default, so ph_add_hla_combine 0 was ignored.
+local bHLAChecked = false
+local function AddHLAModels()
+	bHLAChecked = true
+	if !PHX:QCVar( "ph_add_hla_combine" ) then return end
+	
 	for _,model in pairs(HLAModels) do
 		if (file.Exists(model, "GAME")) then
 			local hlacombine = player_manager.TranslateToPlayerModelName(model)
@@ -702,6 +723,7 @@ function GM:PlayerSetModel(pl)
 		end
 	else
 		-- Otherwise, Use Random one based from a table above.
+		if !bHLAChecked then AddHLAModels() end
 		local customModel = table.Random(playerModels)
 		local customMdlName = player_manager.TranslatePlayerModel(customModel)
 
@@ -721,6 +743,8 @@ function GM:PlayerExchangeProp(pl, ent)
 	if !self:InRound() then return; end
 	if !IsValid(pl) then return; end
 	if !IsValid(ent) then return; end
+	-- No disguise to change: dead, or ph_prop failed to spawn (entity limit) / was cleaned up.
+	if !pl:Alive() || !IsValid(pl.ph_prop) then return; end
 
 	if pl:Team() == TEAM_PROPS && PHX:IsUsablePropEntity(ent:GetClass()) && ent:GetModel() then
 		-- Prop Launcher: Don't allow if Prop is a Trash (Residue of PROP Launcher item/LPS)
@@ -740,8 +764,10 @@ function GM:PlayerExchangeProp(pl, ent)
 				return
 			end
         
+			-- Taken before anything below overwrites ph_prop.health (the ragdoll branch needs it).
+			local hp_ratio = pl.ph_prop.health / pl.ph_prop.max_health
 			local ent_health = math.Clamp(ent:GetPhysicsObject():GetVolume() / 250, 1, 200)
-			local new_health = math.Clamp((pl.ph_prop.health / pl.ph_prop.max_health) * ent_health, 1, 200)
+			local new_health = math.Clamp(hp_ratio * ent_health, 1, 200)
 			pl.ph_prop.health = new_health
 			
 			pl.ph_prop.max_health = ent_health
@@ -768,9 +794,14 @@ function GM:PlayerExchangeProp(pl, ent)
 			local OffsetMult = PHX:GetCVar( "ph_prop_viewoffset_mult" )
 			local UseFullHull = PHX:GetCVar( "ph_tmp_accurate_hull" )
 			
-			if PHX:GetCVar( "ph_sv_enable_obb_modifier" ) && ent:GetNWBool("hasCustomHull",false) then
-				local hmin	= ent.m_Hull[1]
-				local hmax 	= ent.m_Hull[2] * OffsetMult
+			-- A prop-menu pick (or a map prop respawned by a cleanup) has no m_Hull of its
+			-- own, so fall back to the per-model table sv_bbox keeps.
+			local customHull = ( ent:GetNWBool("hasCustomHull",false) && ent.m_Hull ) || ( PHX.CustomHulls && PHX.CustomHulls[ string.lower( ent:GetModel() ) ] )
+			
+			if PHX:GetCVar( "ph_sv_enable_obb_modifier" ) && customHull then
+				local hmin	= customHull[1]
+				-- The multiplier is for height only; scaling X/Y too pushed the hull off-centre.
+				local hmax 	= Vector( customHull[2].x, customHull[2].y, customHull[2].z * OffsetMult )
 				
 				if hmax.z < self.ViewCam.cHullzMins then
                     pl:PHAdjustView( self.ViewCam.cHullzMins, self.ViewCam.cHullzMins )
@@ -782,9 +813,8 @@ function GM:PlayerExchangeProp(pl, ent)
                 
                 pl:SetHull(hmin,hmax)
 				pl:SetHullDuck(hmin,hmax)
-				local vMax = math.Max(hmax.x,hmax.y)
-                local xymax = UseFullHull and vMax or math.Round(vMax)
-                pl:PHSendHullInfo( xymax*-1, xymax, hmax.z, new_health )
+				-- Send this exact hull: a square approximation made client prediction disagree.
+                pl:PHSendHullBounds( hmin, hmax, new_health )
 			else
 				local vMax = math.Max(ent:OBBMaxs().x, ent:OBBMaxs().y)
 				local vMaxZ = ent:OBBMaxs().z-ent:OBBMins().z
@@ -804,10 +834,12 @@ function GM:PlayerExchangeProp(pl, ent)
                     hullxymin   = hullxymax * -1
                     hullz       = (UseFullHull and vRagMaxZ or math.Round(vRagMaxZ)) * OffsetMult
                     
-                    -- Override health back to 100 and set their solid back to BBOX.
+                    -- Ragdolls use a flat 100 max health (and BBOX solid). Keep the health
+                    -- ratio: a flat 100 let a hurt prop heal to full on demand.
                     pl.ph_prop:SetSolid(SOLID_BBOX)
-                    pl:SetHealth(100)
-                    pl.ph_prop.health 		= 100
+                    new_health = math.Clamp(math.Round(hp_ratio * 100), 1, 100)
+                    pl:SetHealth(new_health)
+                    pl.ph_prop.health 		= new_health
                     pl.ph_prop.max_health 	= 100
                     
                     pl:EnablePropPitchRot( false ) --Do not use Pitch Rotation when prop_ragdoll being used.
@@ -829,9 +861,10 @@ function GM:PlayerExchangeProp(pl, ent)
                 pl:PHSendHullInfo( hullxymin, hullxymax, hullz, new_health )
 
 			end
+			
+			-- Only when the disguise actually changed (not banned, not the same model).
+			hook.Call("PH_OnChangeProp", nil, pl, ent)
 		end
-		
-		hook.Call("PH_OnChangeProp", nil, pl, ent)
 	end
 	
 end
@@ -940,16 +973,9 @@ function GM:Initialize()
 end
 
 function GM:Think()
-	self.BaseClass:Think() --... required?
-	
-	for k,v in pairs( player.GetAll() ) do
-	
-		local Class = v:GetPlayerClass()
-		if Class and istable(Class) then
-			v:CallClassFunction( "Think" )
-		end
-		
-	end
+	-- base_phx's Think already runs the class Think and the time limit check, so they
+	-- aren't repeated here. Keep the colon form: .Think(self) runs base_phx's body twice.
+	self.BaseClass:Think()
 
 	-- Prop spectating is a bit messy so let us clean it up a bit
 	if PHX.SPECTATOR_CHECK < CurTime() then
@@ -959,11 +985,6 @@ function GM:Think()
 			end
 		end
 		PHX.SPECTATOR_CHECK = CurTime() + PHX.SPECTATOR_CHECK_ADD
-	end
-
-	-- Game time related
-	if( !GAMEMODE.IsEndOfGame && ( !GAMEMODE.RoundBased || ( GAMEMODE.RoundBased && GAMEMODE:CanEndRoundBasedGame() ) ) && CurTime() >= GAMEMODE.GetTimeLimit() ) then
-		GAMEMODE:EndOfGame( true )
 	end
 	
 end
@@ -1069,10 +1090,11 @@ hook.Add("PlayerSpawn", "PH_PlayerSpawn", function(pl)
 	pl:SetCollisionGroup(COLLISION_GROUP_PASSABLE_DOOR)
 	pl:CollisionRulesChanged()
 	
+	-- Base 200 keeps the old class values at the default multipliers (1 -> 200, 1.5 -> 300).
 	if pl:Team() == TEAM_HUNTERS then
-		pl:SetJumpPower(160 * PHX:GetCVar( "ph_hunter_jumppower" )) --1
+		pl:SetJumpPower(200 * PHX:GetCVar( "ph_hunter_jumppower" )) --1
 	elseif pl:Team() == TEAM_PROPS then
-		pl:SetJumpPower(160 * PHX:GetCVar( "ph_prop_jumppower" )) --1.5
+		pl:SetJumpPower(200 * PHX:GetCVar( "ph_prop_jumppower" )) --1.5
 	end
 
 	-- Listen server host
@@ -1547,11 +1569,6 @@ hook.Add("PlayerButtonDown", "PlayerButton_ControlTaunts", function(pl, key)
 			if pl:HasFakePropEntity() and (key == decoyKey) then
 				pl:PlaceDecoyProp()
 			end
-			
-		-- Team Hunters
-		elseif plTeam == TEAM_HUNTERS then
-			
-			-- Add Something here for hunters. Sometimes in future I think.
 			
 		end
 	end

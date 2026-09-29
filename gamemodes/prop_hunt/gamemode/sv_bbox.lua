@@ -1,5 +1,10 @@
 local CUR_MAP_DATA = {}
 
+-- The same hulls keyed by lowercased model. The per-entity copy only reaches map props
+-- that existed when the config ran; a prop-menu pick is a fresh entity.
+PHX.CustomHulls = PHX.CustomHulls or {}
+local OwnHulls = {}
+
 local function LoadOBBConfig()
 	local map = game.GetMap()
 	local GetData = PHX.ConfigPath .. "/obb/"..map..".txt"
@@ -18,6 +23,10 @@ local function LoadOBBConfig()
 end
 
 local function DoConfig()
+	-- Clear only what we added last time, so a model dropped from the file stops matching.
+	for mdl in pairs(OwnHulls) do PHX.CustomHulls[mdl] = nil end
+	OwnHulls = {}
+	
 	local data = CUR_MAP_DATA
 	if !data then return end
 	
@@ -51,6 +60,10 @@ local function DoConfig()
 		local max 	= Vector(data[i][2]["max"][1],data[i][2]["max"][2],data[i][2]["max"][3])
 		--[[ local dmin 	= Vector(data[i][2]["dmin"][1],data[i][2]["dmin"][2],data[i][2]["dmin"][3])
 		local dmax 	= Vector(data[i][2]["dmax"][1],data[i][2]["dmax"][2],data[i][2]["dmax"][3]) ]]
+		
+		local mdl = string.lower(data[i][1])
+		PHX.CustomHulls[mdl] = {min,max}
+		OwnHulls[mdl] = true
 		
 		for _,found in pairs(tent) do
 			if IsValid(found) then
