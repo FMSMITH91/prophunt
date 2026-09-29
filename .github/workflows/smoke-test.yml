@@ -4,7 +4,7 @@ name: Server smoke test
 # adds bots so rounds, blind time and team logic actually run, and fails if the
 # gamemode does not load, if no round starts, if the run does not reach its
 # end, if anything throws a Lua error while it runs, or if PH:X's integrity
-# checker reports the install as broken.
+# checker reports the install as broken or never reports on it.
 #
 # Not run on every push: the SteamCMD download is several GB and a cold run
 # takes ~10 minutes. It runs weekly, on demand, and on pull requests that change
@@ -232,12 +232,16 @@ jobs:
           # PH:X's integrity checker prints this banner, then a numbered list,
           # when it decides the install is broken. It once said so about every
           # install laid out like this one (gamemodes/ copied into garrysmod/)
-          # and no check above noticed.
+          # and no check above noticed. Its all-clear line is required as well:
+          # on a fresh server it reports from an http.Fetch callback, and a
+          # checker that never got that far would otherwise pass as clean.
           if grep -nF -A 8 '[PH:X Integrity Check] Error' console.log; then
             echo "::error::The PH:X integrity checker reported errors (see above)."; fail=1
+          elif ! grep -qF '[PH:X Integrity Check] No errors found.' console.log; then
+            echo "::error::The PH:X integrity checker never reported a result, so the install went unchecked."; fail=1
           fi
           if [ "$fail" -ne 0 ]; then exit 1; fi
-          echo "No Lua errors or integrity check errors logged."
+          echo "No Lua errors logged, and the integrity checker found no errors."
 
       - name: Upload console log
         if: always()

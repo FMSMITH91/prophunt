@@ -134,10 +134,14 @@ check("client whose Workshop copy is not PH:X -> reported", checkTXT(), 1)
 SERVER, CLIENT = true, false
 
 print("\n== the whole file: what the server's console shows ==")
--- The smoke test fails on the banner the checker prints, so bind to the text
--- the workflow greps for rather than a copy of it.
-local NEEDLE = slurp(".github/workflows/smoke-test.yml"):match("grep %-[%a]*F[%a]* [^']*'([^']+)' console%.log")
+-- The smoke test fails on the banner the checker prints, and without its
+-- all-clear line, so bind to the text the workflow greps for, not a copy.
+local WF = slurp(".github/workflows/smoke-test.yml")
+local NEEDLE = WF:match("grep %-[%a]*F[%a]* [^']*'([^']+)' console%.log")
 check("harness: the workflow's integrity grep was found", NEEDLE, "[PH:X Integrity Check] Error")
+local CLEAN = WF:match("! grep %-[%a]*F[%a]* '([^']+)' console%.log")
+check("harness: the workflow's all-clear grep was found", CLEAN, "[PH:X Integrity Check] No errors found.")
+local function has(log, needle) return needle ~= nil and log:find(needle, 1, true) ~= nil end
 
 local dialogs = 0
 local function panel()
@@ -148,8 +152,8 @@ IS_PHX, GAMEMODE = true, { IS_PROPER_PHX_INSTALLED = true }
 -- Inside the two-day cache window, so the conflict check runs without http.
 cookie.GetNumber = function() return os.time() + 3600 end
 
--- Boot with the whole file and return everything it printed, one string.
-local function boot()
+-- Run fn and return everything it printed, one string, then fn's result.
+local function capture(fn)
   local out, realPrint = {}, print
   local function say(...)
     local parts = {}
@@ -159,38 +163,59 @@ local function boot()
     end
     out[#out + 1] = table.concat(parts)
   end
+  MsgC, print = say, say
+  local r = fn()
+  MsgC, print = function() end, realPrint
+  return table.concat(out, "\n"), r
+end
+
+-- Boot with the whole file; returns its output and how many timers threw.
+local function boot()
   S.hooks, S.timers, dialogs = {}, {}, 0
   loadblocks("integrity.lua", extract(IG, "1-99999"))
-  MsgC, print = say, say
-  S.fire("InitPostEntity")
-  local thrown = S.pump(1)
-  MsgC, print = function() end, realPrint
-  return table.concat(out, "\n"), #thrown
+  return capture(function() S.fire("InitPostEntity"); return #S.pump(1) end)
 end
 
 reset(); install("direct")
 local log, thrown = boot()
-check("gamemodes/ install boots without the error banner", NEEDLE ~= nil and log:find(NEEDLE, 1, true), nil)
-check("  ... says no errors found", log:find("No errors found", 1, true) ~= nil, true)
+check("gamemodes/ install boots without the error banner", has(log, NEEDLE), false)
+check("  ... prints the all-clear the workflow requires", has(log, CLEAN), true)
 check("  ... nothing thrown", thrown, 0)
 
 reset(); install("addon")
 log = boot()
-check("addon install boots without the error banner", NEEDLE ~= nil and log:find(NEEDLE, 1, true), nil)
+check("addon install boots without the error banner", has(log, NEEDLE), false)
+check("  ... prints the all-clear", has(log, CLEAN), true)
 
 reset()
 log = boot()
-check("gamemode txt unreadable -> banner printed", NEEDLE ~= nil and log:find(NEEDLE, 1, true) ~= nil, true)
+check("gamemode txt unreadable -> banner printed", has(log, NEEDLE), true)
 check("  ... counting both reads and the summary", log:find("There was 3 Errors found!", 1, true) ~= nil, true)
+check("  ... and no all-clear", has(log, CLEAN), false)
 
 SERVER, CLIENT = false, true
 reset(); install("workshop")
 log = boot()
-check("client with the Workshop download -> no banner", NEEDLE ~= nil and log:find(NEEDLE, 1, true), nil)
+check("client with the Workshop download -> no banner", has(log, NEEDLE), false)
 check("  ... and no warning window", dialogs, 0)
 reset()
 boot()
 check("client that cannot see the files -> warning window", dialogs, 1)
 SERVER, CLIENT = true, false
+
+print("\n== a fresh server reports only once http.Fetch answers ==")
+-- CI's server has no cached conflict list, so the report waits on the fetch.
+-- Until it calls back the log has neither line, which is why the workflow
+-- requires the all-clear instead of only failing on the banner.
+local answer
+http.Fetch = function(_, _, onFailure) answer = onFailure end
+cookie.GetNumber = function() return 0 end
+reset(); install("direct")
+log = boot()
+check("fresh server: the conflict list is fetched", answer ~= nil, true)
+check("  ... no banner and no all-clear while it waits", has(log, NEEDLE) or has(log, CLEAN), false)
+log = capture(function() answer("timed out") end)
+check("  ... all-clear once the fetch gives up", has(log, CLEAN), true)
+check("  ... still no banner", has(log, NEEDLE), false)
 
 report()
