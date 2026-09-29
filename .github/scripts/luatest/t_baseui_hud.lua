@@ -91,6 +91,49 @@ loadblocks("cl_help.lua", "local cvPlayerModel, cvPlayerColor = nil, nil\n"
   .. extract("gamemodes/base_phx/gamemode/cl_help.lua", [[^function GM:ShowHelp]]))
 check("ShowHelp does not raise", attempt(function() GAMEMODE:ShowHelp() end), "ok")
 
+print("\n== F1 footer: no time limit never says the game is ending ==")
+-- ph_game_time 0 makes GetTimeLimit -1. The footer's `tl == -1` early return
+-- is what keeps `CurTime() > -1` from reading as "past the limit".
+loadblocks("shared.lua@timelimit", extractAll("gamemodes/base_phx/gamemode/shared.lua", {
+  [[^function GM:GetTimeLimit]], [[^function GM:GetGameTimeLeft]] }))
+local help
+function vgui.CreateFromTable() help = Splash(); return help end
+GAMEMODE.RoundBased = true
+GAMEMODE:ShowHelp()
+local footer = help.lblFooterText
+function footer:SetText(t) self.text = t end
+GAMEMODE.GameLength, _G.CURTIME = 0, 5000
+footer:Think()
+check("ph_game_time 0: footer left alone", footer.text, nil)
+GAMEMODE.GameLength = 15                       -- 900 s
+footer:Think()
+check("limit passed: ends after this round", footer.text, "MISC_GAMEEND")
+_G.CURTIME = 100
+footer:Think()
+check("limit ahead: shows the time left", footer.text, "MISC_TIMELEFT")
+_G.CURTIME = 1000
+
+print("\n== Fretta fonts are extended (non-Latin glyphs render) ==")
+local fonts = {}
+surface = { CreateFont = function(name, data) fonts[name] = data end }
+function ScrH() return 1080 end
+loadblocks("cl_init.lua@CreateLegacyFont", extract("gamemodes/base_phx/gamemode/cl_init.lua",
+  [[^function surface\.CreateLegacyFont]]))
+-- Run cl_init.lua's own font lines (plain Lua, nothing to translate).
+local made = 0
+for call in ("\n" .. read("gamemodes/base_phx/gamemode/cl_init.lua")):gmatch("\n(surface%.CreateLegacyFont%b())") do
+  loadchunk(call, "cl_init.lua@font")()
+  made = made + 1
+end
+check("cl_init.lua builds the eight FRETTA_ fonts", made, 8)
+local plain = {}
+for name, data in pairs(fonts) do if data.extended ~= true then plain[#plain + 1] = name end end
+table.sort(plain)
+check("every one is extended", table.concat(plain, ","), "")
+local m = fonts.FRETTA_MEDIUM_SHADOW
+check("...and the other fields still pass through",
+  m.font == "Roboto" and m.size == 19 and m.weight == 700 and m.antialias == true and m.shadow == true, true)
+
 print("\n== Team select: the spacer before Spectators is laid out ==")
 local SelectScreen = loadchunk("local PANEL = {}\n"
   .. extract("gamemodes/base_phx/gamemode/cl_selectscreen.lua", [[^function PANEL:AddSpacer]])

@@ -151,6 +151,10 @@ function PHX:CanMutePlayer( ply )
 	// rank at or above theirs" - an admin can mute a user, a user cannot mute an
 	// admin. That is the intended rule; keep it wherever ULib is installed.
 	if ( lp.CheckGroup ) then
+		// The groups ticked in the F1 Admin Groups tab ("disallow Voice Mute")
+		// still bind everyone below staff; without this the tab did nothing
+		// on a ULib server. Staff keep the rank rule above.
+		if ( PHX.IgnoreMutedUserGroup[ ply:GetUserGroup() ] && !lp:PHXIsStaff() ) then return false end
 		return lp:CheckGroup( ply:GetUserGroup() )
 	end
 	

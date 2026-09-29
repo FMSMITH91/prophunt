@@ -1,6 +1,8 @@
 
+-- extended: without it only Latin-1 glyphs render, so translated text and
+-- non-Latin player names drawn in these fonts lose characters.
 function surface.CreateLegacyFont(font, size, weight, antialias, additive, name, shadow, outline, blursize)
-	surface.CreateFont(name, {font = font, size = size, weight = weight, antialias = antialias, additive = additive, shadow = shadow, outline = outline, blursize = blursize})
+	surface.CreateFont(name, {font = font, size = size, weight = weight, antialias = antialias, additive = additive, shadow = shadow, outline = outline, blursize = blursize, extended = true})
 end
 
 include( 'shared.lua' )
