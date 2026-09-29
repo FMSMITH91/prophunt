@@ -729,7 +729,7 @@ L["PHXM_MV_CHANGEMAP_NOPLAYER"]	= "Sunucuda oyuncu kalmayınca haritayı değiş
 L["KEY_MIDCLICK"]        = "FT"
 L["LD_MIDCLICK"]         = "ORTA TIK"
 L["LD_RIGHTCLICK"]       = "SAĞ TIK"
-L["LD_PRESS2SHOOT"]      = "%s ateş etmek için [%s] tuşuna basın!"
+L["LD_PRESS2SHOOT"]      = "[%s] tuşuna basarak %s ile ateş edin!"
 
 
 -- Added to complete the translation against english.lua.
