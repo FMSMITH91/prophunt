@@ -15,8 +15,14 @@ local function FixTallModelHulls()
 	  end
 	end
 
+	-- m_Hull below only reaches the boards already on the map. A prop-menu pick is
+	-- a fresh entity without one, so also record the hull per model.
+	PHX.CustomHulls = PHX.CustomHulls or {}
+
 	for i=1,#mdls do
 	
+		PHX.CustomHulls[ string.lower(mdls[i]) ] = { Vector(-1.3, -4.3, 0), Vector(1.3, 4.3, 96) }
+		
 		for _,ent in pairs(ents.FindByModel(mdls[i])) do
 		
 			if IsValid( ent ) and string.find(ent:GetClass(), "prop_physics") then

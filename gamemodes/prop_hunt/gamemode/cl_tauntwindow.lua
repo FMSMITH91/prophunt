@@ -132,6 +132,12 @@ local function HasFakeTauntLeft()
 	return LocalPlayer():GetTauntRandMapPropCount() > 0 or PHX:GetCVar( "ph_randtaunt_map_prop_max" ) == -1
 end
 
+-- A cleared bind is 0, which GetKeyName maps to nil; FTranslate then gets no
+-- argument and the checkbox shows a literal %s.
+local function TauntKeyName()
+	return input.GetKeyName( PHX:GetCLCVar( "ph_default_taunt_key" ) ) or PHX:FTranslate( "MISC_NA" )
+end
+
 local function SendToServer(name, snd, bFakeTaunt)
 	
 	bFakeTaunt = tobool(bFakeTaunt)
@@ -285,7 +291,7 @@ local function MainFrame()
 	window.ckPF3:Dock(TOP)
 	window.ckPF3:SetSize(0,20)
 	window.ckPF3:DockMargin(8,1,0,0)
-	window.ckPF3:SetText( PHX:FTranslate("PHX_RTAUNT_USE_PITCH", input.GetKeyName( PHX:GetCLCVar( "ph_default_taunt_key" ) )) )
+	window.ckPF3:SetText( PHX:FTranslate("PHX_RTAUNT_USE_PITCH", TauntKeyName()) )
 	window.ckPF3:SetConVar( "ph_cl_pitch_apply_random" )
     function window.ckPF3:OnChange( bool )
         window.ckPRandF3:SetEnabled( bool )
@@ -295,7 +301,7 @@ local function MainFrame()
 	window.ckPRandF3:Dock(TOP)
 	window.ckPRandF3:SetSize(0,20)
 	window.ckPRandF3:DockMargin(8,1,0,0)
-	window.ckPRandF3:SetText( PHX:FTranslate("PHX_RTAUNT_RANDOMIZE", input.GetKeyName( PHX:GetCLCVar( "ph_default_taunt_key" ) )) )
+	window.ckPRandF3:SetText( PHX:FTranslate("PHX_RTAUNT_RANDOMIZE", TauntKeyName()) )
 	window.ckPRandF3:SetConVar( "ph_cl_pitch_randomized_random" )
     window.ckPRandF3:SetEnabled( window.ckPF3:GetChecked() )
 	

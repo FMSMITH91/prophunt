@@ -297,6 +297,24 @@ check("PostCleanupMap still raises each spawn", s1.pos.z .. "," .. s2.pos.z, "6,
 check("  ... and adds one above each", #created, 2)
 check("  ... 78 units up", created[1] and created[1].pos.z, 78)
 
+-- ph_hotel: a prop-menu pick is a fresh entity, so the tall boards' hull must
+-- also be recorded per model, not only on the boards already on the map.
+S.hooks, PHX.CustomHulls = {}, nil
+local BOARD = "models/props_debris/wood_board05a.mdl"
+local board = Ent("prop_physics", BOARD)
+function board:SetNWBool(k, v) self[k] = v end
+ents.FindByModel = function(mdl) if mdl == BOARD then return { board } end return {} end
+CreateConVar("ph_sv_enable_obb_modifier", "1")
+loadblocks("ph_hotel.lua", extract(GM .. "config/maps/ph_hotel.lua", "1-99999"))
+S.fire("PostCleanupMap")
+local hull = PHX.CustomHulls and PHX.CustomHulls[BOARD]
+check("ph_hotel records the board hull per model", hull and tostring(hull[1]) .. " " .. tostring(hull[2]), "[-1.3 -4.3 0] [1.3 4.3 96]")
+check("  ... for the other board too", PHX.CustomHulls and PHX.CustomHulls["models/props_debris/wood_board03a.mdl"] ~= nil, true)
+check("  ... and the board on the map still gets its own", board.hasCustomHull and tostring(board.m_Hull[2]), "[1.3 4.3 96]")
+PHX.CustomHulls["models/from_obb_file.mdl"] = "sv_bbox"
+S.fire("PostCleanupMap")
+check("  ... next round, other models' hulls are kept", PHX.CustomHulls["models/from_obb_file.mdl"], "sv_bbox")
+
 print("\n== #143: the devil ball template works once uncommented ==")
 local fh = io.open(REPO .. GM .. "config/server/sv_devilball_additions.lua")
 local src = fh:read("*a"); fh:close()

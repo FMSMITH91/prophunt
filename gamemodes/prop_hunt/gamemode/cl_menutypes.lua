@@ -14,6 +14,84 @@ local function ConfirmMessage( cvar, value )
 	PHX:MsgBox( {"PHXM_CVAR_CHANGED", cvar, value}, "MISC_INFO", "MISC_OK" )
 end
 
+-- langcombobox: send the picked language to the server cvar, or apply it here.
+local function ApplyLangChoice( cbox, c, isServer )
+	if cbox.selLang ~= "" and cbox.selLangName ~= "" then
+		if (isServer) then
+			-- Is Serverside?
+			net.Start("SvCommandLang")
+			net.WriteString(cbox.selLang)
+			net.WriteString(c)
+			net.SendToServer()
+			CvarChangedMessage(c, cbox.selLang)
+			ConfirmMessage(c, cbox.selLang)
+		else
+			-- because this is for client, force this to use ph_cl_language.
+			RunConsoleCommand("ph_cl_language", cbox.selLang)
+			-- An explicit choice: ph_default_lang must never override it (sh_convar.lua).
+			cookie.Set("phx_lang_chosen", "1")
+			chat.AddText( Color(60,220,30), PHX:Translate( "LANGUAGE_CHANGED", cbox.selLangName ) )
+			print("[PHX] Prefered Language has changed to " .. cbox.selLangName )
+			if PHX.UI.MainForm:IsValid() then PHX.UI.MainForm:Close() end
+		end
+	end
+end
+
+-- langcombobox: show the current language and offer every loaded one. A pack
+-- may leave out Name, and a nil label errors in SetValue and drops the choice.
+local function FillLangChoices( cbox, c, isServer )
+	local langCode
+	if (isServer) then
+		langCode = GetConVar(c):GetString()
+	else
+		langCode = PHX:GetCLCVar( "ph_cl_language" )
+	end
+	
+	local langList = PHX.LANGUAGES
+	
+	-- The server cvars can hold any code when set from server.cfg or rcon.
+	if (langList[langCode] and !table.IsEmpty(langList[langCode])) then
+		cbox:SetValue( tostring(langList[langCode].Name or langCode) )
+	else
+		cbox:SetValue( "Error: Language " .. tostring(langCode) .. " doesn't exists." )
+	end
+	
+	-- The key is the code every lookup uses (PHX.LANGUAGES[ph_cl_language]).
+	for code,lang in pairs(langList) do
+		cbox:AddChoice(tostring(lang.Name or code), code)
+	end
+end
+
+-- textentry: read the field itself. Remembering the text from the last Enter
+-- made the Set button send a stale value after any later edit.
+local function GetEntryText( textEntry )
+	-- avoid using backslash for ph_fc_cue_path
+	local text = string.Replace(textEntry:GetValue(), "\\", "/")
+	-- The hex hack adds a '#' for the engine to eat; should one survive,
+	-- "##RRGGBB" is not a hex colour and LPS would fall back to white.
+	if text:sub(1, 2) == "##" and util.IsHexColor( text:sub(2) ) then text = text:sub(2) end
+	return text
+end
+
+-- textentry: the Set button.
+local function SubmitEntryText( c, d, text )
+	if text == "" then
+		PHX:MsgBox("PHXM_MSG_INPUT_IS_EMPTY", "MISC_WARN", "MISC_OK")
+	elseif d == "SERVER" then
+		-- No "changed" popup: the server has not answered yet and may refuse it
+		-- (sv_admin.lua replies with an error). The other SERVER controls don't
+		-- claim it either.
+		net.Start("SvCommandTextEntry")
+		net.WriteString(text)
+		net.WriteString(c)
+		net.SendToServer()
+	else
+		RunConsoleCommand(c, text)
+		ConfirmMessage(c, text)
+		CvarChangedMessage(c, text)
+	end
+end
+
 PHX.CLUI = {
 ["check"]	= function( c, d, p, l )
 	if !d then
@@ -321,51 +399,12 @@ end,
 	btn:SetDisabled(true)
 	
 	function btn:DoClick()
-		if cbox.selLang ~= "" and cbox.selLangName ~= "" then
-			if (d) then
-				-- Is Serverside?
-				net.Start("SvCommandLang")
-				net.WriteString(cbox.selLang)
-				net.WriteString(c)
-				net.SendToServer()
-				CvarChangedMessage(c, cbox.selLang)
-				ConfirmMessage(c, cbox.selLang)
-			else
-				-- because this is for client, force this to use ph_cl_language.
-				RunConsoleCommand("ph_cl_language", cbox.selLang)
-				-- An explicit choice: ph_default_lang must never override it (sh_convar.lua).
-				cookie.Set("phx_lang_chosen", "1")
-				chat.AddText( Color(60,220,30), PHX:Translate( "LANGUAGE_CHANGED", cbox.selLangName ) )
-				print("[PHX] Prefered Language has changed to " .. cbox.selLangName )
-				if PHX.UI.MainForm:IsValid() then PHX.UI.MainForm:Close() end
-			end
-			
-		end
+		ApplyLangChoice( cbox, c, d )
 	end
 	
 	cbox.selLang = ""
 	cbox.selLangName = ""
-	
-	local cvlang = "en_us"
-	if (d) then
-		cvlang = GetConVar(c):GetString()
-	else
-		cvlang = PHX:GetCLCVar( "ph_cl_language" )
-	end
-	
-	local langCode = cvlang
-	local langList = PHX.LANGUAGES
-	
-	-- The server cvars can hold any code when set from server.cfg or rcon.
-	if (langList[langCode] and !table.IsEmpty(langList[langCode])) then
-		cbox:SetValue( langList[langCode].Name )
-	else
-		cbox:SetValue( "Error: Language " .. tostring(langCode) .. " doesn't exists." )
-	end
-	
-	for code,_ in pairs(langList) do
-		cbox:AddChoice(langList[code].Name, langList[code].code)
-	end
+	FillLangChoices( cbox, c, d )
 	
 	function cbox:OnSelect(index, value, data)
 		btn:SetDisabled(false)
@@ -409,19 +448,8 @@ end,
 	btn:DockMargin(4,2,0,2)
 	btn:SetText(PHX:QTrans("MISC_SET"))
 	
-	-- Read the field itself: remembering the text from the last Enter made the
-	-- Set button send a stale value after any later edit.
-	local function GetProperText()
-		-- avoid using backslash for ph_fc_cue_path
-		local text = string.Replace(textEntry:GetValue(), "\\", "/")
-		-- The hex hack adds a '#' for the engine to eat; should one survive,
-		-- "##RRGGBB" is not a hex colour and LPS would fall back to white.
-		if text:sub(1, 2) == "##" and util.IsHexColor( text:sub(2) ) then text = text:sub(2) end
-		return text
-	end
-	
 	function textEntry:OnEnter()
-		local properText = GetProperText()
+		local properText = GetEntryText( self )
         
         -- Hack: Hexadecimal colors
         if util.IsHexColor( properText ) then
@@ -432,21 +460,7 @@ end,
 	end
 	
 	function btn:DoClick()
-		local properText = GetProperText()
-		if properText ~= "" then
-			if d == "SERVER" then
-				net.Start("SvCommandTextEntry")
-				net.WriteString(properText)
-				net.WriteString(c)
-				net.SendToServer()
-			else
-				RunConsoleCommand(c, properText)
-			end
-			ConfirmMessage(c, properText)
-			CvarChangedMessage(c, properText)
-		else
-			PHX:MsgBox("PHXM_MSG_INPUT_IS_EMPTY", "MISC_WARN", "MISC_OK")
-		end
+		SubmitEntryText( c, d, GetEntryText( textEntry ) )
 	end
 	
 	return pnl

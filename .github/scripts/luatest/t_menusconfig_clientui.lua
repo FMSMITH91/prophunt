@@ -69,10 +69,20 @@ r, cb = langBox("ph_default_lang", true)
 check("langcombobox with a known server code shows its name", cb and cb._value, "Francais")
 r, cb = langBox(nil, nil)
 check("langcombobox for the player's own language", cb and cb._value, "English")
+-- cl_lang.lua stores a pack with no Name; a nil label errors in the engine's
+-- SetValue and silently drops the choice. Show and offer it by its code.
+local function choice(box, data) for _, ch in ipairs(box and box._choices or {}) do if ch[2] == data then return ch end end end
+PHX.LANGUAGES.xx = { code = "xx" }
+S.cvars["ph_cl_language"].v = "xx"
+r, cb = langBox(nil, nil)
+check("langcombobox with a nameless pack selected shows its code", cb and cb._value, "xx")
+check("  ... and offers it by its code", choice(cb, "xx") and choice(cb, "xx")[1], "xx")
+check("  ... next to the named ones (normal play)", choice(cb, "fr") and choice(cb, "fr")[1], "Francais")
+PHX.LANGUAGES.xx, S.cvars["ph_cl_language"].v = nil, "en_us"
 
 -- #173: the Set button must send what is in the field now.
 CreateConVar("ph_fc_cue_path", "misc/freeze_cam.wav")
-D.all, D.boxes, S.net.sent = {}, {}, {}
+D.all, D.boxes, D.chat, S.net.sent = {}, {}, {}, {}
 PHX.CLUI["textentry"]("ph_fc_cue_path", "SERVER", grid, "L")
 local te = D.find(D.class("DTextEntry"))
 local setBtn = D.find(function(p) return p._class == "DButton" and p._text == "MISC_SET" end)
@@ -83,12 +93,25 @@ setBtn:DoClick()
 check("Set sends the edited text, not the last Enter", lastSent() and lastSent().data[1], "misc/x.wav")
 check("... for the right cvar", lastSent() and lastSent().data[2], "ph_fc_cue_path")
 check("... over the admin textentry message", lastSent() and lastSent().name, "SvCommandTextEntry")
+-- The server has not answered yet and may refuse it (sv_admin replies with an error).
+check("... without claiming it changed (no popup)", #D.boxes, 0)
+check("... or chat line", #D.chat, 0)
 te:SetText("sound\\a.wav"); te:OnEnter("sound\\a.wav"); setBtn:DoClick()
 check("Enter then Set still rewrites backslashes", lastSent().data[1], "sound/a.wav")
 local sentBefore = #S.net.sent
 te:SetText(""); setBtn:DoClick()
 check("an empty field sends nothing", #S.net.sent, sentBefore)
 check("... and says so", D.boxes[#D.boxes], "PHXM_MSG_INPUT_IS_EMPTY")
+
+-- A client-side entry is applied at once, so it still confirms the change.
+CreateConVar("ph_test_client_text", "abc")
+D.all, D.boxes, D.chat = {}, {}, {}
+PHX.CLUI["textentry"]("ph_test_client_text", false, grid, "L")
+D.find(D.class("DTextEntry")):SetText("xyz")
+D.find(function(p) return p._class == "DButton" and p._text == "MISC_SET" end):DoClick()
+check("client textentry: Set applies the ConVar", S.cvars["ph_test_client_text"].v, "xyz")
+check("  ... and confirms it in a popup", #D.boxes, 1)
+check("  ... and in chat", lastChat(), "PHXM_CVAR_CHANGED:ph_test_client_text,xyz")
 
 -- The LPS colour entries show "#" .. cvar, relying on the engine to eat one
 -- leading '#'. Set must send a valid hex colour whether or not it does.

@@ -196,6 +196,23 @@ S.cvars["ph_taunt_pitch_enable"].v = "1"
 D.think(W.frame)
 check("pitch re-enabled -> pitch panel shown again", W.pitchpanel:IsVisible(), true)
 
+-- The pitch checkboxes name the taunt key. A cleared bind is 0, which has no
+-- key name, and the shipped FTranslate then leaves the raw %s in the label.
+do
+  local shimFT = PHX.FTranslate
+  loadblocks("cl_lang.lua@FTranslate", extract(GM .. "cl_lang.lua", [[^function PHX:FTranslate]]))
+  local function pitchLabels() return W.ckPF3:GetText() .. " | " .. W.ckPRandF3:GetText() end
+  openTaunts{ taunts = STOCK }
+  check("pitch checkboxes name the taunt key (normal play)", pitchLabels(),
+        EN.PHX_RTAUNT_USE_PITCH:format("F3") .. " | " .. EN.PHX_RTAUNT_RANDOMIZE:format("F3"))
+  S.cvars["ph_default_taunt_key"].v = "0"
+  openTaunts{ taunts = STOCK }
+  check("cleared taunt key -> the checkboxes say N/A, not %s", pitchLabels(),
+        EN.PHX_RTAUNT_USE_PITCH:format(EN.MISC_NA) .. " | " .. EN.PHX_RTAUNT_RANDOMIZE:format(EN.MISC_NA))
+  S.cvars["ph_default_taunt_key"].v = "63"
+  PHX.FTranslate = shimFT
+end
+
 -- #167 part 2: un-starring the last favourite must be saved.
 PHX.FavoriteTaunts = { ["Car Horn"] = true }
 openTaunts{ taunts = STOCK, cat = PHX.FAVORITE_CATEGORY }

@@ -169,11 +169,13 @@ CVAR["ph_enable_taunt_scanner"]			=	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, "(Requ
 -- Convars for Armor
 CVAR["ph_allow_armor"]			        =	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, "Allow use of Armor? May require round restart." }
 
-CVAR["ph_prop_jumppower"]				=	{ CTYPE_FLOAT, 	"1.5", CVAR_SERVER_ONLY_NO_NOTIFY, "Multipliers for Prop Jump Power (Do not confused with Gravity!). Default is 1.4. Min. 1.", {min=1, max=50}, -- in menu, it only limits to 5.
+-- A mid-round change applies 200 x the multiplier, so the defaults 1 and 1.5
+-- give the stock 200 and 300 a player spawns with; 160 made them jump lower.
+CVAR["ph_prop_jumppower"]				=	{ CTYPE_FLOAT, 	"1.5", CVAR_SERVER_ONLY_NO_NOTIFY, "Multipliers for Prop Jump Power (Do not confused with Gravity!). Default is 1.5. Min. 1.", {min=1, max=50}, -- in menu, it only limits to 5.
 function(cvarname, val)
     cvars.AddChangeCallback( cvarname, function(_,_,new )    
         for _,v in pairs(team.GetPlayers(TEAM_PROPS)) do
-            if v:Alive() then v:SetJumpPower(160 * tonumber(new)) end
+            if v:Alive() then v:SetJumpPower(200 * tonumber(new)) end
         end
         SetGlobalFloat( cvarname, tonumber(new) )
     end, "phx.cvflt_" .. cvarname)
@@ -183,7 +185,7 @@ CVAR["ph_hunter_jumppower"]		=	{ CTYPE_FLOAT, 	"1", CVAR_SERVER_ONLY_NO_NOTIFY, 
 function(cvarname, val)
     cvars.AddChangeCallback( cvarname, function(_,_,new )    
         for _,v in pairs(team.GetPlayers(TEAM_HUNTERS)) do
-            if v:Alive() then v:SetJumpPower(160 * tonumber(new)) end
+            if v:Alive() then v:SetJumpPower(200 * tonumber(new)) end
         end
         SetGlobalFloat( cvarname, tonumber(new) )
     end, "phx.cvflt_" .. cvarname)
@@ -245,7 +247,7 @@ CVAR["ph_waitforplayers"]					=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY, 	"Should w
 -- count), and each team also needs at least one player, so the default of 2 is
 -- the smallest that can start a round. It needs no callback: the engine clamps
 -- to min = 1 before any callback runs, and phx.sync_ mirrors it to the global.
-CVAR["ph_min_waitforplayers"]				=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, 	"Minimum number of players, Hunters and Props combined, needed to start a round. Each team also needs at least one player. Cannot be less than 1.", { min = 1, max = game.MaxPlayers() } }
+CVAR["ph_min_waitforplayers"]				=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, 	"Minimum number of players, Hunters and Props combined, needed to start a round. Each team also needs at least one player. Cannot be less than 1. Default is 2.", { min = 1, max = game.MaxPlayers() } }
 
 CVAR["ph_sv_enable_obb_modifier"]			=	{ CTYPE_BOOL, 	"1",CVAR_SERVER_ONLY_NO_NOTIFY, "Developer: Enable OBB Model Data Override/Modifier" }
 CVAR["ph_reload_obb_setting_everyround"]	=	{ CTYPE_BOOL, 	"1",CVAR_SERVER_ONLY_NO_NOTIFY, "Developer: Reload OBB Model Data Override/Modifier Every round Restarts" }

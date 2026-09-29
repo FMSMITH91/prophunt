@@ -77,6 +77,32 @@ check("default is 2", GetGlobalInt("ph_min_waitforplayers", -1), 2)
 RunConsoleCommand("ph_min_waitforplayers", "5")
 check("a change reaches the global", GetGlobalInt("ph_min_waitforplayers", -1), 5)
 
+print("\n== jump power: a mid-round change gives the jump a spawn gives ==")
+local JUMP = { [==[^CVAR\["ph_prop_jumppower"\]]==], [==[^CVAR\["ph_hunter_jumppower"\]]==] }
+loadCVars(JUMP)
+local function jumper(t) local p = S.Player(t); p.SetJumpPower = function(self, v) self._jp = v end; return p end
+local prop, deadProp, hunter = jumper{ team = TEAM_PROPS }, jumper{ team = TEAM_PROPS, alive = false }, jumper{ team = TEAM_HUNTERS }
+S.players = { prop, deadProp, hunter }
+RunConsoleCommand("ph_prop_jumppower", "2")
+check("props x2 -> a living prop jumps 400", prop._jp, 400)
+check("  ... a dead prop is left alone", deadProp._jp, nil)
+check("  ... and hunters are left alone", hunter._jp, nil)
+check("  ... and the global follows", GetGlobalFloat("ph_prop_jumppower", -1), 2)
+RunConsoleCommand("ph_prop_jumppower", "1.5")
+check("props back to the default 1.5 -> the stock 300", prop._jp, 300)
+RunConsoleCommand("ph_hunter_jumppower", "1.5")
+check("hunters x1.5 -> 300", hunter._jp, 300)
+RunConsoleCommand("ph_hunter_jumppower", "1")
+check("hunters back to the default 1 -> the stock 200", hunter._jp, 200)
+S.players = {}
+
+-- The help text an admin reads in the console must state the real default.
+JUMP[#JUMP + 1] = [==[^CVAR\["ph_min_waitforplayers"\]]==]
+local defs = loadchunk(head .. "\nlocal CVAR = {}\n" .. extractAll(CONVAR, JUMP) .. "\nreturn CVAR", "sh_convar.lua@help")()
+for _, n in ipairs({ "ph_prop_jumppower", "ph_hunter_jumppower", "ph_min_waitforplayers" }) do
+  check(n .. " help names its real default", defs[n][4]:match("Default is ([%d.]+)%."), defs[n][2])
+end
+
 print("\n== #76: ph_fc_cue_path only rewrites itself on the server ==")
 loadCVars({ [==[^CVAR\["ph_fc_cue_path"\]]==] }, "client")
 -- a replicated change arriving on a client runs the same callbacks
