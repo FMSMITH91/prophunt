@@ -100,6 +100,10 @@ function PANEL:AddColumn( Name, iFixedSize, fncValue, UpdateRate, TeamID, Header
 	for k, v in pairs( self.Boards ) do
 		v:AddColumn( Col )
 	end
+
+	// Every team board numbers its columns in call order, so this is the
+	// index Col just took. GM:CreateScoreboard sorts by it.
+	self.NumCols = ( self.NumCols or 0 ) + 1
 	
 	return Col
 

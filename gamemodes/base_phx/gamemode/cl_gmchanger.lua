@@ -1,68 +1,22 @@
-g_PlayableGamemodes = {}
-g_bGotGamemodesTable = false
-
-function RcvPlayableGamemodes( length ) 
-      
-	g_PlayableGamemodes = net.ReadTable()
-	g_bGotGamemodesTable = true
-	 
- end 
- 
-net.Receive( "PlayableGamemodes", RcvPlayableGamemodes ); 
-
-local GMChooser = nil 
-local function GetVoteScreen()
-
-	if ( IsValid( GMChooser ) ) then return GMChooser end
-	
-	GMChooser = vgui.Create( "VoteScreen" )
-	return GMChooser
-
-end
- 
-
-function GM:ShowGamemodeChooser()
-
-	local votescreen = GetVoteScreen()
-	votescreen:ChooseGamemode()
-
-end
-
-function GM:GamemodeWon( mode )
-
-	local votescreen = GetVoteScreen()
-	votescreen:FlashItem( mode )
-
-end
-
-function GM:ChangingGamemode( mode, map )
-
-	local votescreen = GetVoteScreen()
-	votescreen:FlashItem( map )
-
-end
-
-function GM:ShowMapChooserForGamemode( gmname )
-
-	local votescreen = GetVoteScreen()
-	votescreen:ChooseMap( gmname )
-
-end
-
+// Fretta's gamemode vote (the VoteScreen panel, the PlayableGamemodes receiver
+// and ShowGamemodeChooser & co.) lived here. vgui_vote.lua was never loaded and
+// nothing called any of it, so it is gone; PH:X votes through mapvote/.
 
 local ClassChooser = nil 
-cl_classsuicide = CreateConVar( "cl_classsuicide", "0", { FCVAR_ARCHIVE } )
+local cl_classsuicide = CreateConVar( "cl_classsuicide", "0", { FCVAR_ARCHIVE } )
 
 function GM:ShowClassChooser( TEAMID )
 
 	if ( !GAMEMODE.SelectClass ) then return end
-	if ( ClassChooser ) then ClassChooser:Remove() end
+	if ( IsValid( ClassChooser ) ) then ClassChooser:Remove() end
 
-	ClassChooser = vgui.CreateFromTable( vgui_Splash )
+	// vgui_Splash is a local of cl_splashscreen.lua, so it was nil here. This is
+	// the select-screen panel, the one with SetHeaderText and AddSelectButton.
+	ClassChooser = vgui.CreateFromTable( GAMEMODE.VGUISplash )
 	ClassChooser:SetHeaderText( "Choose Class" )
 	ClassChooser:SetHoverText( "What class do you want to be?" );
 
-	Classes = team.GetClass( TEAMID )
+	local Classes = team.GetClass( TEAMID )
 	for k, v in SortedPairs( Classes ) do
 		
 		local displayname = v

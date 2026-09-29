@@ -218,8 +218,12 @@ end
 ---------------------------------------------------------*/
 function PANEL:AddSpacer( h )
 
-	local btn = vgui.Create( "Panel", self )
-	btn:SetSize( 200, h )
+	// Into the button list like the buttons themselves; parented to the splash
+	// it was never laid out, so the gap never appeared.
+	local btn = vgui.Create( "Panel" )
+	btn:SetTall( h )
+	btn:SetMouseInputEnabled( false )
+	self.pnlButtons:AddItem( btn )
 	table.insert( self.Buttons, btn )
 	return btn
 	

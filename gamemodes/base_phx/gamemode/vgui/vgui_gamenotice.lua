@@ -1,5 +1,8 @@
 -- client cvars to control deathmsgs
-local hud_deathnotice_time = CreateClientConVar( "hud_deathnotice_time", "6", true, false )
+-- Not hud_deathnotice_time: the base gamemode creates that one first, without
+-- FCVAR_ARCHIVE, and asking for it again does not add the flag - so it was
+-- never saved between sessions.
+local ph_cl_deathnotice_time = CreateClientConVar( "ph_cl_deathnotice_time", "6", true, false, "How long each kill feed notice stays on screen, in seconds.", 1 )
 local hud_deathnotice_limit = CreateClientConVar( "hud_deathnotice_limit", "5", true, false )
 
 /*
@@ -37,11 +40,17 @@ function PANEL:AddEntityText( txt )
 		
 	end
 
+	-- Numbers, booleans and the like have no IsValid; let AddText print them.
+	if ( !isentity( txt ) ) then return false end
+
 	if( txt:IsValid() ) then
 		self:AddText( txt:GetClass(), GAMEMODE.DeathNoticeDefaultColor )	
 	else
 		self:AddText( tostring( txt ) )	
 	end
+
+	-- Handled: without this AddText added a second label for the same entity.
+	return true
 
 end
 

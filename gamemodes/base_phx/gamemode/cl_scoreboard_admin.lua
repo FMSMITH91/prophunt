@@ -29,15 +29,21 @@ PHX = PHX or {}
 	`PHX:FTranslate( k ) or "..."` idiom can never fall back - it just prints
 	the key on screen. This compares against the key to catch that, and also
 	covers PHX not being loaded at all.
+
+	The fallback gets the same arguments the translation would have, so
+	"Kick %s?" still names the player when the key is missing.
 */
 function PHX:SBTranslate( key, fallback, ... )
 
-	if ( !self.FTranslate ) then return fallback end
+	local str = self.FTranslate && self:FTranslate( key, ... )
+	if ( str != nil && str != key ) then return str end
 
-	local str = self:FTranslate( key, ... )
-	if ( str == nil || str == key ) then return fallback end
+	if ( select( "#", ... ) == 0 ) then return fallback end
 
-	return str
+	// A fallback with a stray % must not take the menu down with it.
+	local ok, formatted = pcall( string.format, fallback, ... )
+
+	return ok and formatted or fallback
 
 end
 
@@ -95,9 +101,12 @@ function PHX:ULXTarget( ply )
 
 end
 
+// ply may also be a target string ULXTarget already built. The menu builds it
+// when it opens, so an action confirmed after the player left or rejoined
+// still names their SteamID.
 function PHX:RunULX( sub, ply, ... )
 
-	local target = self:ULXTarget( ply )
+	local target = isstring( ply ) and ply or self:ULXTarget( ply )
 	if ( !target ) then return end
 
 	RunConsoleCommand( ULX_CMD, sub, target, ... )
@@ -151,10 +160,13 @@ function PHX:TrackScoreboardDialog( frame )
 
 		if ( previous ) then previous( pnl, ... ) end
 
-		PHX.SBDialog = nil
+		// The ban flow opens its confirm dialog from the reason prompt's OK
+		// button, so by now the slot may belong to that newer dialog.
+		if ( PHX.SBDialog == pnl ) then PHX.SBDialog = nil end
 
-		// Only take the cursor back if the board itself is no longer holding it.
-		if ( !IsValid( g_ScoreBoard ) || !g_ScoreBoard:IsVisible() ) then
+		// Only take the cursor back if neither the board nor another tracked
+		// dialog is still holding it.
+		if ( !IsValid( PHX.SBDialog ) && ( !IsValid( g_ScoreBoard ) || !g_ScoreBoard:IsVisible() ) ) then
 			gui.EnableScreenClicker( false )
 		end
 
@@ -188,7 +200,15 @@ function PHX:OpenPlayerMenu( ply )
 	local menu  = DermaMenu()
 	local isSelf = ( ply == lp )
 
-	local title = menu:AddOption( ply:Nick() )
+	// Every callback below runs later - from a menu click, or from a reason
+	// dialog that stays open after TAB is released - and the player may have
+	// left by then. Player methods raise on a NULL entity, so take what the
+	// callbacks need now.
+	local nick   = ply:Nick()
+	local sid    = ply:SteamID()
+	local target = self:ULXTarget( ply )
+
+	local title = menu:AddOption( nick )
 	title:SetEnabled( false )
 	menu:AddSpacer()
 
@@ -198,7 +218,7 @@ function PHX:OpenPlayerMenu( ply )
 		end ):SetIcon( "icon16/user_go.png" )
 
 		menu:AddOption( self:SBTranslate( "DERMA_MENU_COPYID", "Copy SteamID" ), function()
-			SetClipboardText( ply:SteamID() )
+			SetClipboardText( sid )
 		end ):SetIcon( "icon16/page_copy.png" )
 	end
 
@@ -210,7 +230,7 @@ function PHX:OpenPlayerMenu( ply )
 		menu:AddOption( muted
 			and ( self:SBTranslate( "DERMA_MENU_UNMUTE_ME", "Unmute for me" ) )
 			or  ( self:SBTranslate( "DERMA_MENU_MUTE_ME", "Mute for me" ) ), function()
-			ply:SetMuted( !ply:IsMuted() )
+			if ( IsValid( ply ) ) then ply:SetMuted( !ply:IsMuted() ) end
 		end ):SetIcon( muted and "icon16/sound.png" or "icon16/sound_mute.png" )
 	end
 
@@ -233,23 +253,23 @@ function PHX:OpenPlayerMenu( ply )
 
 	if ( gagged && canUngag ) then
 		menu:AddOption( self:SBTranslate( "DERMA_MENU_UNGAG", "Ungag (voice)" ), function()
-			self:RunULX( "ungag", ply )
+			self:RunULX( "ungag", target )
 		end ):SetIcon( "icon16/user_comment.png" )
 	elseif ( !gagged && canGag ) then
 		menu:AddOption( self:SBTranslate( "DERMA_MENU_GAG", "Gag (voice)" ), function()
-			self:RunULX( "gag", ply )
+			self:RunULX( "gag", target )
 		end ):SetIcon( "icon16/sound_mute.png" )
 	end
 
 	if ( canMute ) then
 		menu:AddOption( self:SBTranslate( "DERMA_MENU_MUTE", "Mute (text chat)" ), function()
-			self:RunULX( "mute", ply )
+			self:RunULX( "mute", target )
 		end ):SetIcon( "icon16/comment_delete.png" )
 	end
 
 	if ( canUnmute ) then
 		menu:AddOption( self:SBTranslate( "DERMA_MENU_UNMUTE", "Unmute (text chat)" ), function()
-			self:RunULX( "unmute", ply )
+			self:RunULX( "unmute", target )
 		end ):SetIcon( "icon16/comment_add.png" )
 	end
 
@@ -259,8 +279,8 @@ function PHX:OpenPlayerMenu( ply )
 
 		for _, reason in ipairs( KickReasons() ) do
 			kick:AddOption( reason, function()
-				Confirm( self:SBTranslate( "DERMA_MENU_CONFIRM_KICK", "Kick %s?", ply:Nick() ) .. "\n" .. reason, function()
-					self:RunULX( "kick", ply, reason )
+				Confirm( self:SBTranslate( "DERMA_MENU_CONFIRM_KICK", "Kick %s?", nick ) .. "\n" .. reason, function()
+					self:RunULX( "kick", target, reason )
 				end )
 			end )
 		end
@@ -268,10 +288,10 @@ function PHX:OpenPlayerMenu( ply )
 		kick:AddSpacer()
 		kick:AddOption( self:SBTranslate( "DERMA_MENU_CUSTOM_REASON", "Custom reason..." ), function()
 			self:TrackScoreboardDialog( Derma_StringRequest(
-				self:SBTranslate( "DERMA_MENU_KICK_TITLE", "Kick %s", ply:Nick() ),
+				self:SBTranslate( "DERMA_MENU_KICK_TITLE", "Kick %s", nick ),
 				self:SBTranslate( "DERMA_MENU_REASON", "Reason:" ), "",
 				function( reason )
-					self:RunULX( "kick", ply, reason )
+					self:RunULX( "kick", target, reason )
 				end ) )
 		end )
 	end
@@ -286,12 +306,19 @@ function PHX:OpenPlayerMenu( ply )
 
 			ban:AddOption( label, function()
 				self:TrackScoreboardDialog( Derma_StringRequest(
-					self:SBTranslate( "DERMA_MENU_BAN_TITLE", "Ban %s (%s)", ply:Nick(), label ),
+					self:SBTranslate( "DERMA_MENU_BAN_TITLE", "Ban %s (%s)", nick, label ),
 					self:SBTranslate( "DERMA_MENU_REASON", "Reason:" ), "",
 					function( reason )
-						Confirm( self:SBTranslate( "DERMA_MENU_CONFIRM_BAN", "Ban %s for %s?", ply:Nick(), label ), function()
+						Confirm( self:SBTranslate( "DERMA_MENU_CONFIRM_BAN", "Ban %s for %s?", nick, label ), function()
+							// ulx ban only finds a connected player. If they left while
+							// the reason was typed, ban the SteamID instead.
+							if ( !IsValid( ply ) && isstring( sid ) && sid:match( "^STEAM_%d:%d:%d+$" ) && self:CanRunULX( "ulx banid" ) ) then
+								RunConsoleCommand( ULX_CMD, "banid", sid, t.mins, reason )
+								return
+							end
+
 							// ulx ban <player> <minutes, 0 = permanent> <reason>
-							self:RunULX( "ban", ply, t.mins, reason )
+							self:RunULX( "ban", target, t.mins, reason )
 						end )
 					end ) )
 			end )

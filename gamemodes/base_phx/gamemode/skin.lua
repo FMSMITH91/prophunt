@@ -78,10 +78,6 @@ SKIN.colButtonBorderHighlight	= Color( 255, 255, 255, 50 )
 SKIN.colButtonBorderShadow		= Color( 0, 0, 0, 100 )
 SKIN.fontButton					= "Default"
 
--- enum for draw order
-DM_ORDER_LATESTATTOP = 1;
-DM_ORDER_LATESTATBOTTOM = 2;
-
 -- basic deathmsg appearance settings
 SKIN.deathMessageBackgroundCol			= Color( 46, 43, 42, 220 );
 SKIN.deathMessageBackgroundLocal		= Color( 75, 75, 75, 200 ); -- this is the colour that the background is when the local player is involved in the deathmsg, so it stands out.
@@ -288,8 +284,8 @@ end
 
 function SKIN:PaintTeamScoreboardHeader( panel )
 
-	local Color = team.GetColor( panel.iTeamID )
-	draw.RoundedBox( 4, 0, 0, panel:GetWide(), panel:GetTall()*2, Color )
+	local col = team.GetColor( panel.iTeamID )
+	draw.RoundedBox( 4, 0, 0, panel:GetWide(), panel:GetTall()*2, col )
 
 end
 
