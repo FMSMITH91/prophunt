@@ -413,7 +413,11 @@ end,
 	-- Set button send a stale value after any later edit.
 	local function GetProperText()
 		-- avoid using backslash for ph_fc_cue_path
-		return string.Replace(textEntry:GetValue(), "\\", "/")
+		local text = string.Replace(textEntry:GetValue(), "\\", "/")
+		-- The hex hack adds a '#' for the engine to eat; should one survive,
+		-- "##RRGGBB" is not a hex colour and LPS would fall back to white.
+		if text:sub(1, 2) == "##" and util.IsHexColor( text:sub(2) ) then text = text:sub(2) end
+		return text
 	end
 	
 	function textEntry:OnEnter()

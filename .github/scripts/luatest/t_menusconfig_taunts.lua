@@ -164,7 +164,7 @@ local tiny = "tiny\0list"
 sent, biggest = transfer(tiny)
 check("tiny list -> one message", sent, 1)
 check("tiny list -> arrives intact", decompressed == tiny, true)
-check("exactly at the slice size -> one message", (transfer(string.rep("a", 60000))), 1)
+check("exactly at the slice size -> one message", transfer(string.rep("a", 60000)), 1)
 check("  ... intact", decompressed == string.rep("a", 60000), true)
 
 -- the request is still once per connection

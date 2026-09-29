@@ -239,6 +239,43 @@ te:SetText(""); setBtn:DoClick()
 check("an empty field sends nothing", #S.net.sent, sentBefore)
 check("... and says so", D.boxes[#D.boxes], "PHXM_MSG_INPUT_IS_EMPTY")
 
+-- The LPS colour entries show "#" .. cvar, relying on the engine to eat one
+-- leading '#'. Set must send a valid hex colour whether or not it does.
+CreateConVar("lps_halo_color", "#14FA00")
+local function hexEntry(eats)
+  D.all, S.net.sent = {}, {}
+  if eats then
+    -- GMod localisation: an unknown "#token" shows without its '#'.
+    local set = P.SetText
+    P.SetText = function(self, t)
+      if self._class == "DTextEntry" and type(t) == "string" and t:sub(1, 1) == "#" then t = t:sub(2) end
+      return set(self, t)
+    end
+    P.SetValue = function(self, v) return P.SetText(self, v) end
+  end
+  PHX.CLUI["textentry"]("lps_halo_color", "SERVER", grid, "L")
+  local e = D.find(D.class("DTextEntry"))
+  local b = D.find(function(p) return p._class == "DButton" and p._text == "MISC_SET" end)
+  return e, b
+end
+local pSetText, pSetValue = P.SetText, P.SetValue
+-- What the player types lands in the field as-is (no SetText).
+local function typeIn(e, s) e._text, e._value = s, s; e:OnEnter(s) end
+for _, eats in ipairs({ false, true }) do
+  local how = eats and "(engine eats '#')" or "(engine keeps '#')"
+  local e, b = hexEntry(eats)
+  b:DoClick()
+  check("hex colour, Set without editing sends #14FA00 " .. how, lastSent() and lastSent().data[1], "#14FA00")
+  typeIn(e, "#CC0000"); b:DoClick()
+  check("hex colour, Enter then Set sends #CC0000 " .. how, lastSent() and lastSent().data[1], "#CC0000")
+  typeIn(e, "CC0000"); b:DoClick()
+  check("hex colour typed without '#' is still a hex colour " .. how,
+        lastSent() and util.IsHexColor(lastSent().data[1]), true)
+  typeIn(e, "rainbow"); b:DoClick()
+  check("'rainbow' is sent unchanged " .. how, lastSent() and lastSent().data[1], "rainbow")
+  P.SetText, P.SetValue = pSetText, pSetValue
+end
+
 ---------------------------------------------------------------- cl_menu
 print("\n== cl_menu: F1 menu (ph_x_menu) ==")
 -- Record the menu types instead of building them; they are covered above.
