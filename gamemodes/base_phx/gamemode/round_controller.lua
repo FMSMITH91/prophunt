@@ -367,7 +367,7 @@ function GM:CheckPlayerDeathRoundEnd()
 	
 		if ( table.Count( Teams ) == 1 ) then
 		
-			local TeamID = table.GetFirstKey( Teams )
+			local TeamID = next( Teams )
 			GAMEMODE:RoundEndWithResult( TeamID )
 			return
 			
@@ -390,16 +390,6 @@ function GM:CheckRoundEnd()
 	
 	// if something then call GAMEMODE:RoundEndWithResult( TEAM_BLUE, "Team Blue Ate All The Mushrooms!" )
 	// OR for a free for all you could do something like... GAMEMODE:RoundEndWithResult( SomePlayer )
-
-end
-
-function GM:CheckRoundEndInternal()
-
-	if ( !GAMEMODE:InRound() ) then return end
-
-	GAMEMODE:CheckRoundEnd()
-	
-	timer.Create( "CheckRoundEnd", 1, 0, function() GAMEMODE:CheckRoundEndInternal() end )
 
 end
 

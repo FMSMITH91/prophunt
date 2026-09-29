@@ -138,8 +138,26 @@ local DeniedCVars = {
 	["ph_use_custom_mapvote_cmd"]	= true
 }
 
+-- The F1 MapVote tab's ConVars. Named one by one rather than an "mv_" prefix,
+-- because another mapvote addon may own other mv_* names. Each one checks the
+-- value too: staff type the prefix list freely, and it ends up in string.find.
+local function IsNumber( v ) local n = tonumber( v ) return n ~= nil and n > -math.huge and n < math.huge end	-- NaN fails both
+local AllowedMapVoteCVars = {
+	["mv_allowcurmap"]				= IsNumber,
+	["mv_cooldown"]					= IsNumber,
+	["mv_use_ulx_votemaps"]			= IsNumber,
+	["mv_change_when_no_player"]	= IsNumber,
+	["mv_maplimit"]					= IsNumber,
+	["mv_timelimit"]				= IsNumber,
+	["mv_mapbeforerevote"]			= IsNumber,
+	["mv_rtvcount"]					= IsNumber,
+	["mv_map_prefix"]				= function( v ) return isstring( v ) and v:match( "^[%w_%-%.,%s]*$" ) ~= nil end,
+}
+
 local function IsAllowedCVar( cmd )
 	if !cmd or !isstring(cmd) or DeniedCVars[cmd] or !ConVarExists(cmd) then return false end
+
+	if AllowedMapVoteCVars[cmd] then return true end
 
 	for _,prefix in ipairs( AllowedCVarPrefix ) do
 		if (cmd:sub(1, #prefix) == prefix) then return true end
@@ -154,6 +172,13 @@ local function doCommand(ply, cmd, value, identifier)
 	if !IsAllowedCVar( cmd ) then
 		PHX:VerboseMsg("[Server CVar: "..identifier.."] Rejected non-PH:X command '"..tostring(cmd).."' from "..ply:Nick().." ("..ply:SteamID()..")", 3)
 		ply:PHXChatInfo( "ERROR", "PHX_ADMIN_ACCESS_ONLY", ply:Nick() )
+		return
+	end
+
+	local check = AllowedMapVoteCVars[cmd]
+	if check and !check( value ) then
+		PHX:VerboseMsg("[Server CVar: "..identifier.."] Rejected value '"..tostring(value).."' for '"..cmd.."' from "..ply:Nick().." ("..ply:SteamID()..")", 3)
+		ply:PHXChatInfo( "ERROR", "MISC_ERROR" )
 		return
 	end
 

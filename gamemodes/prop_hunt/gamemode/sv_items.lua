@@ -40,8 +40,12 @@ PHX.LUCKY_BALL = {
 			end
 		end,
 		function(pl)
-			pl:Give("item_battery")
-			pl:ChatPrint("[Lucky Ball] You obtained 15+ armor!")
+			if PHX:GetCVar( "ph_allow_armor" ) then
+				pl:Give("item_battery")
+				pl:ChatPrint("[Lucky Ball] You obtained 15+ armor!")
+			else
+				pl:ChatPrint(PHX.LUCKY_BALL:RandomiseText())
+			end
 		end,
 		function(pl)
 			local rand
@@ -50,6 +54,8 @@ PHX.LUCKY_BALL = {
 			if allow then
 				pl:SetArmor(pl:Armor() + rand)
 				pl:ChatPrint("[Lucky Ball] You gained new armor "..tostring(rand).."+ bonus!")
+			else
+				pl:ChatPrint(PHX.LUCKY_BALL:RandomiseText())
 			end
 		end,
 		function(pl)
@@ -270,14 +276,20 @@ PHX.DEVIL_BALL = {
 				pl:SendLua("surface.PlaySound('prop_idbs/speedup.wav')")
 				pl:SetWalkSpeed( pl:GetWalkSpeed() + 100 )
 				pl.ph_fastspeed = true
-				timer.Simple(math.random(4,12), 
+				-- Named, so ResetEverything can cancel it at round end.
+				timer.Create("PHX.DevilFast."..pl:EntIndex(), math.random(4,12), 1,
 				function()
-					if !IsValid(pl) then return end
+					if !IsValid(pl) or !pl.ph_fastspeed then return end
 					pl:ChatPrint("[Devil Crystal] super speed power up exhausted...")
 					pl:SendLua("surface.PlaySound('prop_idbs/generic_exhaust.wav')")
-					pl:SetWalkSpeed( pl._OriginalWSpeed )
-					pl._OriginalWSpeed = nil	-- else it leaks onto a later class with a different base speed
 					pl.ph_fastspeed = false
+					-- The slow crystal shares _OriginalWSpeed: while it runs, undo only our +100.
+					if pl.ph_slowspeed then
+						pl:SetWalkSpeed( pl:GetWalkSpeed() - 100 )
+					elseif pl._OriginalWSpeed then
+						pl:SetWalkSpeed( pl._OriginalWSpeed )
+						pl._OriginalWSpeed = nil	-- else it leaks onto a later class with a different base speed
+					end
 				end)
 			end
 		end,
@@ -293,6 +305,8 @@ PHX.DEVIL_BALL = {
 			if allow then
 				pl:SetArmor(pl:Armor() + rand)
 				pl:ChatPrint("[Devil Crystal] You gained new armor points "..tostring(rand).."+ bonus!")
+			else
+				pl:ChatPrint(PHX.LUCKY_BALL:RandomiseText())
 			end
 		end,
 		function(pl)
@@ -303,14 +317,18 @@ PHX.DEVIL_BALL = {
 				pl:SendLua("surface.PlaySound('prop_idbs/slowdown.wav')")
 				pl:SetWalkSpeed( pl:GetWalkSpeed() - 100 )
 				pl.ph_slowspeed = true
-				timer.Simple(math.random(4,12), 
+				timer.Create("PHX.DevilSlow."..pl:EntIndex(), math.random(4,12), 1,
 				function()
-					if !IsValid(pl) then return end
+					if !IsValid(pl) or !pl.ph_slowspeed then return end
 					pl:ChatPrint("[Devil Crystal] slow down power up exhausted...")
 					pl:SendLua("surface.PlaySound('prop_idbs/generic_exhaust.wav')")
-					pl:SetWalkSpeed( pl._OriginalWSpeed )
-					pl._OriginalWSpeed = nil	-- ditto
 					pl.ph_slowspeed = false
+					if pl.ph_fastspeed then
+						pl:SetWalkSpeed( pl:GetWalkSpeed() + 100 )
+					elseif pl._OriginalWSpeed then
+						pl:SetWalkSpeed( pl._OriginalWSpeed )
+						pl._OriginalWSpeed = nil	-- ditto
+					end
 				end)
 			end
 		end,
@@ -322,12 +340,17 @@ PHX.DEVIL_BALL = {
 				pl:PrintCenter( "Hunters are frozen!", Color(153,217,234) )
 				pl:SendLua("surface.PlaySound('prop_idbs/surface_prop_froze_hunter.wav')")
 				for _,v in ipairs( HunterPlayers ) do
-					if v:Alive() then
+					-- Leave already-held hunters alone. A blinded one is Locked (frozen +
+					-- godmode); Freeze(false) strips only the frozen flag, and the unblind
+					-- code then thought he was free and left him locked all round.
+					if v:Alive() and !v:IsFrozen() then
 						v:Freeze(true)
+						v._devilFrozen = true
 						v:EmitSound(Sound("prop_idbs/govarchz_pickup.wav"))
 						v:ChatPrint("[Devil Crystal] Oh no! You are temporarily frozen!")
 						timer.Simple(math.random(2,3), function()
-							if IsValid(v) then
+							if IsValid(v) and v._devilFrozen then
+								v._devilFrozen = nil
 								v:ChatPrint("[Devil Crystal] You are unfrozen now!")
 								v:EmitSound(Sound("prop_idbs/froze_done.wav"))
 								v:Freeze(false)
@@ -592,6 +615,9 @@ local function ResetEverything()
 			v.ph_cloacking		= false
 			v.ph_slowspeed		= false
 			v.ph_fastspeed		= false
+			v._devilFrozen		= nil	-- its unfreeze timer must not touch next round's blind lock
+			timer.Remove("PHX.DevilFast."..v:EntIndex())
+			timer.Remove("PHX.DevilSlow."..v:EntIndex())
 			
 			-- force remove timer
 			if v.tmr_item and v.tmr_item ~= nil then timer.Remove(v.tmr_item); v.tmr_item = nil; end

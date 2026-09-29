@@ -28,8 +28,10 @@ local function AutoTauntThink()
 				
 				if !isstring(rand_taunt) then rand_taunt = tostring(rand_taunt); end
 
-				-- Play random HL2 cheer sound because taunt is empty.
-				if (TAUNT_FALLBACK) then
+				-- Play random HL2 cheer sound because taunt is empty. TAUNT_FALLBACK is only
+				-- set when every list is empty; with hunter-only taunts the pick above was
+				-- nil and this played the sound "nil" (the F3 key already checks both).
+				if (TAUNT_FALLBACK or table.IsEmpty(PHX.CachedTaunts[TEAM_PROPS])) then
 					PHX:PlayTaunt( ply, "vo/coast/odessa/male01/nlo_cheer0"..math.random(1,4)..".wav", 0, 100, 0, "LastTauntTime" )
 					continue;	-- next prop, NOT out of the whole loop.
 				end
@@ -56,7 +58,9 @@ local function CheckValidity( tauntName, sndFile, plyTeam )
 	local cached = PHX.CachedTaunts[plyTeam]
 	if !cached then return false end	-- spectators/unassigned have no taunt list.
 	
-	return file.Exists("sound/"..sndFile, "GAME") and (cached[tauntName] ~= nil) and table.HasValue( cached, sndFile )
+	-- Cheap table checks first: file.Exists searches every mounted path, on strings
+	-- the client chose.
+	return (cached[tauntName] ~= nil) and table.HasValue( cached, sndFile ) and file.Exists("sound/"..sndFile, "GAME")
 end
 
 local function SetLastTauntDelay( ply )
@@ -77,6 +81,16 @@ net.Receive("CL2SV_PlayThisTaunt", function(len, ply)
 	-- emitting taunts from wherever their roaming spectator camera had moved to,
 	-- and fake taunts from props anywhere on the map.
 	if (ply and IsValid(ply) and ply:Alive()) then
+
+		-- A failed request sets no taunt delay, so rate-limit requests themselves.
+		if (ply.PHXNextTauntReq or 0) > CurTime() then return end
+		ply.PHXNextTauntReq = CurTime() + 0.25
+
+		-- The taunt window enforces these, but only on the client: custom taunts
+		-- switched off (mode 0), the [F3] cooldown, and the round being over.
+		if !GAMEMODE:InRound() then return end
+		if !TAUNT_FALLBACK and PHX:GetCVar( "ph_custom_taunt_mode" ) < 1 then return end
+		if ply:GetLastTauntTime( "LastTauntTime" ) + PHX:GetCVar( "ph_normal_taunt_delay" ) > CurTime() then return end
 
 		local delay 		= IsDelayed(ply)
 		local isDelay 		= delay[1]

@@ -85,7 +85,9 @@ local function ClearBlindedHuntersList()
         if timer.Exists(tmrUnblind) then timer.Remove(tmrUnblind) end
 		ply.TimerBlindID = nil
 		if ply:GetBlindState() then ply:Blind(false) end
-		if ply:IsFrozen() then ply:UnLock() end
+		-- Not gated on IsFrozen(): anything that clears FL_FROZEN alone leaves the Lock's
+		-- godmode and MOVETYPE_NONE. UnLock does nothing to a player who isn't Locked.
+		ply:UnLock()
 		if !GAMEMODE:InRound() then ply.PHXHasLoadout = false end
 		timer.Simple(0.1, function()
 			-- a delay to prevent weapons spawn twice

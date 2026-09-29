@@ -1,4 +1,25 @@
 
+// Cycling helpers for sequential tables, replacing the deprecated table.FindNext
+// and table.FindPrev with the same results: wrap around at either end, and a
+// value that isn't in the table gives the first (next) or last (prev) entry.
+local function IndexOf( t, v )
+	for i = 1, #t do
+		if ( t[ i ] == v ) then return i end
+	end
+end
+
+local function NextIn( t, v )
+	local i = IndexOf( t, v )
+	if ( !i ) then return t[ 1 ] end
+	return t[ i % #t + 1 ]
+end
+
+local function PrevIn( t, v )
+	local i = IndexOf( t, v )
+	if ( !i ) then return t[ #t ] end
+	return t[ ( i - 2 ) % #t + 1 ]
+end
+
 /*---------------------------------------------------------
    Name: gamemode:GetValidSpectatorModes( Player ply )
    Desc: Gets a table of the allowed spectator modes (OBS_MODE_INEYE, etc)
@@ -64,7 +85,8 @@ function GM:GetSpectatorTargets( pl )
 
 	local t = {}
 	for k, v in pairs( GAMEMODE:GetValidSpectatorEntityNames( pl ) ) do
-		t = table.Merge( t, ents.FindByClass( v ) )
+		// Add, not Merge: Merge goes by key, so a second class overwrote the first.
+		table.Add( t, ents.FindByClass( v ) )
 	end
 	
 	return t
@@ -91,7 +113,7 @@ end
 function GM:FindNextSpectatorTarget( pl, ent )
 
 	local Targets = GAMEMODE:GetSpectatorTargets( pl )
-	return table.FindNext( Targets, ent )
+	return NextIn( Targets, ent )
 
 end
 
@@ -103,7 +125,7 @@ end
 function GM:FindPrevSpectatorTarget( pl, ent )
 
 	local Targets = GAMEMODE:GetSpectatorTargets( pl )
-	return table.FindPrev( Targets, ent )
+	return PrevIn( Targets, ent )
 
 end
 
@@ -115,17 +137,23 @@ function GM:StartEntitySpectate( pl )
 
 	local CurrentSpectateEntity = pl:GetObserverTarget()
 	
-	for i=1, 32 do
+	if ( !GAMEMODE:IsValidSpectatorTarget( pl, CurrentSpectateEntity ) ) then
 	
-		if ( GAMEMODE:IsValidSpectatorTarget( pl, CurrentSpectateEntity ) ) then
-			pl:SpectateEntity( CurrentSpectateEntity )
-			pl:SetupHands( CurrentSpectateEntity )
-			return
+		// Pick among the valid targets only. 32 random draws from every player,
+		// enemies and spectators included, often missed the last teammate alive.
+		local Valid = {}
+		for _, ent in ipairs( GAMEMODE:GetSpectatorTargets( pl ) ) do
+			if ( GAMEMODE:IsValidSpectatorTarget( pl, ent ) ) then table.insert( Valid, ent ) end
 		end
-	
-		CurrentSpectateEntity = GAMEMODE:FindRandomSpectatorTarget( pl )
+		
+		if ( #Valid == 0 ) then return false end
+		CurrentSpectateEntity = Valid[ math.random( #Valid ) ]
 	
 	end
+	
+	pl:SpectateEntity( CurrentSpectateEntity )
+	pl:SetupHands( CurrentSpectateEntity )
+	return true
 
 end
 
@@ -185,7 +213,11 @@ function GM:ChangeObserverMode( pl, mode )
 
 	if ( mode == OBS_MODE_IN_EYE || mode == OBS_MODE_CHASE ) then
 		// StartEntitySpectate picks and applies the target - do NOT clear it below.
-		GAMEMODE:StartEntitySpectate( pl, mode )
+		// With nobody to follow, roam instead of chasing nothing.
+		if ( !GAMEMODE:StartEntitySpectate( pl, mode ) ) then
+			mode = OBS_MODE_ROAMING
+			pl:SpectateEntity( NULL )
+		end
 	else
 		pl:SpectateEntity( NULL )
 	end
@@ -203,7 +235,7 @@ function GM:BecomeObserver( pl )
 	local mode = pl:GetInfoNum( "cl_spec_mode", OBS_MODE_CHASE )
 	
 	if ( !table.HasValue( GAMEMODE:GetValidSpectatorModes( pl ), mode ) ) then 
-		mode = table.FindNext( GAMEMODE:GetValidSpectatorModes( pl ), mode )
+		mode = NextIn( GAMEMODE:GetValidSpectatorModes( pl ), mode )
 	end
 	
 	GAMEMODE:ChangeObserverMode( pl, mode )
@@ -215,7 +247,7 @@ local function spec_mode( pl, cmd, args )
 	if ( !GAMEMODE:IsValidSpectator( pl ) ) then return end
 	
 	local mode = pl:GetObserverMode()
-	local nextmode = table.FindNext( GAMEMODE:GetValidSpectatorModes( pl ), mode )
+	local nextmode = NextIn( GAMEMODE:GetValidSpectatorModes( pl ), mode )
 	
 	GAMEMODE:ChangeObserverMode( pl, nextmode )
 

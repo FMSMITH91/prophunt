@@ -399,16 +399,13 @@ function GM:OnPlayerChangedTeam( ply, oldteam, newteam )
 			ply:Spawn()
 		end
 	
-	elseif ( oldteam ~= TEAM_SPECTATOR ) then
-
-		ply.LastTeamChange = CurTime()
-
 	else
-	
+
 		// If we're straight up changing teams just hang
 		//  around until we're ready to respawn onto the 
 		//  team that we chose
-		
+		ply.LastTeamChange = CurTime()
+
 	end
 	
 	//PrintMessage( HUD_PRINTTALK, Format( "%s joined '%s'", ply:Nick(), team.GetName( newteam ) ) )
@@ -423,56 +420,8 @@ function GM:OnPlayerChangedTeam( ply, oldteam, newteam )
 	
 end
 
--- unused, moved to prop_hunt
-function GM:CheckTeamBalance( bDontKillPlayer )
-
-	local highest
-
-	for id, tm in pairs( team.GetAllTeams() ) do
-		if ( id > 0 && id < 1000 && team.Joinable( id ) ) then
-			if ( !highest || team.NumPlayers( id ) > team.NumPlayers( highest ) ) then
-			
-				highest = id
-			
-			end
-		end
-	end
-
-	if not highest then return end
-
-	for id, tm in pairs( team.GetAllTeams() ) do
-		if ( id ~= highest and id > 0 && id < 1000 && team.Joinable( id ) ) then
-			if team.NumPlayers( id ) < team.NumPlayers( highest ) then
-				while team.NumPlayers( id ) < team.NumPlayers( highest ) - 1 do
-				
-					local ply = GAMEMODE:FindLeastCommittedPlayerOnTeam( highest )
-					if ( !IsValid( ply ) ) then break end
-					
-					if !bDontKillPlayer then
-						ply:Kill()
-					end
-					
-					ply:SetTeam( id )
-
-					--PrintMessage(HUD_PRINTTALK, ply:Name().." has been changed to "..team.GetName( id ).." for team balance." )
-					
-					if (PHX and PHX ~= nil) then
-						for _, listener in ipairs(player.GetAll()) do
-							if listener == ply then
-								listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCEYOU")
-							else
-								--listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCE", ply:Name(), team.GetName( id ))
-								listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCE", ply:Name(), PHX:TranslateName( id ))
-							end
-						end
-					end
-					
-				end
-			end
-		end
-	end
-	
-end
+-- GM:CheckTeamBalance lives in prop_hunt (enhancedplus/sv_enhancedplus.lua). A second
+-- copy here was dead code that fixes kept landing in instead of the live one.
 
 function GM:FindLeastCommittedPlayerOnTeam( teamid )
 

@@ -91,11 +91,14 @@ hook.Add("Initialize", "PHX.InitOBBModelData", function()
 end)
 
 hook.Add("PostCleanupMap", "PHX.PostOBBModelData", function()
+	-- Every round starts with a cleanup that respawns the map props without their
+	-- hulls, so always re-apply. The ConVar only decides whether to re-read the file.
 	if PHX:GetCVar( "ph_reload_obb_setting_everyround" ) then
-		PHX:VerboseMsg("[OBB] PostCleanup OBB ModelData Config...")
-		
-		DoConfig()
+		PHX:VerboseMsg("[OBB] PostCleanup: reloading OBB ModelData Config...")
+		CUR_MAP_DATA = LoadOBBConfig()
 	end
+	
+	DoConfig()
 end)
 
 concommand.Add("refresh_obb_map_setting", function(ply)
