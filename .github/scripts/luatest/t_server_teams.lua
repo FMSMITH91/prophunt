@@ -113,6 +113,27 @@ local flagged = 0
 for _, pl in ipairs(S.players) do if pl.PHXHuntedLastRound then flagged = flagged + 1 end end
 check("round 1: nobody counts as last round's hunter", flagged, 0)
 
+print("\n== swap notices for a player who has left ==")
+cv("ph_notice_prop_rotation", "1"); cv("ph_usable_prop_type", "3")
+cv("ph_swap_teams_every_round", "1")
+lobby(2, 2)
+SetGlobalInt("RoundNumber", 2)
+GAMEMODE:OnPreRoundStart(2)
+local gone, stayed = S.players[1], S.players[2]          -- hunters last round
+check("both ex-hunters are props now", gone:Team() .. "/" .. stayed:Team(), TEAM_PROPS .. "/" .. TEAM_PROPS)
+-- He disconnects before the 0.5s/0.75s notices: GMod drops him from the player
+-- lists, and any method call on the stale reference raises.
+table.RemoveByValue(S.players, gone)
+gone.__valid = false
+setmetatable(gone, { __index = function(_, k) error("Tried to use a NULL entity! (read " .. tostring(k) .. ")") end })
+local noticeErrs = S.pump(2)
+check("notices for a player who left: no Lua error", noticeErrs[1], nil)
+local told = false
+for _, c in ipairs(stayed.chat) do if c[1] == "NOTIFY_IN_PROP_TEAM" then told = true end end
+check("... the one who stayed still gets his", told, true)
+cv("ph_notice_prop_rotation", "0"); cv("ph_usable_prop_type", "1")
+cv("ph_swap_teams_every_round", "0")
+
 print("\n== ph_preventconsecutivehunting (E+ shuffle) ==")
 cv("ph_team_balance_classic", "0")
 local names6 = { "p1", "p2", "p3", "p4", "p5", "p6" }

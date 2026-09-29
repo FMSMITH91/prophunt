@@ -236,6 +236,15 @@ H[1]:Spawn()                                    -- lock timer lands just after b
 advance(2)
 check("blind ends inside the 1s lock timer: one loadout", #H[1].weapons, 5)
 
+-- Any ControlPlayer unblind (the unblind timer, or the lock timer landing after
+-- blind ends) must mark him armed, or the late loadout at blind end arms him again.
+startRound(1, 2)
+advance(5)
+S.classes.Hunter:ControlPlayer(H[1], false, H[1].TimerBlindID)
+check("ControlPlayer's unblind marks the hunter armed", H[1].PHXHasLoadout, true)
+advance(30)                                     -- blind ends, late loadout at 30.1
+check("... so blind end does not arm him twice", #H[1].weapons, 5)
+
 S.cvars["ph_allow_respawnonblind_teamchange"].v = "1"
 startRound(2, 2)
 advance(0.3)
@@ -276,6 +285,17 @@ advance(0.6)
 check("dead hunter: freeze cam at 0.5s", H[1]:GetObserverMode(), OBS_MODE_FREEZECAM)
 advance(4.2)
 check("dead hunter: chase cam at 4.5s", H[1]:GetObserverMode(), OBS_MODE_CHASE)
+
+-- Respawned inside the freeze cam by a spawn that skipped PH_PlayerSpawn (another
+-- addon's PlayerSpawn hook returned a value, which stops hook.Call), so
+-- InFreezeCam is still set when the 4.5s timer runs.
+startRound(2, 2)
+advance(40)
+die(H[1], P[1], false)
+advance(0.6)
+H[1]._alive, H[1]._obs = true, OBS_MODE_NONE
+advance(4.2)
+check("alive at 4.5s with InFreezeCam still set: no chase cam", H[1]:GetObserverMode(), OBS_MODE_NONE)
 
 print("\n== spawn picking never kills ==")
 local function spawnAt(x) return { __valid = true, GetPos = function() return Vector(x, 0, 0) end } end

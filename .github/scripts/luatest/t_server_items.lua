@@ -165,4 +165,54 @@ H[1]:Lock()
 S.pump(3.1)
 check("next round's blind Lock survives the old timer", H[1]:IsFrozen() and H[1]._lk, true)
 
+print("\n== at the entity limit (ents.Create gives NULL) ==")
+-- Find the item that creates cls by asking it, not by its position in the list.
+local function itemCreating(items, t, cls)
+  local realCreate = ents.Create
+  local found
+  for i, fn in ipairs(items) do
+    ents.Create = function(c) if c == cls then error({ probe = c }) end return realCreate(c) end
+    local ok, err = pcall(fn, S.Player{ team = t })
+    ents.Create = realCreate
+    if not ok and type(err) == "table" and err.probe == cls then found = i; break end
+  end
+  S.timers, S.players = {}, {}
+  return found
+end
+local MINE = itemCreating(LUCKY, TEAM_HUNTERS, "combine_mine")
+local NADE = itemCreating(DEVIL, TEAM_PROPS, "npc_grenade_frag")
+check("the bomb and grenade items exist", tostring(MINE ~= nil) .. "/" .. tostring(NADE ~= nil), "true/true")
+h = S.Player{ team = TEAM_HUNTERS }
+LUCKY[MINE](h)
+check("lucky bomb normally: planted and announced", said(h), true)
+pr = S.Player{ team = TEAM_PROPS }
+DEVIL[NADE](pr)
+check("devil grenade normally: spawned and announced", said(pr), true)
+S.entsCreateFails = true
+check("lucky bomb at the limit: no Lua error", attempt(LUCKY[MINE], S.Player{ team = TEAM_HUNTERS }), "ok")
+check("devil grenade at the limit: no Lua error", attempt(DEVIL[NADE], S.Player{ team = TEAM_PROPS }), "ok")
+S.entsCreateFails = false
+
+print("\n== decoy reward with no disguise entity ==")
+loadblocks("sh_player.lua@decoy", "local Player = S.PlyMeta\n" ..
+  extract("gamemodes/prop_hunt/gamemode/sh_player.lua", [[^\s*function Player:PlaceDecoyProp]]))
+S.boolCVar("ph_enable_decoy_reward", "1")
+PHX.DecoyDistance = 100
+function PM:GetHull() return Vector(-16, -16, 0), Vector(16, 16, 72) end
+GAMEMODE.ViewCam = { CamColEnabled = function(_, pos, _, tr) tr.start, tr.endpos = pos, pos; return tr end }
+util.TraceLine = function() return { Hit = true, HitNormal = Vector(0, 0, 1), HitPos = Vector(0, 0, 0) } end
+local function decoyOwner(ph_prop)
+  local d = S.Player{ team = TEAM_PROPS, info = { cl_playercolor = "1 1 1", cl_playermodel = "kleiner" } }
+  d:SetFakePropEntity(true)
+  d.ph_prop = ph_prop
+  return d
+end
+local d = decoyOwner({ __valid = true, GetModel = function() return "models/props_c17/oildrum001.mdl" end,
+                       OBBMins = function() return Vector(-8, -8, -4) end, GetAngles = function() return Angle() end })
+check("decoy normally: placed", attempt(function() d:PlaceDecoyProp() end), "ok")
+check("... and used up", d:HasFakePropEntity(), false)
+d = decoyOwner(nil)                                      -- ph_prop could not be created
+check("no ph_prop: no Lua error", attempt(function() d:PlaceDecoyProp() end), "ok")
+check("... and the decoy is kept for later", d:HasFakePropEntity(), true)
+
 report()
