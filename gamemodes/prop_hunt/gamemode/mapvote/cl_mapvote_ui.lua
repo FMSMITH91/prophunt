@@ -5,11 +5,9 @@
 	thumbnail, live vote count, a share bar and the avatars of everyone who
 	voted for it.
 
-	Registered as PHXMapVote, deliberately NOT as "VoteScreen". base_phx's
-	vgui/vgui_vote.lua already registers a control by that name - Fretta's
-	gamemode vote, which cl_gmchanger.lua creates - and prop_hunt loads second,
-	so the old map vote silently overwrote it. Two different panels answering to
-	one name meant whichever loaded last won.
+	Registered as PHXMapVote rather than "VoteScreen", the name the old map vote
+	shared with Fretta's gamemode vote panel, so it cannot collide with anything
+	else registered under that generic name.
 
 	The net protocol is the classic screen's, so both share the server side:
 	  PHX.MV.Start   amt, map strings, seconds

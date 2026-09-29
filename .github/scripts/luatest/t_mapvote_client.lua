@@ -134,7 +134,7 @@ do
   local realVgui = vgui
   vgui = { Create = function() return Stub() end }
 
-  local ClassicInit = chunkReturningPanel(CLV, { [[^function PANEL:Init]] })
+  local ClassicInit = chunkReturningPanel(CLV, { [[^function PANEL:Init]], [[^function PANEL:AddWindowButtons]] })
   local c = Stub()
   for k, v in pairs(ClassicInit) do c[k] = v end
   check("classic screen builds", attempt(c.Init, c), "ok")
@@ -149,6 +149,25 @@ do
   c:SetVisible(true)
   c.closeButton.DoClick()
   check("classic close, scoreboard open: it keeps the cursor", #S.clicker, 0)
+
+  -- Staff cancel: hides the screen before the server's PHX.MV.Cancel arrives,
+  -- and a refused mv_stop never sends one.
+  local me = S.Player{ sid = "STEAM_0:0:9" }
+  local realChat, realLP = chat, LocalPlayer
+  chat, LocalPlayer = { AddText = function() end }, function() return me end
+  S.clicker, g_ScoreBoard = {}, nil
+  c:SetVisible(true)
+  check("classic cancel button runs", attempt(c.CancelBtn.DoClick), "ok")
+  check("  ...asks the server to stop the vote", me.concmds[1], "mv_stop")
+  check("  ...hides the classic screen", c:IsVisible(), false)
+  check("classic cancel: the cursor is handed back", S.clicker[1], false)
+
+  S.clicker = {}
+  g_ScoreBoard = Panel()
+  c:SetVisible(true)
+  c.CancelBtn.DoClick()
+  check("classic cancel, scoreboard open: it keeps the cursor", #S.clicker, 0)
+  chat, LocalPlayer = realChat, realLP
   vgui = realVgui
 end
 

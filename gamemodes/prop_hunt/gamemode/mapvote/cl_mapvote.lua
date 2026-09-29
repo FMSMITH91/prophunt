@@ -94,6 +94,25 @@ function PANEL:Init()
     self.mapList:EnableHorizontal(true)
     self.mapList:EnableVerticalScrollbar()
     
+    self:AddWindowButtons()
+	
+	self.CancelBtn = vgui.Create("DButton", self.Canvas)
+	self.CancelBtn:SetPos(0,0)
+	self.CancelBtn:SetText("Cancel MapVote")
+	self.CancelBtn:SetSize(160,32)
+	self.CancelBtn.DoClick = function()
+		chat.AddText( "MapVote has been stopped." )
+		LocalPlayer():ConCommand("mv_stop")
+		self:SetVisible(false)
+		MapVote.ReleaseCursor()
+	end
+
+    self.Voters = {}
+end
+
+// The close, maximise and minimise buttons of the old window chrome. Only
+// close does anything: it hides the vote, which ph_mapvote_show brings back.
+function PANEL:AddWindowButtons()
     self.closeButton = vgui.Create("DButton", self.Canvas)
     self.closeButton:SetText("")
 
@@ -122,18 +141,6 @@ function PANEL:Init()
     self.minimButton.Paint = function(panel, w, h)
         derma.SkinHook("Paint", "WindowMinimizeButton", panel, w, h)
     end
-	
-	self.CancelBtn = vgui.Create("DButton", self.Canvas)
-	self.CancelBtn:SetPos(0,0)
-	self.CancelBtn:SetText("Cancel MapVote")
-	self.CancelBtn:SetSize(160,32)
-	self.CancelBtn.DoClick = function()
-		chat.AddText( "MapVote has been stopped." )
-		LocalPlayer():ConCommand("mv_stop")
-		self:SetVisible(false)
-	end
-
-    self.Voters = {}
 end
 
 function PANEL:PerformLayout()
@@ -344,8 +351,5 @@ function PANEL:Flash(id)
     end
 end
 
--- Registered as PHXMapVoteClassic, not "VoteScreen".
--- base_phx/gamemode/vgui/vgui_vote.lua already registers a control by that
--- name - Fretta's gamemode vote, which cl_gmchanger.lua creates - and
--- prop_hunt loads second, so this file used to silently overwrite it.
+-- Named PHXMapVoteClassic to stay clear of Fretta's old VoteScreen name.
 derma.DefineControl("PHXMapVoteClassic", "", PANEL, "DPanel")
