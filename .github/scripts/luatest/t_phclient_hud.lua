@@ -79,7 +79,7 @@ local function spawn(opts)
   S.cvars["ph_autotaunt_delay"].v = "45"
   S.cvars["ph_hud_use_new"].v = (opts.oldhud and "0") or "1"
   loadblocks("cl_autotaunt.lua", autotauntSrc)
-  ME = S.Player{ team = opts.team or TEAM_PROPS, alive = (opts.alive ~= false),
+  ME = S.Player{ team = opts.team or TEAM_PROPS, alive = opts.alive ~= false,
                  vars = { LastTauntTime = _G.CURTIME - (opts.ago or 10), CLastTauntTime = 0 } }
   local ok = attempt(S.receivers["AutoTauntSpawn"])
   if opts.delay then S.cvars["ph_autotaunt_delay"].v = tostring(opts.delay) end
@@ -127,6 +127,29 @@ check("spectator: no prop panel", #draws, 0)
 spawn{ alive = false }
 paint()
 check("dead prop: no prop panel", #draws, 0)
+
+-- The cases above never run Setup(). Here the panel is already up, so only the
+-- painter's own Alive/Team gate hides it: with auto-taunt off no CheckAutoTaunt
+-- timer runs, and `started` stays true until the round ends.
+for _, auto in ipairs{ false, true } do
+  local tag = "set up, auto-taunt " .. (auto and "on" or "off") .. ": "
+  spawn{ auto = auto }
+  paint()
+  check(tag .. "prop sees the panel", panelDrawn(), true)
+  ME._alive = false
+  paint()
+  check(tag .. "prop dies, panel hidden", #draws, 0)
+  ME._alive, ME._team = true, TEAM_HUNTERS
+  paint()
+  check(tag .. "moved to hunters, panel hidden", #draws, 0)
+  ME._team = TEAM_SPECTATOR
+  paint()
+  check(tag .. "moved to spectators, panel hidden", #draws, 0)
+end
+spawn()
+S.receivers["AutoTauntRoundEnd"]()
+paint()
+check("round end: panel hidden for a living prop", #draws, 0)
 
 spawn{ oldhud = true }
 paint()

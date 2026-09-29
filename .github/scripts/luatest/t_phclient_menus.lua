@@ -7,8 +7,11 @@ CLIENT, SERVER = true, false
 function ScrW() return 1920 end
 function ScrH() return 1080 end
 function Format(...) return string.format(...) end
+-- Plain replace. The locals keep gsub's match count out of the next call.
 string.Replace = function(s, find, rep)
-  return (s:gsub(find:gsub("%p", "%%%0"), (rep:gsub("%%", "%%%%"))))
+  local pat = find:gsub("%p", "%%%0")
+  local repl = rep:gsub("%%", "%%%%")
+  return (s:gsub(pat, repl))
 end
 function PHX:GetCLCVar(n) return PHX:GetCVar(n) end
 
@@ -178,6 +181,9 @@ PHX.LegalSoundPath = "misc/freeze_cam.wav"   -- what the client captured at load
 S.cvars["ph_fc_cue_path"].v = "mysounds/fc.wav"
 S.receivers["PlayFreezeCamSound"]()
 check("custom cue path is played", played[#played], "mysounds/fc.wav")
+S.cvars["ph_fc_cue_path"].v = "mysounds\\fc.wav"
+S.receivers["PlayFreezeCamSound"]()
+check("backslash cue path is normalised", played[#played], "mysounds/fc.wav")
 S.cvars["ph_fc_cue_path"].v = "misc/freeze_cam.wav"
 S.receivers["PlayFreezeCamSound"]()
 check("default cue path is played", played[#played], "misc/freeze_cam.wav")
