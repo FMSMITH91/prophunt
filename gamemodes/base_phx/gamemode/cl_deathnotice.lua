@@ -21,6 +21,14 @@ end
 
 hook.Add( "InitPostEntity", "CreateDeathNotify", CreateDeathNotify )
 
+-- DNotify right-aligns against its own width, so a feed still sized for the old
+-- resolution draws past the right edge after a smaller one is picked.
+hook.Add( "OnScreenSizeChanged", "PHX.ResizeDeathNotify", function()
+	if ( !IsValid( g_DeathNotify ) ) then return end
+	g_DeathNotify:SetSize( ScrW() - 25, ScrH() )
+	g_DeathNotify:Shuffle()
+end )
+
 
 local function RecvPlayerKilledByPlayer()
 
@@ -118,7 +126,7 @@ net.Receive( "NPCKilledNPC", RecvNPCKilledNPC )
 ---------------------------------------------------------*/
 --function GM:AddDeathNotice( victim, inflictor, attacker )
 /*
-	hud_deathnotice_time and hud_deathnotice_limit are declared in
+	ph_cl_deathnotice_time and hud_deathnotice_limit are declared in
 	vgui_gamenotice.lua and were read by nothing at all, so notices fell back to
 	DNotify's hardcoded 5 second life and nothing capped how many could stack.
 	A mass death event - a round wipe, or an admin slaying the server - filled
@@ -128,7 +136,7 @@ local function PushNotice( pnl )
 
 	if ( !IsValid( pnl ) ) then return end
 
-	local cvTime = GetConVar( "hud_deathnotice_time" )
+	local cvTime = GetConVar( "ph_cl_deathnotice_time" )
 	local life   = cvTime and math.max( 1, cvTime:GetFloat() ) or 6
 
 	g_DeathNotify:AddItem( pnl, life )
@@ -150,6 +158,11 @@ local function PushNotice( pnl )
 end
 
 function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
+
+	-- Every sender passes names, not players, so Victim == Attacker below would
+	-- turn a kill between two same-named players into a suicide. Decide from
+	-- what the sender actually said, before the arguments are rewritten.
+	local bSelf = ( Inflictor == "suicide" ) or Attacker == nil or Attacker == ""
 	
 	-- for some odd reason, Attacker == nil if inflictor == "suicide" in the base gamemode. wtf and WHEN DID THEY UPDATED THIS???
 	if Inflictor == "suicide" then Attacker = Victim; team1 = team2 end
@@ -176,7 +189,7 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 	if ( team2 == -1 ) then color2 = table.Copy( GAMEMODE.DeathNoticeDefaultColor )
 	else color2 = table.Copy( team.GetColor( team2 ) ) end
 	
-	if Victim == Attacker then
+	if bSelf then
 		pnl:AddText( Attacker, color1 )
 		pnl:AddText( PHX:GetRandomTranslated("SUICIDEMSG") or "is ded." )
 	elseif Victim == "#ph_fake_prop" then
@@ -189,6 +202,10 @@ function GM:AddDeathNotice( Attacker, team1, Inflictor, Victim , team2 )
 		pnl:AddText( Victim, color2 )
 	end
 	
+	-- GameNotice only highlights when handed a Player object, and it only ever
+	-- gets names now, so the skin's "you were involved" background never showed.
+	local me = IsValid( LocalPlayer() ) and LocalPlayer():Nick()
+	if ( me and ( Attacker == me or Victim == me ) ) then pnl.m_bHighlight = true end
 	
 	PushNotice( pnl )
 

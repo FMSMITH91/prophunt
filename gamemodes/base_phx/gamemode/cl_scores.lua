@@ -42,9 +42,10 @@ function GM:GetScoreboard()
 end
 
 // True while the map vote panel is on screen. The panel is removed when the
-// vote is cancelled or the map changes, so this cannot get stuck on.
+// vote is cancelled or the map changes, so this cannot get stuck on. A vote
+// the player closed stays valid but hidden, and must not block TAB.
 local function MapVoteOnScreen()
-	return PHX && PHX.MV && IsValid( PHX.MV.Panel )
+	return PHX && PHX.MV && IsValid( PHX.MV.Panel ) && PHX.MV.Panel:IsVisible()
 end
 
 function GM:ScoreboardShow()
@@ -55,14 +56,18 @@ function GM:ScoreboardShow()
 	if ( MapVoteOnScreen() ) then return end
 	
 	gui.EnableScreenClicker(true)
-	GAMEMODE:GetScoreboard():SetVisible( true )
-	GAMEMODE:PositionScoreboard( GAMEMODE:GetScoreboard() )
+
+	// GetScoreboard builds a fresh board on every call, so call it once.
+	local sb = GAMEMODE:GetScoreboard()
+	sb:SetVisible( true )
+	GAMEMODE:PositionScoreboard( sb )
 	
 end
 
 function GM:ScoreboardHide()
 
-	GAMEMODE:GetScoreboard():SetVisible( false )
+	// Hide the board that is showing rather than building a new one to hide.
+	if ( IsValid( g_ScoreBoard ) ) then g_ScoreBoard:SetVisible( false ) end
 
 	// The right-click menu is an unparented DMenu (DermaMenu passes no parent),
 	// so hiding the board leaves it on screen - and the screen clicker is
@@ -146,6 +151,10 @@ function PHX:CanMutePlayer( ply )
 	// rank at or above theirs" - an admin can mute a user, a user cannot mute an
 	// admin. That is the intended rule; keep it wherever ULib is installed.
 	if ( lp.CheckGroup ) then
+		// The groups ticked in the F1 Admin Groups tab ("disallow Voice Mute")
+		// still bind everyone below staff; without this the tab did nothing
+		// on a ULib server. Staff keep the rank rule above.
+		if ( PHX.IgnoreMutedUserGroup[ ply:GetUserGroup() ] && !lp:PHXIsStaff() ) then return false end
 		return lp:CheckGroup( ply:GetUserGroup() )
 	end
 	
@@ -188,7 +197,9 @@ function GM:AddScoreboardVoice( ScoreBoard )
 		return main
 	end
  
-	ScoreBoard:AddColumn( "Mute", 40, f, 0.5, nil, 6, 6 )
+	// DERMA_MUTE is not in the language files yet (it has to land in all of
+	// them at once), so this shows the English fallback until it is.
+	ScoreBoard:AddColumn( PHX:SBTranslate( "DERMA_MUTE", "Mute" ), 40, f, 0.5, nil, 6, 6 )
  
 end
 
@@ -199,7 +210,7 @@ end
 function GM:AddScoreboardName( ScoreBoard )
 
 	local f = function( ply ) return ply:Name() end
-	local col = ScoreBoard:AddColumn( PHX:FTranslate("DERMA_NAME") or "Name", nil, f, 10, nil, 4, 4 )
+	local col = ScoreBoard:AddColumn( PHX:SBTranslate( "DERMA_NAME", "Name" ), nil, f, 10, nil, 4, 4 )
 	
 	// Handled in vgui_scoreboard_team.lua: this column's value is plain text, so
 	// the label is built by the engine and only reachable from UpdateColumn.
@@ -210,21 +221,26 @@ end
 function GM:AddScoreboardKills( ScoreBoard )
 
 	local f = function( ply ) return ply:Frags() end
-	ScoreBoard:AddColumn( PHX:FTranslate("DERMA_KILLS") or "Kills", 40, f, 0.5, nil, 6, 6 )
+	ScoreBoard:AddColumn( PHX:SBTranslate( "DERMA_KILLS", "Kills" ), 40, f, 0.5, nil, 6, 6 )
 
 end
 
 function GM:AddScoreboardDeaths( ScoreBoard )
 
 	local f = function( ply ) return ply:Deaths() end
-	ScoreBoard:AddColumn( PHX:FTranslate("DERMA_DEATHS") or "Deaths", 60, f, 0.5, nil, 6, 6 )
+	ScoreBoard:AddColumn( PHX:SBTranslate( "DERMA_DEATHS", "Deaths" ), 60, f, 0.5, nil, 6, 6 )
 
 end
 
 function GM:AddScoreboardPing( ScoreBoard )
 
-	local f = function( ply ) return PHX:FTranslate( ply:ScoreboardPing() ) or "SV" end -- Original: ply:ScoreboardPing()
-	ScoreBoard:AddColumn( PHX:FTranslate("DERMA_PING") or "Ping", 40, f, 0.1, nil, 6, 6 )
+	// ScoreboardPing is a number, or a DERMA_*_TAG key for the host and bots.
+	local f = function( ply )
+		local ping = ply:ScoreboardPing()
+		if ( isstring( ping ) ) then return PHX:SBTranslate( ping, ping == "DERMA_BOT_TAG" and "BOT" or "SV" ) end
+		return ping
+	end
+	ScoreBoard:AddColumn( PHX:SBTranslate( "DERMA_PING", "Ping" ), 40, f, 0.1, nil, 6, 6 )
 
 end
 
@@ -245,23 +261,6 @@ function GM:PositionScoreboard( ScoreBoard )
 		ScoreBoard:SetSize( 420, ScrH() - 64 )
 		ScoreBoard:SetPos( (ScrW() - ScoreBoard:GetWide()) / 2, 32 )
 	end
-
-end
-
-function GM:AddScoreboardWantsChange( ScoreBoard )
-
-	local f = function( ply ) 
-					if ( ply:GetNWBool( "WantsVote", false ) ) then 
-						local lbl = vgui.Create( "DLabel" )
-							lbl:SetFont( "Marlett" )
-							lbl:SetText( "a" )
-							lbl:SetTextColor( Color( 100, 255, 0 ) )
-							lbl:SetContentAlignment( 5 )
-						return lbl
-					end					
-				end
-				
-	ScoreBoard:AddColumn( "", 16, f, 2, nil, 6, 6 )
 
 end
 
@@ -288,21 +287,26 @@ function GM:CreateScoreboard( ScoreBoard )
 
 	ScoreBoard:SetSkin( GAMEMODE.HudSkin )
 
-	self:AddScoreboardAvatar( ScoreBoard )		// 1
-	self:AddScoreboardVoice( ScoreBoard )		// 2
-	self:AddScoreboardWantsChange( ScoreBoard )	// 3
-	self:AddScoreboardName( ScoreBoard )		// 4
+	// Sort indices are counted rather than hard-coded: the hook below can add
+	// any number of columns ahead of Kills, which used to shift the sort onto
+	// an addon's column.
+	self:AddScoreboardAvatar( ScoreBoard )
+	self:AddScoreboardVoice( ScoreBoard )
+	local nameCol = ( ScoreBoard.NumCols or 0 ) + 1
+	self:AddScoreboardName( ScoreBoard )
 	-- Include custom column externally. Set after Player's Name.
 	hook.Call("PH_AddColumnScoreboard", nil, ScoreBoard, function( Name, Fixed, Func, Rate, TeamID, HAlign, VAlign, Font )
 		GAMEMODE:AddScoreboardCustom( ScoreBoard, Name, Fixed, Func, Rate, TeamID, HAlign, VAlign, Font )
 	end)
 	-- Add the Rest.
-	self:AddScoreboardKills( ScoreBoard )		// 5
-	self:AddScoreboardDeaths( ScoreBoard )		// 6
-	self:AddScoreboardPing( ScoreBoard )		// 7
+	local killsCol = ( ScoreBoard.NumCols or 0 ) + 1
+	self:AddScoreboardKills( ScoreBoard )
+	local deathsCol = ( ScoreBoard.NumCols or 0 ) + 1
+	self:AddScoreboardDeaths( ScoreBoard )
+	self:AddScoreboardPing( ScoreBoard )
 		
 	// Here we sort by these columns (and descending), in this order. You can define up to 4
-	ScoreBoard:SetSortColumns( { 5, true, 6, false, 4, false } )
+	ScoreBoard:SetSortColumns( { killsCol, true, deathsCol, false, nameCol, false } )
 
 end
 

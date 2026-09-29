@@ -7,7 +7,8 @@ function GM:ShowHelp()
 
 	--if ( !IsValid( Help ) ) then
 	
-		local Help = vgui.CreateFromTable( vgui_Splash )
+		-- vgui_Splash is a local of cl_splashscreen.lua, so it was nil here.
+		local Help = vgui.CreateFromTable( GAMEMODE.VGUISplash )
 		Help:SetHeaderText( GAMEMODE.Name or "Untitled Gamemode" )
 		Help:SetForHelp( "HELP_F1" )
 		-- Help:SetHoverText( GAMEMODE.Help or "No Help Avaliable" );
@@ -23,14 +24,6 @@ function GM:ShowHelp()
 			
 			panel:SetText( timeLeft )
 		end
-
-		--[[
-		if ( GetConVar( "fretta_voting" ):GetInt() ~= 0 ) then
-			local btn = Help:AddSelectButton( PHX:FTranslate("DERMA_RTV") or "Vote For Change", function() RunConsoleCommand( "say", "rtv" ) end )
-			btn.m_colBackground = Color( 255, 200, 100 )
-			btn:SetDisabled( LocalPlayer():GetNWBool( "WantsVote" ) ) 
-		end
-		]]
 		
 		-- Internal Select buttons.
 		local btnadd = Help:AddSelectButton(PHX:FTranslate("DERMA_PHMENU") or "Prop Hunt Menu", function()

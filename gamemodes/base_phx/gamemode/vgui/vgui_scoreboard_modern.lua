@@ -614,8 +614,8 @@ function PANEL:Think()
 
 	local players = team.GetPlayers( self.iTeam )
 
-	// Highest frags first, then fewest deaths, then name - the same intent as
-	// the classic board's SetSortColumns( { 5, true, 6, false, 4, false } ).
+	// Highest frags first, then fewest deaths, then name - the same order the
+	// classic board's SetSortColumns asks for in GM:CreateScoreboard.
 	table.sort( players, function( a, b )
 		if ( a:Frags() ~= b:Frags() ) then return a:Frags() > b:Frags() end
 		if ( a:Deaths() ~= b:Deaths() ) then return a:Deaths() < b:Deaths() end
@@ -745,6 +745,75 @@ function PANEL:RebuildCells()
 
 end
 
+// True while the cell's last value still stands. Otherwise books the next
+// refresh and returns false. An UpdateRate of 0 asks just once.
+local function CustomCellFresh( row, cell )
+
+	local now    = RealTime()
+	local rate   = tonumber( cell.UpdateRate ) or 1
+	local nextAt = row.NextCol[ cell.id ]
+
+	if ( nextAt != nil && ( rate == 0 || nextAt > now ) ) then return true end
+	row.NextCol[ cell.id ] = now + rate
+
+	return false
+
+end
+
+// Embeds a Panel the column returned, removing the one it replaces.
+local function AdoptCustomPanel( row, cell, value )
+
+	if ( !IsValid( value ) ) then return end
+
+	local old = row.CustomPanels[ cell.id ]
+	if ( IsValid( old ) && old != value ) then old:Remove() end
+
+	value:SetParent( row )
+	row.CustomPanels[ cell.id ] = value
+	row.ColText[ cell.id ] = nil
+	row:InvalidateLayout()
+
+end
+
+// Caches a plain value for painting, removing any panel it replaces.
+local function SetCustomText( row, cell, value )
+
+	local old = row.CustomPanels[ cell.id ]
+	if ( IsValid( old ) ) then old:Remove() end
+
+	row.CustomPanels[ cell.id ] = nil
+	row.ColText[ cell.id ] = tostring( value )
+
+end
+
+/*
+	Asks a custom column for this row's value, at most once per UpdateRate
+	seconds (0 = once), the way the classic board does. Rows paint every frame,
+	and a column that builds a fresh label each call - Fretta's own pattern -
+	used to leave one orphaned panel on screen per row per frame.
+
+	A returned Panel is adopted in place of the previous one, as
+	DListView_Line:SetColumnText does; a plain value is cached for painting.
+*/
+local function UpdateCustomCell( row, cell, ply )
+
+	row.NextCol = row.NextCol or {}
+	row.ColText = row.ColText or {}
+
+	if ( CustomCellFresh( row, cell ) ) then return end
+
+	// Third-party code, so never let it take the whole scoreboard down.
+	local ok, value = pcall( cell.fncValue, ply )
+	if ( !ok || value == nil ) then return end
+
+	if ( type( value ) == "Panel" ) then
+		AdoptCustomPanel( row, cell, value )
+	else
+		SetCustomText( row, cell, value )
+	end
+
+end
+
 /*
 	Compatibility shim for the PH_AddColumnScoreboard hook. Third-party columns
 	keep the classic signature:
@@ -771,14 +840,16 @@ function PANEL:AddColumn( Name, iFixedSize, fncValue, UpdateRate, TeamID, Header
 	col.draw = function( row, ply, x, cell, h, fade )
 
 		if ( !cell.fncValue ) then return end
+
+		UpdateCustomCell( row, cell, ply )
+
 		// A panel column draws itself; nothing to print here.
 		if ( IsValid( row.CustomPanels[ cell.id ] ) ) then return end
 
-		// Third-party code, so never let it take the whole scoreboard down.
-		local ok, value = pcall( cell.fncValue, ply )
-		if ( !ok || value == nil || type( value ) == "Panel" ) then return end
+		local text = row.ColText and row.ColText[ cell.id ]
+		if ( text == nil ) then return end
 
-		draw.SimpleText( tostring( value ), cell.Font or "PHX.SB.Row", x + cell.w * 0.5, h * 0.5,
+		draw.SimpleText( text, cell.Font or "PHX.SB.Row", x + cell.w * 0.5, h * 0.5,
 			ColorAlpha( COL_TEXT, fade ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 
 	end
@@ -794,16 +865,7 @@ end
 function PANEL:BuildCustomPanels( row, ply )
 
 	for _, col in ipairs( self.CustomCols ) do
-		if ( col.fncValue ) then
-
-			local ok, value = pcall( col.fncValue, ply )
-
-			if ( ok && type( value ) == "Panel" && IsValid( value ) ) then
-				value:SetParent( row )
-				row.CustomPanels[ col.id ] = value
-			end
-
-		end
+		if ( col.fncValue ) then UpdateCustomCell( row, col, ply ) end
 	end
 
 end

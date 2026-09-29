@@ -1,6 +1,8 @@
 
+-- extended: without it only Latin-1 glyphs render, so translated text and
+-- non-Latin player names drawn in these fonts lose characters.
 function surface.CreateLegacyFont(font, size, weight, antialias, additive, name, shadow, outline, blursize)
-	surface.CreateFont(name, {font = font, size = size, weight = weight, antialias = antialias, additive = additive, shadow = shadow, outline = outline, blursize = blursize})
+	surface.CreateFont(name, {font = font, size = size, weight = weight, antialias = antialias, additive = additive, shadow = shadow, outline = outline, blursize = blursize, extended = true})
 end
 
 include( 'shared.lua' )
@@ -16,7 +18,6 @@ include( 'vgui/vgui_hudcommon.lua' )
 include( 'cl_hud.lua' )
 include( 'cl_deathnotice.lua' )
 include( 'cl_scores.lua' )
-include( 'cl_notify.lua' )
 
 language.Add( "env_laser", "Laser" )
 language.Add( "env_explosion", "Explosion" )
@@ -93,20 +94,26 @@ end
 
 hook.Add( "PrePlayerDraw", "DrawPlayerRing", function( ply ) GAMEMODE:DrawPlayerRing( ply ) end ) 
 
+// The engine's DEFINE_BASECLASS idiom: the table is filled in whenever the base
+// gamemode registers, so taking it at load time is safe.
+local BaseGM = baseclass.Get( "gamemode_base" )
+
 function GM:HUDShouldDraw( name )
 
-	if GAMEMODE.ScoreboardVisible then return false end
-	
 	// commented out until HUD elements are made
 	//for k, v in pairs{"CHudHealth", "CHudBattery", "CHudAmmo", "CHudSecondaryAmmo"} do
 	//	if name == v then return false end 
   	//end 
 	
-	if name == "CHudDamageIndicator" and not LocalPlayer():Alive() then
+	local ply = LocalPlayer()
+	if name == "CHudDamageIndicator" and IsValid( ply ) and not ply:Alive() then
 		return false
 	end
 	
-	return true
+	// The base gamemode is where a weapon's own SWEP:HUDShouldDraw gets asked;
+	// returning true here ignored it. Not self.BaseClass: under prop_hunt that
+	// is this same function, and it would recurse.
+	return BaseGM.HUDShouldDraw( self, name )
 	
 end
 
@@ -145,9 +152,9 @@ function GM:GetTeamColor( ent )
 	
 	end
 
-	local team = TEAM_UNASSIGNED
-	if ( ent.Team and IsValid(ent) ) then team = ent:Team() end
-	return GAMEMODE:GetTeamNumColor( team )
+	local teamID = TEAM_UNASSIGNED
+	if ( ent.Team and IsValid(ent) ) then teamID = ent:Team() end
+	return GAMEMODE:GetTeamNumColor( teamID )
 
 end
 

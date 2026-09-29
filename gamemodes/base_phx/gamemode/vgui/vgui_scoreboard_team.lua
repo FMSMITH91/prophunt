@@ -29,7 +29,11 @@ function PANEL:Think()
 	if ( self.PlayerCount != Count ) then
 		self.PlayerCount = Count
 		--self.TeamName:SetText( team.GetName( self.iTeamID ) .. " (" .. self.PlayerCount .. " Players)" )
-		self.TeamName:SetText( PHX:TranslateName( self.iTeamID ) .. " (" .. self.PlayerCount .. " Players)" )
+		-- DERMA_PLAYERS is "(%d players)" with its own brackets, and has a
+		-- singular twin, so it takes the count rather than being concatenated.
+		local key      = ( Count == 1 ) and "DERMA_PLAYERS_ONE" or "DERMA_PLAYERS"
+		local fallback = ( Count == 1 ) and "(%d player)" or "(%d players)"
+		self.TeamName:SetText( PHX:TranslateName( self.iTeamID ) .. " " .. PHX:SBTranslate( key, fallback, Count ) )
 	end
 	
 	self.TeamScore:SetText( team.GetScore( self.iTeamID ) )
