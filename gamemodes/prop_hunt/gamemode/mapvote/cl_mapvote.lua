@@ -7,7 +7,7 @@ MapVote.Duration = 0
 local cvarModern = CreateClientConVar( "ph_cl_modern_mapvote", "1", true, false,
     "Use the modern map vote screen. 0 falls back to the classic list." )
 
-net.Receive("RAM_MapVoteStart", function()
+net.Receive("PHX.MV.Start", function()
     MapVote.CurrentMaps = {}
     MapVote.Allow = true
     MapVote.Votes = {}
@@ -37,7 +37,7 @@ net.Receive("RAM_MapVoteStart", function()
     if ( GAMEMODE && GAMEMODE.ScoreboardHide ) then GAMEMODE:ScoreboardHide() end
 end)
 
-net.Receive("RAM_MapVoteUpdate", function()
+net.Receive("PHX.MV.Update", function()
     local update_type = net.ReadUInt(3)
     
     if(update_type == MapVote.UPDATE_VOTE) then
@@ -58,15 +58,19 @@ net.Receive("RAM_MapVoteUpdate", function()
     end
 end)
 
-net.Receive("RAM_MapVoteCancel", function()
+net.Receive("PHX.MV.Cancel", function()
     if IsValid(MapVote.Panel) then
         MapVote.Panel:Remove()
     end
+
+    MapVote.ReleaseCursor()
 end)
 
-net.Receive("RTV_Delay", function()
-    chat.AddText(Color( 102,255,51 ), "[RTV]", Color( 255,255,255 ), PHX:Translate("PHXM_MV_VOTEROCKED") )
-end)
+// The modern screen can be hidden mid-vote; this brings it back. The result
+// re-opens it anyway.
+concommand.Add( "ph_mapvote_show", function()
+    if ( IsValid( MapVote.Panel ) ) then MapVote.Panel:SetVisible( true ) end
+end, nil, "Show the map vote screen again after hiding it." )
 
 local PANEL = {}
 
@@ -218,34 +222,39 @@ function PANEL:Think()
         v.NumVotes = 0
     end
     
-    for k, v in pairs(self.Voters) do
-        if(not IsValid(v.Player)) then
+    // Removed icons are dropped from the list, not Removed again every frame
+    // for the rest of the vote.
+    local kept = {}
+    
+    for _, v in ipairs(self.Voters) do
+        if(not IsValid(v.Player) or not MapVote.Votes[v.Player:SteamID()]) then
             v:Remove()
         else
-            if(not MapVote.Votes[v.Player:SteamID()]) then
-                v:Remove()
-            else
-                local bar = self:GetMapButton(MapVote.Votes[v.Player:SteamID()])
-                
+            kept[#kept + 1] = v
+            
+            // GetMapButton returns false for an unknown id.
+            local bar = self:GetMapButton(MapVote.Votes[v.Player:SteamID()])
+            
+            if(IsValid(bar)) then
                 if(MapVote.HasExtraVotePower(v.Player)) then
                     bar.NumVotes = bar.NumVotes + 2
                 else
                     bar.NumVotes = bar.NumVotes + 1
                 end
                 
-                if(IsValid(bar)) then
-                    local CurrentPos = Vector(v.x, v.y, 0)
-                    local NewPos = Vector((bar.x + bar:GetWide()) - 21 * bar.NumVotes - 2, bar.y + (bar:GetTall() * 0.5 - 10), 0)
-                    
-                    if(not v.CurPos or v.CurPos ~= NewPos) then
-                        v:MoveTo(NewPos.x, NewPos.y, 0.3)
-                        v.CurPos = NewPos
-                    end
+                local CurrentPos = Vector(v.x, v.y, 0)
+                local NewPos = Vector((bar.x + bar:GetWide()) - 21 * bar.NumVotes - 2, bar.y + (bar:GetTall() * 0.5 - 10), 0)
+                
+                if(not v.CurPos or v.CurPos ~= NewPos) then
+                    v:MoveTo(NewPos.x, NewPos.y, 0.3)
+                    v.CurPos = NewPos
                 end
             end
         end
         
     end
+    
+    self.Voters = kept
     
     local timeLeft = math.Round(math.Clamp(MapVote.EndTime - CurTime(), 0, math.huge))
     
@@ -263,7 +272,7 @@ function PANEL:SetMaps(maps)
         button:SetText(v)
         
         button.DoClick = function()
-            net.Start("RAM_MapVoteUpdate")
+            net.Start("PHX.MV.Update")
                 net.WriteUInt(MapVote.UPDATE_VOTE, 3)
                 net.WriteUInt(button.ID, 32)
             net.SendToServer()

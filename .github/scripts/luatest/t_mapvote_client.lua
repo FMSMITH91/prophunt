@@ -1,0 +1,126 @@
+dofile((debug.getinfo(1, "S").source:match("@(.*/)") or "./") .. "runner.lua")
+
+-- Client half of the map vote: hiding the modern screen, handing the cursor
+-- back, and the classic screen's voter icons. Runs the shipped functions with
+-- stand-in panels; the Derma drawing itself cannot run here.
+
+local CLV = "gamemodes/prop_hunt/gamemode/mapvote/cl_mapvote.lua"
+local CUI = "gamemodes/prop_hunt/gamemode/mapvote/cl_mapvote_ui.lua"
+
+-- Engine includes/util.lua returns false for a falsy argument; the shim raises.
+-- MapVote.Panel starts out as `false`, so that difference matters here.
+local shimIsValid = IsValid
+function IsValid(e) if not e then return false end return shimIsValid(e) end
+
+net.SendToServer = function() S.net.cur.to = "server"; table.insert(S.net.sent, S.net.cur) end
+S.clicker = {}
+gui = { EnableScreenClicker = function(b) S.clicker[#S.clicker + 1] = b end }
+
+-- A stand-in panel: visibility, removal (which invalidates it, as in GMod) and
+-- the few layout calls the code makes.
+local function Panel(t)
+  local p = t or {}
+  p.__valid, p._visible, p.removed = true, true, 0
+  function p:SetVisible(b) self._visible = b end
+  function p:IsVisible() return self._visible end
+  function p:Remove() self.removed = self.removed + 1; self.__valid = false end
+  function p:MoveTo(x, y) self.x, self.y = x, y end
+  function p:GetWide() return self.w or 100 end
+  function p:GetTall() return self.h or 20 end
+  function p:SetText() end function p:SizeToContents() end function p:CenterHorizontal() end
+  return p
+end
+
+PHX.MV = { Votes = {}, UPDATE_VOTE = 1, EndTime = 0 }
+PHX.MV.HasExtraVotePower = function() return false end
+
+local function loadPanel(path, specs)
+  return loadblocks(path, extractAll(path, specs), "local MapVote = PHX.MV\nlocal PANEL = {}\n")
+end
+local function chunkReturningPanel(path, specs)
+  return loadchunk("local MapVote = PHX.MV\nlocal PANEL = {}\n" .. extractAll(path, specs) .. "\nreturn PANEL", path)()
+end
+
+------------------------------------------------------------------------------
+print("\n== #50: the modern vote screen can be hidden and brought back ==")
+------------------------------------------------------------------------------
+loadPanel(CUI, { [[^function MapVote\.ReleaseCursor]] })
+local Screen = chunkReturningPanel(CUI, { [[^function PANEL:Minimise]], [[^function PANEL:SendVote]] })
+loadblocks(CLV, extractAll(CLV, { [[^net\.Receive\("PHX\.MV\.Cancel"]], [[^concommand\.Add\( "ph_mapvote_show"]] }),
+  "local MapVote = PHX.MV\n")
+
+local function screen()
+  local s = Panel()
+  for k, v in pairs(Screen) do s[k] = v end
+  return s
+end
+
+do
+  local s = screen()
+  s.Pending, s.NextSend = 2, CurTime() + 0.3
+  S.net.sent, S.clicker, g_ScoreBoard = {}, {}, nil
+  s:Minimise()
+  local m = S.net.sent[1]
+  check("hiding sends the vote still waiting on the debounce", m and m.name, "PHX.MV.Update")
+  check("  ...for the map last clicked", m and m.data[2], 2)
+  check("  ...and clears it", s.Pending, nil)
+  check("the screen is hidden", s:IsVisible(), false)
+  check("the cursor is handed back", S.clicker[1], false)
+
+  s = screen()
+  S.net.sent, S.clicker = {}, {}
+  g_ScoreBoard = Panel()
+  s:Minimise()
+  check("nothing pending: nothing sent", #S.net.sent, 0)
+  check("scoreboard open: it keeps the cursor", #S.clicker, 0)
+
+  g_ScoreBoard = Panel(); g_ScoreBoard:SetVisible(false)
+  PHX.MV.Panel = s
+  S.concommands["ph_mapvote_show"].fn()
+  check("ph_mapvote_show brings it back", s:IsVisible(), true)
+  PHX.MV.Panel = false
+  check("ph_mapvote_show with no vote is harmless", attempt(S.concommands["ph_mapvote_show"].fn), "ok")
+
+  S.clicker = {}
+  PHX.MV.Panel = s
+  S.receivers["PHX.MV.Cancel"]()
+  check("cancel removes the screen", s.removed, 1)
+  check("cancel hands the cursor back", S.clicker[1], false)
+  S.clicker = {}
+  g_ScoreBoard:SetVisible(true)
+  PHX.MV.Panel = screen()
+  S.receivers["PHX.MV.Cancel"]()
+  check("cancel with the scoreboard open leaves its cursor", #S.clicker, 0)
+end
+
+------------------------------------------------------------------------------
+print("\n== #184: classic screen voter icons ==")
+------------------------------------------------------------------------------
+local Classic = chunkReturningPanel(CLV, { [[^function PANEL:Think]], [[^function PANEL:GetMapButton]] })
+
+do
+  local bars = { Panel{ ID = 1, x = 0, y = 0 }, Panel{ ID = 2, x = 0, y = 30 } }
+  local c = Panel()
+  for k, v in pairs(Classic) do c[k] = v end
+  c.mapList = { GetItems = function() return bars end }
+  c.countDown = Panel()
+
+  local stay = S.Player{ sid = "STEAM_0:0:1" }
+  local gone = S.Player{ sid = "STEAM_0:0:2" }
+  local odd  = S.Player{ sid = "STEAM_0:0:3" }
+  local iStay, iGone, iOdd = Panel{ Player = stay }, Panel{ Player = gone }, Panel{ Player = odd }
+  c.Voters = { iStay, iGone, iOdd }
+  PHX.MV.Votes = { [stay:SteamID()] = 2, [gone:SteamID()] = 1, [odd:SteamID()] = 7 }
+
+  gone.__valid = false
+  check("an unknown map id does not error", attempt(c.Think, c), "ok")
+  check("the leaver's icon is removed", iGone.removed, 1)
+  check("  ...and dropped from the list", #c.Voters, 2)
+  check("the vote on a real map is counted", bars[2].NumVotes, 1)
+  check("the unknown id counts nowhere", bars[1].NumVotes, 0)
+  attempt(c.Think, c); attempt(c.Think, c)
+  check("a removed icon is not removed again every frame", iGone.removed, 1)
+  check("order of the remaining icons kept", c.Voters[1] == iStay and c.Voters[2] == iOdd, true)
+end
+
+report()
