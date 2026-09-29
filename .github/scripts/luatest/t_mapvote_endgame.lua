@@ -8,8 +8,9 @@ local boot, run, count, offered, players, vote, timerAt =
 -- round starts after it, so that vote is the only way off the map. Every way of
 -- cancelling it - mv_stop (which both vote screens' Cancel button runs), ulx
 -- unmap_vote, the server console, a Lua caller - is refused and the vote goes
--- on to change map. A mid-game vote still cancels exactly as before. Setup is
--- shared with the other map vote tests in mapvote_fixture.lua.
+-- on to change map. A mid-game vote still cancels exactly as before. RTV at the
+-- end of the game is in t_mapvote_endgame_rtv.lua. Setup is shared with the
+-- other map vote tests in mapvote_fixture.lua.
 
 local MAPS = { "ph_a", "ph_b", "ph_c" }
 local NOCANCEL = "PHXM_MV_ENDGAME_NOCANCEL"

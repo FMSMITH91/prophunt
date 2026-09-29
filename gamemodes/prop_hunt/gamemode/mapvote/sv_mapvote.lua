@@ -365,6 +365,13 @@ end
 -- caller does not report one that never happened.
 function MapVote.PHXCancel(ply)
 
+	-- RTV's 4 s countdown runs while Allow is still false, so it is stopped
+	-- before any check below can return - the end-of-game refusal included,
+	-- which otherwise left staff no way to stop one. Its tally goes too: left
+	-- at the threshold, the next disconnect started the cancelled vote all over
+	-- again.
+	if MapVote.RTV then MapVote.RTV.Reset() end
+
 	-- The end-of-game vote is the only way off the map: no round starts once
 	-- the game is over, so cancelling it left every player frozen until someone
 	-- changed map by hand. It carries on; a mid-game vote can still be stopped.
@@ -376,11 +383,6 @@ function MapVote.PHXCancel(ply)
 		end
 		return false
 	end
-
-	-- RTV's 4 s countdown runs while Allow is still false, so it is stopped
-	-- before the checks below. Its tally goes too: left at the threshold, the
-	-- next disconnect started the cancelled vote all over again.
-	if MapVote.RTV then MapVote.RTV.Reset() end
 
 	-- With the setting off a built-in vote can still be running (it was turned
 	-- off mid-vote), so only report "disabled" when nothing is open. The
@@ -410,13 +412,14 @@ local SELF_FUNCS = { [""] = true, ["PHX.StartMapVote()"] = true, ["MapVote.PHXSt
 local SELF_CMDS = { [""] = true, ["mv_start"] = true }
 local inCustomFunc = false
 
-function PHX.StartMapVote()
-	
+-- ph_use_custom_mapvote_cmd, then ph_use_custom_mapvote. True when one of them
+-- took the vote, so the built-in one must not start as well.
+local function StartCustomVote()
 	if PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) then	-- Overrides the function mode below.
 		local c = string.Trim( tostring( PHX:GetCVar( "ph_custom_mv_concmd" ) or "" ) )
 		if !SELF_CMDS[ string.Explode( " ", c )[1] ] then
 			game.ConsoleCommand( c .. "\n" )
-			return
+			return true
 		end
 	end
 
@@ -429,35 +432,58 @@ function PHX.StartMapVote()
 			local ok, err = pcall( RunString, f, "MapVote_CVAR", false )
 			inCustomFunc = false
 
-			if ok and !err then return end
+			if ok and !err then return true end
 			ErrorNoHalt( "[PH:X MapVote] ph_custom_mv_func failed, using the built-in vote: " .. tostring( err ) .. "\n" )
 		end
 	end
-	
-	if (not PHX:GetCVar( "ph_enable_mapvote" )) then
-		local result = hook.Call( "PH_OverrideMapVote", nil )
-		local listeners = hook.GetTable()[ "PH_OverrideMapVote" ]
-        if (result) then
-		    MsgAll("PH:X MapVote is disabled. Calling Map Vote Overrides Hook... \n")
-		    return
-        elseif (listeners and next(listeners) ~= nil) then
-            -- hook.Call ran it anyway, so its vote has started; a second,
-            -- built-in one would race it for the changelevel.
-            MsgAll("WARNING: [PH_OverrideMapVote] hook did not return true; assuming it started a vote. (Did you forget to `return true`?)\n")
-            return
-        end
 
-        -- Nothing else will change the map, and at the end of the game that
-        -- leaves every player frozen. PHXStart refuses while the setting is
-        -- off, so force it there. Mid-game (RTV, the server emptying) the
-        -- setting still means no vote.
-        if (GAMEMODE and GAMEMODE.IsEndOfGame) then
-            MsgAll("WARNING: Detected no external Map Votes Call from [PH_OverrideMapVote] hook, Falling back to the built-in vote!\n")
-            MapVote.PHXStart(nil, nil, nil, nil, true)
-            return
-        end
+	return false
+end
+
+-- ph_enable_mapvote 0. True when a vote started anyway; false leaves it to
+-- MapVote.PHXStart, which says the vote is off.
+local function StartDisabledVote()
+	local result = hook.Call( "PH_OverrideMapVote", nil )
+	local listeners = hook.GetTable()[ "PH_OverrideMapVote" ]
+	if (result) then
+		MsgAll("PH:X MapVote is disabled. Calling Map Vote Overrides Hook... \n")
+		return true
+	elseif (listeners and next(listeners) ~= nil) then
+		-- hook.Call ran it anyway, so its vote has started; a second,
+		-- built-in one would race it for the changelevel.
+		MsgAll("WARNING: [PH_OverrideMapVote] hook did not return true; assuming it started a vote. (Did you forget to `return true`?)\n")
+		return true
 	end
-	
+
+	-- Nothing else will change the map, and at the end of the game that
+	-- leaves every player frozen. PHXStart refuses while the setting is
+	-- off, so force it there. Mid-game (RTV, the server emptying) the
+	-- setting still means no vote.
+	if (GAMEMODE and GAMEMODE.IsEndOfGame) then
+		MsgAll("WARNING: Detected no external Map Votes Call from [PH_OverrideMapVote] hook, Falling back to the built-in vote!\n")
+		MapVote.PHXStart(nil, nil, nil, nil, true)
+		return true
+	end
+
+	return false
+end
+
+function PHX.StartMapVote()
+
+	-- The game ended with a built-in vote already open or decided (staff
+	-- started one in the voting delay, or an addon ended the game mid-vote).
+	-- That vote changes map and can no longer be cancelled, so it serves as the
+	-- end-of-game vote: starting another reshuffled the maps, reset the
+	-- deadline and threw away every vote cast.
+	if (GAMEMODE and GAMEMODE.IsEndOfGame) and (MapVote.Allow or MapVote.ChangingMap) then
+		print("[MapVote] The game has ended during a map vote: that vote picks the next map.")
+		return
+	end
+
+	if StartCustomVote() then return end
+
+	if (not PHX:GetCVar( "ph_enable_mapvote" )) and StartDisabledVote() then return end
+
 	MapVote.PHXStart()
 
 end

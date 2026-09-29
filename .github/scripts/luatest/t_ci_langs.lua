@@ -46,9 +46,11 @@ end
 print("\n== every notice rtv.lua sends is still translated ==")
 -- PHXM_MV_VOTEROCKED lost its last reader and was removed. check_langs.py only
 -- compares the files with each other, so a key deleted from all 12 passes it.
+-- CHAT_STARTING_MAPVOTE is borrowed from the end of the game.
 local rtvKeys = {}
-for key in extract("gamemodes/prop_hunt/gamemode/mapvote/rtv.lua", "1-999999"):gmatch('"(PHXM_[%w_]+)"') do
-  rtvKeys[key] = true
+local rtvSrc = extract("gamemodes/prop_hunt/gamemode/mapvote/rtv.lua", "1-999999")
+for _, rx in ipairs({ '"(PHXM_[%w_]+)"', '"(CHAT_[%w_]+)"' }) do
+  for key in rtvSrc:gmatch(rx) do rtvKeys[key] = true end
 end
 rtvKeys = table.GetKeys(rtvKeys)
 table.sort(rtvKeys)

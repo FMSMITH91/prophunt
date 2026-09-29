@@ -115,20 +115,35 @@ end
 print("\n== #14/#48: ph_enable_mapvote 0 ==")
 ------------------------------------------------------------------------------
 do
+  -- Players are told "disabled" only when no vote runs at all.
+  local function toldDisabled(ps)
+    for _, p in ipairs(ps) do
+      for _, c in ipairs(p.chat) do if c[1] == "Warning: MapVote is disabled." then return true end end
+    end
+    return false
+  end
+
   S.files = {}
   boot{ enable = false, ulxmaps = { "ph_a", "ph_b", "ph_c" } }
-  players(2)
+  local ps = players(2)
   local r = endGame()
   check("no hook at all: the built-in vote runs anyway", #r.offered > 0, true)
   check("no hook at all: the map changes", r.changelevel ~= nil, true)
+  check("no hook at all: nobody is told the vote is disabled", toldDisabled(ps), false)
 
   local calls = 0
   boot{ enable = false, ulxmaps = { "ph_a", "ph_b" },
         preHooks = { { "PH_OverrideMapVote", "addon", function() calls = calls + 1; return true end } } }
-  players(2)
+  ps = players(2)
   PHX.StartMapVote()
   check("hook returns true: addon called once", calls, 1)
   check("hook returns true: no built-in vote", count("PHX.MV.Start"), 0)
+  check("hook returns true: nobody is told the vote is disabled", toldDisabled(ps), false)
+
+  boot{ enable = false, ulxmaps = { "ph_a", "ph_b" } }
+  ps = players(2)
+  PHX.StartMapVote()
+  check("no hook, mid-game: players are told the vote is disabled", toldDisabled(ps), true)
 
   calls = 0
   boot{ enable = false, ulxmaps = { "ph_a", "ph_b" },
