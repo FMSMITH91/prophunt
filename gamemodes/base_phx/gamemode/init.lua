@@ -64,6 +64,10 @@ function GM:Initialize()
 	
 end
 
+// Publish the time limit this map enforces for GetTimeLimit on clients. A hook,
+// because prop_hunt's GM:Initialize replaces the one above.
+hook.Add( "Initialize", "PHX.PublishTimeLimit", function() SetGlobalInt( "PHX.TimeLimit", GAMEMODE:GetTimeLimit() ) end )
+
 function GM:Think()
 
 	self.BaseClass:Think()
