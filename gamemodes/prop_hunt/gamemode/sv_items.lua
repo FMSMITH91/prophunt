@@ -155,6 +155,7 @@ PHX.LUCKY_BALL = {
 		function(pl)
 			local thebomb = { "taunts_phx/2/prop_hunt_x_originals/deus_ex_the_bomb.wav", "taunts_phx/2/prop_hunt_x_originals/deus_ex_the_bomb_jock.wav" }
 			local suicidebomb = ents.Create("combine_mine")
+			if !IsValid(suicidebomb) then return end -- entity limit
 			suicidebomb:SetPos(Vector(pl:GetPos()))
 			suicidebomb:SetAngles(Angle(0,0,0))
 			suicidebomb:Spawn()
@@ -338,6 +339,7 @@ PHX.DEVIL_BALL = {
 		end,
 		function(pl)
 			local nade = ents.Create("npc_grenade_frag")
+			if !IsValid(nade) then return end -- entity limit
 			local pos = pl:GetPos()
 			nade:SetPos(Vector( pos.x, pos.y, pos.z+8 ))
 			nade:SetAngles(Angle(0,0,0))

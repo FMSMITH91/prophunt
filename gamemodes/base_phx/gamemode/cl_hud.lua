@@ -11,6 +11,8 @@ local IsObserver = false
 local ObserveMode = 0
 local ObserveTarget = NULL
 local InVote = false
+local WaitingToStart = false
+local RoundPaused = false
 
 function GM:AddHUDItem( item, pos, parent )
 	hudScreen:AddItem( item, parent, pos )
@@ -31,6 +33,8 @@ function GM:HUDNeedsUpdate()
 	if ( ObserveMode != LocalPlayer():GetObserverMode() ) then return true end
 	if ( ObserveTarget != LocalPlayer():GetObserverTarget() ) then return true end
 	if ( InVote != GAMEMODE:InGamemodeVote() ) then return true end
+	if ( WaitingToStart != GetGlobalBool( "RoundWaitingToStart", false ) ) then return true end
+	if ( RoundPaused != GetGlobalBool( "RoundWaitForPlayers", false ) ) then return true end
 	
 	return false
 end
@@ -47,6 +51,8 @@ function GM:OnHUDUpdated()
 	ObserveMode = LocalPlayer():GetObserverMode()
 	ObserveTarget = LocalPlayer():GetObserverTarget()
 	InVote = GAMEMODE:InGamemodeVote()
+	WaitingToStart = GetGlobalBool( "RoundWaitingToStart", false )
+	RoundPaused = GetGlobalBool( "RoundWaitForPlayers", false )
 end
 
 function GM:OnHUDPaint()
@@ -63,6 +69,14 @@ function GM:RefreshHUD()
 	
 	if ( InVote ) then return end
 	
+	// PreRoundStart is holding the next round for players. Checked before the
+	// round result, which stays set through the wait, and drawn whatever InRound
+	// is - it is false for the whole wait.
+	if ( WaitingToStart ) then
+		GAMEMODE:AddWaitForPlayersText()
+		return
+	end
+	
 	if ( RoundWinner and RoundWinner != NULL ) then
 		GAMEMODE:UpdateHUD_RoundResult( RoundWinner, Alive )
 	elseif ( RoundResult != 0 ) then
@@ -74,7 +88,9 @@ function GM:RefreshHUD()
 	else
 		GAMEMODE:UpdateHUD_Alive( InRound )
 		
-		if ( GetGlobalBool( "RoundWaitForPlayers" ) && ( ( team.NumPlayers( TEAM_HUNTERS ) < 1 ) || ( team.NumPlayers( TEAM_PROPS ) < 1 ) ) ) then
+		// The server decides when a round is paused for players (prop_hunt's
+		// RoundStart); recounting teams here disagreed with it.
+		if ( RoundPaused ) then
 			GAMEMODE:UpdateHUD_WaitForPlayers( InRound )
 		end
 	end
@@ -83,7 +99,9 @@ end
 
 function GM:HUDPaint()
 
-	self.BaseClass:HUDPaint()
+	// Not self.BaseClass: under prop_hunt that is base_phx, i.e. this same
+	// function again, so everything below ran twice per frame.
+	baseclass.Get( "gamemode_base" ).HUDPaint( self )
 	
 	GAMEMODE:OnHUDPaint()
 	GAMEMODE:RefreshHUD()
@@ -93,15 +111,19 @@ end
 function GM:UpdateHUD_WaitForPlayers( InRound )
 
 	if ( InRound && Alive ) then
-	
-		local WaitText = vgui.Create( "DHudElement" );
-			WaitText:SizeToContents()
-			WaitText.Think = function(self)
-				self:SetText( PHX:FTranslate("HUD_WAITPLY") or "Waiting for players..." )
-			end
-		GAMEMODE:AddHUDItem( WaitText, 8 )
-	
+		GAMEMODE:AddWaitForPlayersText()
 	end
+
+end
+
+function GM:AddWaitForPlayersText()
+
+	local WaitText = vgui.Create( "DHudElement" );
+		WaitText:SizeToContents()
+		WaitText.Think = function(self)
+			self:SetText( PHX:SBTranslate( "HUD_WAITPLY", "Waiting for players..." ) )
+		end
+	GAMEMODE:AddHUDItem( WaitText, 8 )
 
 end
 
@@ -164,7 +186,7 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 	
 		local RespawnText = vgui.Create( "DHudElement" );
 			RespawnText:SizeToContents()
-			RespawnText:SetText( "Waiting for round start" )
+			RespawnText:SetText( PHX:SBTranslate( "HUD_WAITPLY", "Waiting for players..." ) )
 		GAMEMODE:AddHUDItem( RespawnText, 8 )
 		return
 		

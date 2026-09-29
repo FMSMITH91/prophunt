@@ -147,11 +147,27 @@ function GM:PreRoundStart( iNum )
 	if ( GAMEMODE.IsEndOfGame ) then return end
 
 	// Likewise for a vote started mid-game (RTV, ulx map_vote, mv_start), where
-	// IsEndOfGame is never set at all.
-	if ( PHX && PHX.MV && PHX.MV.Allow ) then return end
+	// IsEndOfGame is never set at all. Poll rather than return: a cancelled vote
+	// (mv_stop, ulx unmap_vote) or an empty map list never calls back in here,
+	// so returning stalled the round cycle for good. Once a map has won, stop -
+	// changelevel is seconds away and a round would start under the result.
+	if ( PHX && PHX.MV ) then
 
-	// Should the game end?
-	if( CurTime() >= GAMEMODE.GetTimeLimit() || GAMEMODE:HasReachedRoundLimit( iNum ) ) then
+		if ( PHX.MV.ChangingMap ) then return end
+
+		if ( PHX.MV.Allow ) then
+			timer.Simple( 1, function() GAMEMODE:PreRoundStart( iNum ) end )
+			return
+		end
+
+	end
+
+	// Should the game end? GetTimeLimit returns -1 for no limit (ph_game_time 0),
+	// which every CurTime() is past, so it used to end the game before round 1.
+	local iTimeLimit = GAMEMODE:GetTimeLimit()
+	if( ( iTimeLimit != -1 && CurTime() >= iTimeLimit ) || GAMEMODE:HasReachedRoundLimit( iNum ) ) then
+		GAMEMODE.bWaitingForPlayers = false
+		SetGlobalBool( "RoundWaitingToStart", false )
 		GAMEMODE:EndOfGame( true );
 		return;
 	end
@@ -160,10 +176,12 @@ function GM:PreRoundStart( iNum )
 	
 		// Say why once, not once per retry, and flag it so cl_hud can show the
 		// waiting state instead of leaving the last round result on screen.
+		// Its own global: prop_hunt's RoundStart owns RoundWaitForPlayers, for
+		// the in-round ph_waitforplayers pause.
 		if ( !GAMEMODE.bWaitingForPlayers ) then
 		
 			GAMEMODE.bWaitingForPlayers = true
-			SetGlobalBool( "RoundWaitForPlayers", true )
+			SetGlobalBool( "RoundWaitingToStart", true )
 			
 			for _, pl in pairs( player.GetAll() ) do
 				pl:PHXChatInfo( "ERROR", "CHAT_NOPLAYERS" )
@@ -177,6 +195,7 @@ function GM:PreRoundStart( iNum )
 	end
 	
 	GAMEMODE.bWaitingForPlayers = false
+	SetGlobalBool( "RoundWaitingToStart", false )
 
 	timer.Create( "RoundStartTimer", GAMEMODE.RoundPreStartTime, 1, function() GAMEMODE:RoundStart() end )
 	SetGlobalInt( "RoundNumber", iNum )

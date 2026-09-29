@@ -349,7 +349,10 @@ GM.IS_PROPER_PHX_INSTALLED 	= true
 -- Fretta configuration
 -- Note: NEVER USE PHX:GetCVar() on ANY EARLY VARIABLES or else Settings won't work!
 GM.GameLength				= PHX:QCVar( "ph_game_time" ) -- Same as GetConVar but it's a wrapper and quicker version.
-GM.AddFragsToTeamScore		= true
+-- Team score is the rounds-won tally (OnRoundResult). A hunter's kill of a prop
+-- is a KillSilent, which skips DoPlayerDeath, so frags only ever added props'
+-- kills of hunters - each LPS kill counted as a round won for the props.
+GM.AddFragsToTeamScore		= false
 GM.CanOnlySpectateOwnTeam 	= true
 GM.ValidSpectatorModes 		= { OBS_MODE_CHASE, OBS_MODE_IN_EYE, OBS_MODE_ROAMING }
 GM.Data 					= {}

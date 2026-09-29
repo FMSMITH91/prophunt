@@ -67,7 +67,6 @@ local HLAModels = {
     "models/hlvr/characters/hazmat_worker/hazmat_worker_player.mdl",
     "models/hlvr/characters/worker/worker_player.mdl"
 }
-local bAlreadyStarted = false
 
 -- Control Taunt Window whether it should be Forced Close or Allow to be used.
 -- Used for checking if player is dead, round is ended, or any other meaning.
@@ -91,7 +90,9 @@ local function ClearBlindedHuntersList()
 		if !GAMEMODE:InRound() then ply.PHXHasLoadout = false end
 		timer.Simple(0.1, function()
 			-- a delay to prevent weapons spawn twice
-			if !(ply.PHXHasLoadout) and GAMEMODE:InRound() and !PHX:IsBlindStatus() and (ply._LoadOutUnblind) then 
+			-- Alive: StartLoadOut gives a dead hunter nothing, and marking him
+			-- armed anyway left him unarmed if he was respawned later on.
+			if IsValid(ply) and ply:Alive() and !(ply.PHXHasLoadout) and GAMEMODE:InRound() and !PHX:IsBlindStatus() and (ply._LoadOutUnblind) then 
 				PHX:VerboseMsg('[Loadout] Spawning late weapon loadouts (possibly player was respawned manually or during blind time)')
 				ply._LoadOutUnblind( ply )
 				ply.PHXHasLoadout = true
@@ -148,6 +149,15 @@ end )
 function GM:CheckPlayerDeathRoundEnd()
 	if !GAMEMODE.RoundBased || !GAMEMODE:InRound() then 
 		return
+	end
+
+	-- A blind-time respawn is on its way (see autoPlayerRepsawnDuringDeath).
+	-- This check runs 0.2s after a death and the respawn at 0.45s, so without
+	-- waiting the last prop or hunter's team lost before it could come back.
+	-- The respawn timer runs this check again once it is done; the deadline
+	-- makes the hold lapse on its own if that timer never runs.
+	for _, pl in ipairs(player.GetAll()) do
+		if pl._PHXBlindRespawnAt and pl._PHXBlindRespawnAt > CurTime() and !pl:Alive() then return end
 	end
 
 	local Teams = GAMEMODE:GetTeamAliveCounts()
@@ -388,8 +398,10 @@ hook.Add("DoPlayerDeath", "HunterFreezeCam", function(ply, attacker, dmginfo)
 		ply:Team() == TEAM_HUNTERS && IsValid( attacker ) && 
 		attacker:IsPlayer() && attacker ~= ply && attacker:Team() == TEAM_PROPS ) then
 		
+		-- !Alive in both: a blind-time respawn at 0.45s beats these, and they
+		-- used to put the respawned hunter back into spectate for the round.
 		timer.Simple(0.5, function()
-			if ply and IsValid(ply) and !ply:GetNWBool("InFreezeCam", false) then
+			if ply and IsValid(ply) and !ply:Alive() and !ply:GetNWBool("InFreezeCam", false) then
 				net.Start("PlayFreezeCamSound")
 				net.Send(ply)
 			
@@ -401,7 +413,7 @@ hook.Add("DoPlayerDeath", "HunterFreezeCam", function(ply, attacker, dmginfo)
 		end)
 		
 		timer.Simple(4.5, function()
-			if ply and IsValid(ply) and ply:GetNWBool("InFreezeCam", false) then
+			if ply and IsValid(ply) and !ply:Alive() and ply:GetNWBool("InFreezeCam", false) then
 				local randHunter = {}
 				for _,v in pairs(team.GetPlayers(TEAM_HUNTERS)) do
 					if v:Alive() then
@@ -423,10 +435,61 @@ hook.Add("DoPlayerDeath", "HunterFreezeCam", function(ply, attacker, dmginfo)
 	end
 end)
 
+-- Team spawn picking that never kills. The base gamemode's picker tries 7
+-- random spawns and on the last try Kill()s whoever stands there: during blind
+-- time that is a Locked teammate on his own spawn, and in the round-start spawn
+-- loop it is a player already placed, who then stays dead for the round.
+-- Try every spawn in random order instead, let hunters share (they never
+-- collide with each other), and stack rather than kill when all are taken.
+local spawnpointmin = Vector( -16, -16, 0 )
+local spawnpointmax = Vector( 16, 16, 64 )
+local function IsSpawnpointBlocked( pl, spawn )
+	local pos = spawn:GetPos()
+	for _, v in ipairs( ents.FindInBox( pos + spawnpointmin, pos + spawnpointmax ) ) do
+		if IsValid(v) and v ~= pl and v:IsPlayer() and v:Alive() and !(pl:Team() == TEAM_HUNTERS and v:Team() == TEAM_HUNTERS) then
+			return true
+		end
+	end
+	return false
+end
+
+function GM:PlayerSelectTeamSpawn( TeamID, pl )
+	local SpawnPoints = team.GetSpawnPoints( TeamID )
+	if !SpawnPoints or table.IsEmpty( SpawnPoints ) then return end
+
+	local list = {}
+	for _, spawn in pairs( SpawnPoints ) do
+		if IsValid(spawn) then table.insert( list, spawn ) end
+	end
+	if #list == 0 then return end
+	table.Shuffle( list )
+
+	for _, spawn in ipairs( list ) do
+		if !IsSpawnpointBlocked( pl, spawn ) then return spawn end
+	end
+
+	return list[1]
+end
+
+-- The base PlayerSelectSpawn fallback (maps with no team spawns) goes through
+-- this, with bMakeSuitable on its last try; same rule, and never kill.
+function GM:IsSpawnpointSuitable( pl, spawn, bMakeSuitable )
+	if pl:Team() == TEAM_SPECTATOR then return true end
+	return bMakeSuitable or !IsSpawnpointBlocked( pl, spawn )
+end
 
 -- function to respawn players during blind mode.
 -- this is usually noticed when the player is falling, changing team, or etc.
 local function AutoRespawnCheck( ply, bWasDeadOrSuicide )
+	-- The death was already undone (an admin respawn, say). Respawning again
+	-- KillSilent()s him, which queues another check, and he loops until the
+	-- respawn window closes.
+	if bWasDeadOrSuicide and ply:Alive() then
+		ply._joinCameFrom = nil
+		ply._Team2TeamDisabledSuicide = nil
+		return
+	end
+
 	-- Require at least 3 players.
 	if player.GetCount() > 2 and (ply:Team() == TEAM_PROPS or ply:Team() == TEAM_HUNTERS) then
 
@@ -475,6 +538,18 @@ local function AutoRespawnCheck( ply, bWasDeadOrSuicide )
 	ply._Team2TeamDisabledSuicide = nil
 	
 end
+
+-- Whether AutoRespawnCheck( ply, true ) is going to respawn this death. Reads
+-- the same conditions without changing anything, so it can be asked early.
+local function WillBlindRespawn( ply )
+	if player.GetCount() <= 2 or CurTime() >= phx_blind_unlocktime then return false end
+	if ply:Team() ~= TEAM_PROPS and ply:Team() ~= TEAM_HUNTERS then return false end
+	if ply._joinCameFrom or ply._Team2TeamDisabledSuicide then return false end
+
+	local tim = math.Clamp( PHX:GetCVar("ph_allow_respawnonblind_team_only"), 0, TEAM_PROPS )
+	return tim == 0 or tim == ply:Team()
+end
+
 hook.Add("PostPlayerDeath", "autoPlayerRepsawnDuringDeath", function(ply)
 	-- Force Close the Taunt Menu whenever a player is dead.
 	if ply:Team() == TEAM_PROPS or ply:Team() == TEAM_HUNTERS then
@@ -485,9 +560,19 @@ hook.Add("PostPlayerDeath", "autoPlayerRepsawnDuringDeath", function(ply)
 	if !PHX:GetCVar( "ph_allow_respawnonblind" ) then return end
 	if !GAMEMODE:InRound() then return end
 
+	-- Hold CheckPlayerDeathRoundEnd until this respawn has run.
+	local bHeld = WillBlindRespawn( ply )
+	if bHeld then ply._PHXBlindRespawnAt = CurTime() + 0.5 end
+
 	local time = 0.45
 	timer.Simple(time, function()
-		if IsValid(ply) and GAMEMODE:InRound() then AutoRespawnCheck(ply, true) end
+		if !IsValid(ply) then return end
+		ply._PHXBlindRespawnAt = nil
+		if GAMEMODE:InRound() then
+			AutoRespawnCheck(ply, true)
+			-- the check that was held off, in case no respawn happened after all
+			if bHeld then GAMEMODE:CheckPlayerDeathRoundEnd() end
+		end
 	end)
 
 end)
@@ -537,23 +622,30 @@ end)
 hook.Add("OnPlayerChangedTeam", "TeamChange_switchLimitter", function(ply, old, new)
 	local MAX_TEAMCHANGE_LIMIT = PHX:GetCVar( "ph_max_teamchange_limit" )
 
+	-- Count a switch against the last team this player actually played on, so a
+	-- detour through Spectator still counts (and still gets reverted). Only
+	-- Hunters<->Props was counted before, which Spectator walked around, and a
+	-- first join from Spectator counted as a switch.
+	if old == TEAM_HUNTERS or old == TEAM_PROPS then ply.m_LastPlayTeam = old end
+	local fromTeam = ply.m_LastPlayTeam
+
 	if MAX_TEAMCHANGE_LIMIT ~= -1 and (not ply:IsBot()) and !ply:PHXIsStaff() then
-		if new ~= TEAM_SPECTATOR then
+		if (new == TEAM_HUNTERS or new == TEAM_PROPS) and fromTeam and new ~= fromTeam then
 			ply.ChangeLimit = ply.ChangeLimit + 1
 			ply:PHXChatInfo("WARNING", "CHAT_SWAPTEAM_WARNING", ply.ChangeLimit, MAX_TEAMCHANGE_LIMIT)
 			PHX:VerboseMsg("[Team] "..ply:Nick().." has switched team "..ply.ChangeLimit.."x.")
-		end
-		
-		if ply.ChangeLimit > MAX_TEAMCHANGE_LIMIT and new ~= TEAM_SPECTATOR then
-			ply.ChangeLimit = MAX_TEAMCHANGE_LIMIT
-			timer.Simple(0.3, function()
-				if IsValid(ply) and old ~= TEAM_SPECTATOR then
-					if (ply.PHXHasLoadout) then ply.PHXHasLoadout = false end
-					ply:SetTeam(old)
-					ply:PHXChatInfo("ERROR", "CHAT_SWAPTEAM_REVERT", PHX:TranslateName(new,ply))
-					PHX:VerboseMsg("[Team] Reverting "..ply:Nick().."\'s team to "..team.GetName(old))
-				end
-			end)
+
+			if ply.ChangeLimit > MAX_TEAMCHANGE_LIMIT then
+				ply.ChangeLimit = MAX_TEAMCHANGE_LIMIT
+				timer.Simple(0.3, function()
+					if IsValid(ply) and ply:Team() == new then
+						if (ply.PHXHasLoadout) then ply.PHXHasLoadout = false end
+						ply:SetTeam(fromTeam)
+						ply:PHXChatInfo("ERROR", "CHAT_SWAPTEAM_REVERT", PHX:TranslateName(new,ply))
+						PHX:VerboseMsg("[Team] Reverting "..ply:Nick().."\'s team to "..team.GetName(fromTeam))
+					end
+				end)
+			end
 		end
 	end
 end)
@@ -948,7 +1040,11 @@ end )
 hook.Add("PlayerSpawn", "PH_PlayerSpawn", function(pl)
 	pl._joinCameFrom=nil
 	pl._Team2TeamDisabledSuicide=nil
+	pl._PHXBlindRespawnAt=nil
     pl:SetPlayerLockedRot( false )
+	-- and tell the client: a hunter's kill (KillSilent) skips the prop class
+	-- OnDeath that used to, so the HUD kept showing the rotation as locked.
+	pl:SendRotState( 0 )
 	pl:SetNWBool("InFreezeCam", false)
 	pl:SetNWEntity("PlayerKilledByPlayerEntity", nil)
 	pl:Blind(false)
@@ -1055,17 +1151,30 @@ function GM:OnPreRoundStart(num)
 
 	game.CleanUpMap()
 	
-	if GetGlobalInt("RoundNumber") != 1 && (PHX:GetCVar( "ph_swap_teams_every_round" ) || ((team.GetScore(TEAM_PROPS) + team.GetScore(TEAM_HUNTERS)) > 0)) then
-		local propscore = team.GetScore(TEAM_PROPS)
-		local huntscore = team.GetScore(TEAM_HUNTERS)
-		team.SetScore(TEAM_PROPS, huntscore)
-		team.SetScore(TEAM_HUNTERS, propscore)
+	-- Record who actually hunted last round before anything below moves players.
+	-- CheckTeamBalanceCustom reads it for ph_preventconsecutivehunting; guessing
+	-- it from ph_swap_teams_every_round was wrong whenever the two disagreed.
+	local bNotFirstRound = GetGlobalInt("RoundNumber") != 1
+	for _, pl in pairs(player.GetAll()) do
+		pl.PHXHuntedLastRound = bNotFirstRound && pl:Team() == TEAM_HUNTERS
+	end
+	
+	if bNotFirstRound then
+		-- The cvar alone decides. This also used to swap whenever either team
+		-- had scored, so turning it off never stopped the swapping.
+		local bSwap = PHX:GetCVar( "ph_swap_teams_every_round" )
+		if bSwap then
+			local propscore = team.GetScore(TEAM_PROPS)
+			local huntscore = team.GetScore(TEAM_HUNTERS)
+			team.SetScore(TEAM_PROPS, huntscore)
+			team.SetScore(TEAM_HUNTERS, propscore)
+		end
 		for _, pl in pairs(player.GetAll()) do
 
 			-- Clear player's last_taunt
 			pl.last_taunt = nil
 		
-			if pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS then
+			if bSwap && (pl:Team() == TEAM_PROPS || pl:Team() == TEAM_HUNTERS) then
 			
 				if pl:Team() == TEAM_PROPS then
 					pl:SetTeam(TEAM_HUNTERS)
@@ -1074,14 +1183,14 @@ function GM:OnPreRoundStart(num)
                     if pl:HasFakePropEntity() then pl:PHXNotify( "DECOY_REMINDER_GET", "GENERIC", 18, true ) end
 					if PHX:GetCVar( "ph_notice_prop_rotation" ) then
 						timer.Simple(0.5, function() 
-							pl:PHXNotify( "NOTIFY_IN_PROP_TEAM", "UNDO", 20, true )
+							if IsValid(pl) then pl:PHXNotify( "NOTIFY_IN_PROP_TEAM", "UNDO", 20, true ) end
 						end)
 						pl:PHXNotify( "NOTIFY_ROTATE_NOTICE", "GENERIC", 18, true ) -- the R key need to be added from binder.
 					end
 					
 					if PHX:GetCVar( "ph_usable_prop_type" ) > 2 then
 						timer.Simple(0.75, function()
-							pl:PHXChatInfo("NOTICE", "NOTIFY_CUST_ENT_TYPE_IS_ON")
+							if IsValid(pl) then pl:PHXChatInfo("NOTICE", "NOTIFY_CUST_ENT_TYPE_IS_ON") end
 						end)
 					end
 				end
@@ -1108,7 +1217,7 @@ function GM:OnPreRoundStart(num)
             end)
         end
 		
-		hook.Call("PH_OnPreRoundStart", nil, num, PHX:GetCVar( "ph_swap_teams_every_round" ))
+		hook.Call("PH_OnPreRoundStart", nil, num, bSwap)
 	end
 	
 	-- Balance teams. We need to set this "TRUE" to make sure the switched player isn't killed during team switch.
@@ -1182,27 +1291,25 @@ hook.Add("PostPlayerDeath", "PHX.DisablePlayerFlashlight", function( ply )
 end)
 
 -- Round Control Override
-function GM:OnRoundEnd( num )
-	-- Check if PHX:GetCVar( "ph_waitforplayers" ) is true
-	-- This is a fast implementation for a waiting system
-	-- Make optimisations if needed
-	if ( PHX:GetCVar( "ph_waitforplayers" ) ) then
-		-- Take away a round number quickly before it adds another when there are not enough players
-		-- Set to false
-		if ( ( team.NumPlayers( TEAM_HUNTERS ) < PHX:GetCVar( "ph_min_waitforplayers" ) ) || ( team.NumPlayers( TEAM_PROPS ) < PHX:GetCVar( "ph_min_waitforplayers" ) ) ) then
-			bAlreadyStarted = false
-		end
 
-		-- Set to true
-		if ( ( team.NumPlayers( TEAM_HUNTERS ) >= PHX:GetCVar( "ph_min_waitforplayers" ) ) && ( team.NumPlayers( TEAM_PROPS ) >= PHX:GetCVar( "ph_min_waitforplayers" ) ) ) then
-			bAlreadyStarted = true
-		end
-		
-		-- Check if the round was already started before so we count it as a fully played round
-		if ( !bAlreadyStarted ) then
-			SetGlobalInt( "RoundNumber", GetGlobalInt("RoundNumber") - 1 )
-		end
+-- Too few players for a real, timed round: a team is empty, or fewer than
+-- ph_min_waitforplayers are playing in total. That cvar is a total, as
+-- GM:CanStartRound reads it; comparing it per team made every round with a
+-- one-player team (1v1, 2v1 at the default of 2) untimed.
+local function IsRoundUnderstaffed()
+	local h, p = team.NumPlayers( TEAM_HUNTERS ), team.NumPlayers( TEAM_PROPS )
+	return h < 1 || p < 1 || ( h + p ) < PHX:GetCVar( "ph_min_waitforplayers" )
+end
+
+function GM:OnRoundEnd( num )
+	-- A round that ph_waitforplayers kept untimed (see GM:RoundStart) does not
+	-- count as a played round. Decided by how the round ran, not by who happens
+	-- to be connected when it ends.
+	if ( GAMEMODE.bRoundIsWarmup ) then
+		SetGlobalInt( "RoundNumber", GetGlobalInt("RoundNumber") - 1 )
 	end
+	GAMEMODE.bRoundIsWarmup = false
+	SetGlobalBool( "RoundWaitForPlayers", false )
 	
 	ClearTimer()
 	
@@ -1225,35 +1332,47 @@ function GM:RoundStart()
 	-- Check if PHX:GetCVar( "ph_waitforplayers" ) is true
 	-- This is a fast implementation for a waiting system
 	-- Make optimisations if needed
-	if ( PHX:GetCVar( "ph_waitforplayers" ) ) then
+	GAMEMODE.bRoundIsWarmup = PHX:GetCVar( "ph_waitforplayers" ) && IsRoundUnderstaffed()
+	if ( GAMEMODE.bRoundIsWarmup ) then
 	
-		-- Pause these timers if there are not enough players on the teams in the server
-		if ( ( team.NumPlayers( TEAM_HUNTERS ) < PHX:GetCVar( "ph_min_waitforplayers" ) ) || ( team.NumPlayers( TEAM_PROPS ) < PHX:GetCVar( "ph_min_waitforplayers" ) ) ) then
-		
-			if ( timer.Exists( "RoundEndTimer" ) && timer.Exists( "CheckRoundEnd" ) ) then
-			
-				timer.Pause( "RoundEndTimer" )
-				timer.Pause( "CheckRoundEnd" )
-			
-				SetGlobalFloat( "RoundEndTime", -1 );
-			
-				for _,pl in pairs (player.GetAll()) do
-					pl:PHXChatInfo("ERROR", "CHAT_NOPLAYERS")
-				end
-				-- Reset the team score
-				team.SetScore(TEAM_PROPS, 0)
-				team.SetScore(TEAM_HUNTERS, 0)
-			end
-		
+		-- Pause the round clock, and the near-round-end grenades with it, until
+		-- GM:CheckRoundEnd sees enough players. CheckRoundEnd keeps ticking so it
+		-- can; pausing it too meant a paused round never got its timer back.
+		timer.Pause( "RoundEndTimer" )
+		timer.Pause( "phx.tmr_GiveGrenade" )
+	
+		SetGlobalFloat( "RoundEndTime", -1 );
+	
+		for _,pl in pairs (player.GetAll()) do
+			pl:PHXChatInfo("ERROR", "CHAT_NOPLAYERS")
 		end
+		-- Reset the team score
+		team.SetScore(TEAM_PROPS, 0)
+		team.SetScore(TEAM_HUNTERS, 0)
 	
 	end
 	
-	-- Send this as a global boolean
-	SetGlobalBool( "RoundWaitForPlayers", PHX:GetCVar( "ph_waitforplayers" ) )
+	-- Send this as a global boolean: whether THIS round is paused, which is what
+	-- cl_hud shows, rather than the cvar.
+	SetGlobalBool( "RoundWaitForPlayers", GAMEMODE.bRoundIsWarmup )
 	
 	hook.Call("PH_RoundStart", nil)
 	
+end
+
+-- Runs every second of a round (the CheckRoundEnd timer). Resumes a round that
+-- ph_waitforplayers paused once enough players are on.
+function GM:CheckRoundEnd()
+	if ( !GAMEMODE.bRoundIsWarmup || !GAMEMODE:InRound() ) then return end
+	if ( PHX:GetCVar( "ph_waitforplayers" ) && IsRoundUnderstaffed() ) then return end
+	
+	GAMEMODE.bRoundIsWarmup = false
+	timer.UnPause( "RoundEndTimer" )
+	timer.UnPause( "phx.tmr_GiveGrenade" )
+	
+	-- After UnPause: TimeLeft is negative while a timer is paused.
+	SetGlobalFloat( "RoundEndTime", CurTime() + ( timer.TimeLeft( "RoundEndTimer" ) or 0 ) )
+	SetGlobalBool( "RoundWaitForPlayers", false )
 end
 -- End of Round Control Override
 

@@ -298,7 +298,8 @@ if SERVER then
 			return
 		end
 	
-		if self:HasFakePropEntity() and self:Alive() and self:Team() == TEAM_PROPS then
+		-- ph_prop is left nil when it could not be created (entity limit)
+		if self:HasFakePropEntity() and self:Alive() and self:Team() == TEAM_PROPS and IsValid(self.ph_prop) then
 			local trace = {}
 			local dist = PHX.DecoyDistance
             local min,max = self:GetHull()

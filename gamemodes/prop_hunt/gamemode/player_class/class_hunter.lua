@@ -54,6 +54,8 @@ function CLASS:ControlPlayer( ply, isLock, TimerID )
         ply:UnLock()
 		
         self:StartLoadOut( ply )
+        -- or ClearBlindedHuntersList's late loadout arms him a second time
+        if ply:Alive() then ply.PHXHasLoadout = true end
         
     end
 end
@@ -100,7 +102,13 @@ function CLASS:OnSpawn(pl)
 		if !pl._LoadOutUnblind then
 			pl._LoadOutUnblind = function( pl ) self:StartLoadOut( pl ) end
 		end
-		timer.Simple(1, function() self:ControlPlayer( pl, true, TimerID ) end)
+		-- Nothing cancels this one, so check he is still this blinded hunter: a
+		-- player respawned as a prop within the second was Locked for the round.
+		timer.Simple(1, function()
+			if IsValid(pl) and pl:Alive() and pl:Team() == TEAM_HUNTERS and pl.TimerBlindID == TimerID then
+				self:ControlPlayer( pl, true, TimerID )
+			end
+		end)
 		timer.Create( TimerID, unlock_time, 1, function() 
 			self:ControlPlayer( pl, false, TimerID ); 
 			if IsValid(pl) then pl.PHXHasLoadout = true; end
@@ -124,15 +132,19 @@ function CLASS:OnDeath(pl, attacker, dmginfo)
 	pl.PHXHasLoadout = false
 	pl.TimerBlindID = nil
 	
-	pl:CreateRagdoll()
+	-- no CreateRagdoll here: GM:DoPlayerDeath makes one right after this
     pl:Blind(false)
 	pl:UnLock()
     pl:PHResetView() -- Always Reset the ViewOffset
 	
 	-- Spawn Devil Ball
+	-- Not during blind time: no prop can kill a blinded hunter, so that is a
+	-- suicide the blind respawn undoes, and each one left a free crystal on
+	-- the hunter spawn for props to farm.
 	local pos = pl:GetPos()
-	if PHX:GetCVar( "ph_enable_devil_balls" ) and GAMEMODE:InRound() then
+	if PHX:GetCVar( "ph_enable_devil_balls" ) and GAMEMODE:InRound() and !PHX:IsBlindStatus() then
         local dropent = ents.Create("ph_devilball")
+        if !IsValid(dropent) then return end -- entity limit
         dropent:SetPos(Vector(pos.x, pos.y, pos.z + 16)) -- Don't spawn Devil Ball underground.
         dropent:SetAngles(Angle(0,0,0))
         dropent:Spawn()

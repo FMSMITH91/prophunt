@@ -318,6 +318,11 @@ function GM:CheckTeamBalanceCustom()
 	local hunterCount = GAMEMODE:GetHunterCount(plyrCount)
 
 	if PHX:GetCVar( "ph_rotateteams" ) then
+		-- Rotate over a stable order. The list above is last round's hunters then
+		-- props, which reshuffles every round, so the window landed on the same
+		-- players again and again while others never hunted.
+		table.sort(plyrTable, function(a, b) return a:UserID() < b:UserID() end)
+
 		local offset = GetGlobalInt("RotateTeamsOffset", 1)
 		SetGlobalInt("RotateTeamsOffset", offset + 1)
 		offset = offset % plyrCount
@@ -339,13 +344,11 @@ function GM:CheckTeamBalanceCustom()
 
 		if PHX:GetCVar( "ph_preventconsecutivehunting" ) then
 
-			local teamContainingHunters = TEAM_HUNTERS
-
-			if PHX:GetCVar( "ph_swap_teams_every_round" ) then
-				teamContainingHunters = TEAM_PROPS
+			-- Recorded by GM:OnPreRoundStart before any swap moved players.
+			local lastRoundsHunters = {}
+			for _, pl in ipairs(plyrTable) do
+				if pl.PHXHuntedLastRound then table.insert(lastRoundsHunters, pl) end
 			end
-
-			local lastRoundsHunters = team.GetPlayers(teamContainingHunters)
 
 			-- Only honour this if enough players are left to actually fill the
 			-- hunter slots. If everyone played as a Hunter last round they would
@@ -419,7 +422,7 @@ function GM:CheckTeamBalance( bDontKillPlayer )
 						if listener == ply then
 							listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCEYOU")
 						else
-							listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCE", ply:Name(), PHX:TranslateName( id, ply ))
+							listener:PHXChatInfo("NOTICE", "CHAT_SWAPBALANCE", ply:Name(), PHX:TranslateName( id, listener ))
 						end
 					end
 					
