@@ -54,7 +54,9 @@ net.Receive("phxpm.fb_openPM_Editor", function()
 
 		if PHX:GetCVar( "pcr_allow_custom" ) then
 			local isFor = net.ReadTable()
-			thePanel = PHXPM_openFileBrowser( ply, isFor.global, isFor.sub, serverContents )
+			-- Returns nil if the editor is already open (the server re-grants its lock holder);
+			-- keep the handle so the save confirmation can still re-enable its buttons.
+			thePanel = PHXPM_openFileBrowser( ply, isFor.global, isFor.sub, serverContents ) or thePanel
 		else
 			PHX:ChatInfo("PCR_EDT_ERROR_DISABLED", "ERROR")
 		end

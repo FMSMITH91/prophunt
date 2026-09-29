@@ -46,10 +46,16 @@ function ENT:AddBans()
 		
 		local BannedMdls = PHX.BANNED_PROP_MODELS
 		
+		-- Remember which bans this map added, so RemoveBans does not lift bans
+		-- the server already had (perma-bans, model_bans.txt).
 		for _,mdl in SortedPairs( self.KVs or {} ) do
 			if !CurMapBan[mdl] then 
-				CurMapBan[mdl] = true
-				if !table.HasValue( BannedMdls, mdl ) then table.insert(BannedMdls, mdl); end
+				if !table.HasValue( BannedMdls, mdl ) then
+					table.insert(BannedMdls, mdl)
+					CurMapBan[mdl] = "added"
+				else
+					CurMapBan[mdl] = "preexisting"
+				end
 			end
 		end
 		
@@ -71,8 +77,8 @@ function ENT:RemoveBans()
 		
 		for _,mdl in SortedPairs( self.KVs or {} ) do
 			if CurMapBan[mdl] then
+				if CurMapBan[mdl] == "added" then table.RemoveByValue( BannedMdls, mdl ) end
 				CurMapBan[mdl] = nil;
-				table.RemoveByValue( BannedMdls, mdl )
 			end
 		end
 		
@@ -95,8 +101,10 @@ function ENT:GetBannedList()
 	local t={}
 	for i=1,16 do
 	
+		-- Lowercase, like the rest of PHX.BANNED_PROP_MODELS: the ban checks compare
+		-- lowercased names, so a mixed-case entry from the map never matched.
 		local KeyVal = kvs["model"..i]
-		if (KeyVal) then table.insert(t, KeyVal); end
+		if (KeyVal) then table.insert(t, string.lower(KeyVal)); end
 		
 	end
 	

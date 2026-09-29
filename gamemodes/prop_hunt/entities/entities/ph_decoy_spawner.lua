@@ -101,8 +101,11 @@ function ENT:makeEntity()
 				
 				if (TakeModelFromMap) then
 					decoy:TakeModelFromMap()
-				else
-					decoy:ChangeModel(mdl)
+				elseif isstring(mdl) and mdl ~= "" then
+					-- ChangeModel copies from an entity; this is a model path.
+					-- With no model keyvalue the decoy keeps its Kleiner model.
+					util.PrecacheModel(mdl)
+					decoy:SetModel(mdl)
 				end
 				-- Set Pos again
 				decoy:SetPos( decoy:GetPos() - Vector(0,0,decoy:OBBMins().z) )

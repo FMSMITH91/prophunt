@@ -56,19 +56,17 @@ ENT.sounds = {
 }
 
 function ENT:Use(activator)
+	-- Remove() only takes effect at the end of the frame; without this a second
+	-- player using it in the same tick would get another item.
+	if self.Consumed or self:IsMarkedForDeletion() then return end
+	
 	if GAMEMODE:InRound() && IsValid(activator) && activator:IsPlayer() && activator:Alive() && activator:Team() == TEAM_PROPS then
+		self.Consumed = true
 		
 		if activator:Team() == TEAM_PROPS && activator:Alive() then
-			local cur
-			-- Give up after a few tries: with a single item this could never
-			-- satisfy the condition and would hang the server.
-			for _ = 1, 10 do
-				cur = PHX.DEVIL_BALL.Items[math.random(1, #PHX.DEVIL_BALL.Items)]
-				if cur ~= self.getfunction then break end
-			end
-			
-			self.getfunction = cur
-			self.getfunction(activator,self)
+			-- The crystal is used once, so there is no previous item to avoid.
+			local item = PHX.DEVIL_BALL.Items[math.random(1, #PHX.DEVIL_BALL.Items)]
+			item(activator,self)
 			
 			hook.Call("PH_OnDevilBallPickup", nil, activator)
 		end
@@ -80,11 +78,14 @@ function ENT:Use(activator)
 end
 
 function ENT:OnTakeDamage(dmg)
+	if self.Consumed or self:IsMarkedForDeletion() then return end
+	
 	local hit = dmg:GetDamage()
 	
 	self:SetHealth( self:Health() - hit )
 	
 	if self:Health() <= 0 then
+		self.Consumed = true
 		self:EmitSound(Sound("physics/glass/glass_cup_break"..math.random(1,2)..".wav"))
 		self:ShowEffects(self, "GlassImpact", self:GetPos(), self:GetPos())
 		self:Remove()

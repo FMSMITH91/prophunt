@@ -11,19 +11,27 @@ function PHX.LPS:HaloColorTranslate()
 end
 
 local ColHalo = color_white
+local ColHaloStr -- cvar string ColHalo was parsed from.
 
 hook.Add("PreDrawHalos", "LPS.PropHalos", function()
     if PHX:GetCVar( "lps_enable" ) and PHX:GetCVar( "lps_halo_show" ) and PHX:GetCLCVar( "lps_cl_draw_halo" ) then
         local lpsActive = {}
         local ThroughWall = PHX:GetCVar( "lps_halo_walls" )
-
-        ColHalo = PHX.LPS:HaloColorTranslate()
         
         for _, ply in pairs(team.GetPlayers(TEAM_PROPS)) do
             if ply:IsLastStanding() and !ply:IsLPSHolstered() then
                 table.insert( lpsActive, ply:GetPlayerPropEntity() )
             end
         end
+        if #lpsActive == 0 then return end
+        
+        -- Parsing every frame printed the invalid-hex warning every frame; only re-parse on change.
+        local ColorStr = PHX:GetCVar( "lps_halo_color" )
+        if ColorStr == "rainbow" or ColorStr ~= ColHaloStr then
+            ColHaloStr = ColorStr
+            ColHalo = PHX.LPS:HaloColorTranslate()
+        end
+        
         halo.Add(lpsActive, ColHalo, 1.2, 1.2, 1, true, ThroughWall)
     end
 end)
@@ -64,6 +72,10 @@ hook.Add("HUDPaint", "LPS.WeaponHUDIndicator", function()
         draw.WordBox( 8, ScrW()*0.5, ScrH()*0.7+32,  --orig: 0.5
             string.format(TextBox.Template, WeaponName:upper(), tostring(AmmoString), state ), "PHX.LPS.IndicatorFont", 
             TextBox.Bcolor, TextBox.Fcolor, TEXT_ALIGN_CENTER )
-		draw.SimpleText( HolsterHelp, "Trebuchet18", ScrW()*0.5, ScrH()*0.75+32, color_white, TEXT_ALIGN_CENTER )
+		-- The hint advertises R-Click to holster; hide it when lps_allow_holster is off,
+		-- unless they're still holstered from before and need it to unholster.
+		if PHX:GetCVar( "lps_allow_holster" ) or LocalPlayer():IsLPSHolstered() then
+			draw.SimpleText( HolsterHelp, "Trebuchet18", ScrW()*0.5, ScrH()*0.75+32, color_white, TEXT_ALIGN_CENTER )
+		end
     end
 end)

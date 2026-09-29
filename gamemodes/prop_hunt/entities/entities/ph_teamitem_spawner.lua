@@ -111,6 +111,10 @@ function ENT:makeEntity()
 	local on
     if SpawnOn and SpawnOn ~= nil and SpawnOn ~= "" then
         local ent = ents.FindByName(SpawnOn)		
+		if #ent == 0 then	-- math.random(1, 0) returns 1, so `on` would be nil.
+			MsgC(Color(240,72,86), self.MsgPrefix .. "No entity named '" .. SpawnOn .. "' to spawn on!\n")
+			return
+		end
         on = ent[math.random(1, #ent)]
 		
 		local findEnt = ents.FindInSphere( on:GetPos(), 16 )

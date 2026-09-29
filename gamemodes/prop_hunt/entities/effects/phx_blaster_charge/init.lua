@@ -3,6 +3,15 @@ local matBlueFlash 	= Material("Sprites/strider_blackball")
 local matBlueBeam	= Material("Effects/blueblacklargebeam")
 matBlueFlash:SetInt("$spriterendermode",8)
 
+-- Vector() is (0,0,0), so the old `Vector()*size` padding added nothing, and the two
+-- corners were never ordered. Order them, then pad by the sprite size.
+local function SetBeamRenderBounds(ent, a, b, size)
+	local mins, maxs = Vector(a), Vector(b) -- copies: OrderVectors swaps in place.
+	OrderVectors(mins, maxs)
+	local pad = Vector(size,size,size)
+	ent:SetRenderBoundsWS(mins - pad, maxs + pad)
+end
+
 function EFFECT:Init(data)
 	
 	self.Ent			= data:GetEntity()
@@ -30,7 +39,7 @@ function EFFECT:Init(data)
 	local hitpos        = self.Shooter:GetEyeTrace().HitPos
 	
 	if not Muzzle then return end
-	self:SetRenderBoundsWS(Muzzle.Pos + Vector() * self.RefractSize, hitpos - Vector() * self.RefractSize)
+	SetBeamRenderBounds(self, Muzzle.Pos, hitpos, self.RefractSize)
 	
 	self.KillTime = CurTime() + 1.35
 	self.ShouldRender = true
@@ -61,7 +70,7 @@ function EFFECT:Render()
 	local MuzzleAng = self.Shooter:GetAimVector()
 	local RenderPos = Muzzle.Pos
 	local hitpos = self.Shooter:GetEyeTrace().HitPos
-	self:SetRenderBoundsWS(RenderPos + Vector()*self.RefractSize,hitpos - Vector()*self.RefractSize)	
+	SetBeamRenderBounds(self, RenderPos, hitpos, self.RefractSize)
 	
 	local invintrplt = (self.KillTime - CurTime())/1.35
 	local intrplt = 1 - invintrplt

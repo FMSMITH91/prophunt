@@ -5,7 +5,9 @@ function EFFECT:Init(data)
 	self.Position = data:GetOrigin()
 	self.Normal = data:GetNormal()
 	self.KillTime = CurTime() + 0.65
-	self:SetRenderBoundsWS(self.Position + Vector()*280,self.Position - Vector()*280)
+	-- Vector() is (0,0,0), so `Vector()*280` padded nothing and the effect culled as a single point.
+	local pad = Vector(280,280,280)
+	self:SetRenderBoundsWS(self.Position - pad,self.Position + pad)
 	
 	local ang = self.Normal:Angle():Right():Angle() -- D :
 	local emitter = ParticleEmitter(self.Position)
@@ -87,7 +89,8 @@ function EFFECT:Render()
 	--Experimental
 	local potato = math.sin(0.5*invintrplt*math.pi)
 	
-	self:SetRenderBoundsWS(self.Position + Vector()*size,self.Position - Vector()*size)
+	local pad = Vector(size,size,size)
+	self:SetRenderBoundsWS(self.Position - pad,self.Position + pad)
 	
 	matBulge:SetFloat("$refractamount", potato*0.16)
 --	matBulge:SetMaterialFloat("$refractamount", math.sin(0.5*invintrplt*math.pi)*0.16)

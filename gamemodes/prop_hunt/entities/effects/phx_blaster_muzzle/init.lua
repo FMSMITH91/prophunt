@@ -20,7 +20,10 @@ function EFFECT:Init(data)
 	if not IsValid(self.WeaponEnt) then return end	
 
 	local Muzzle = 	self.WeaponEnt:GetAttachment(self.Attachment)
-	self:SetRenderBoundsWS(Muzzle.Pos + Vector() * self.SpriteSize, Muzzle.Pos - Vector() * self.SpriteSize)
+	if not Muzzle then return end -- e.g. error.mdl when the workshop content is missing.
+	-- Vector() is (0,0,0), so `Vector()*size` padded nothing and the effect culled as a single point.
+	local pad = Vector(self.SpriteSize,self.SpriteSize,self.SpriteSize)
+	self:SetRenderBoundsWS(Muzzle.Pos - pad, Muzzle.Pos + pad)
 
 	self.KillTime = CurTime() + 2
 	self.ShouldRender = true
@@ -48,7 +51,8 @@ function EFFECT:Render()
 	if not Muzzle then return end
 	
 	local RenderPos = Muzzle.Pos
-	self:SetRenderBoundsWS(RenderPos + Vector()*self.SpriteSize,RenderPos - Vector()*self.SpriteSize)	
+	local pad = Vector(self.SpriteSize,self.SpriteSize,self.SpriteSize)
+	self:SetRenderBoundsWS(RenderPos - pad,RenderPos + pad)
 
 	local invintrplt = (self.KillTime - CurTime())/2
 	local intrplt = 1 - invintrplt

@@ -33,8 +33,13 @@ function ENT:Initialize()
 end
 
 function ENT:Use(activator)
+	-- Remove() only takes effect at the end of the frame; without this a second
+	-- player using it in the same tick would get another item.
+	if self.Consumed or self:IsMarkedForDeletion() then return end
+	
 	if GAMEMODE:InRound() && IsValid(activator) && activator:IsPlayer() && activator:Alive() && activator:Team() == TEAM_HUNTERS then
 		if activator:Team() == TEAM_HUNTERS and activator:Alive() then
+			self.Consumed = true
 			local DoItem = PHX.LUCKY_BALL.Items[math.random(1,#PHX.LUCKY_BALL.Items)]; DoItem(activator);
 			hook.Call("PH_OnLuckyBallPickup", nil, activator)
 			self:EmitSound( Sound( self.sounds[math.random(1,#self.sounds)] ) )
@@ -44,12 +49,14 @@ function ENT:Use(activator)
 end
 
 function ENT:OnTakeDamage(dmg)
+	if self.Consumed or self:IsMarkedForDeletion() then return end
 	if dmg:IsDamageType(DMG_CRUSH) then dmg:ScaleDamage(2) end
 	
 	local hit = dmg:GetDamage()
 	self:SetHealth( self:Health()-hit )
 	
 	if self:Health() <= 0 then
+		self.Consumed = true
 		self:EmitSound(Sound("physics/glass/glass_cup_break"..math.random(1,2)..".wav"))
 		self:ShowEffects(self, "cball_explode", self:GetPos(), self:GetPos())
 		self:Remove()

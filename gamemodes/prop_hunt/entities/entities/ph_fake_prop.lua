@@ -116,6 +116,7 @@ if SERVER then
     end
 
     function ENT:ChangeModel( strEnt, pos )
+        if !IsValid( strEnt ) then return end	-- takes an entity, not a model path.
         self:SetModel( strEnt:GetModel() )
         self:SetCollisionBounds( strEnt:GetCollisionBounds() )
     end
@@ -126,6 +127,10 @@ if SERVER then
     end
 	
 	function ENT:OnTakeDamage(dmg)
+		-- Remove() only takes effect at the end of the frame, so a second hit in
+		-- the same tick would run the death (and steal frags) again.
+		if self.Killed or self:IsMarkedForDeletion() then return end
+		
 		local attacker = dmg:GetAttacker()
 		local inflictor = dmg:GetInflictor()
 		local owner = self:GetOwner()
@@ -135,6 +140,7 @@ if SERVER then
 			self.health = self.health - dmg:GetDamage()
 			
 			if self.health <= 0 then
+				self.Killed = true
 				hook.Call("PH_OnFakePropKilled", nil, attacker)
 				
 				-- Steal attacker's frags and give the frags to the owner of this prop!

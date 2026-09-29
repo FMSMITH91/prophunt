@@ -39,7 +39,8 @@ function(cvarname,value)
         SetGlobalBool(cvarname, tobool(new))
     end, "phx.cvbool_"..cvarname)
 end }
-cvar["lps_start_every_x_rounds"] = { CTYPE_NUMBER,  "2",        CVAR_SERVER_ONLY, "Numbers of X rounds that should make the event starts", {min = 2, max = PHX:GetCVar( "ph_rounds_per_map" ) },
+-- Static max: ph_rounds_per_map read here is its default (10), before server.cfg runs, so it clamped this to 10.
+cvar["lps_start_every_x_rounds"] = { CTYPE_NUMBER,  "2",        CVAR_SERVER_ONLY, "Numbers of X rounds that should make the event starts", {min = 2, max = 100 },
 function(cvarname,value)
     cvars.AddChangeCallback(cvarname, function(_,_,new)
         -- update immediately
@@ -121,7 +122,7 @@ if CLIENT then
             {"", "label", false,    "LPS_TRIGGER_CONDITION" },
             {"lps_start_random_round", 	"check", "SERVER",	"LPS_START_RANDOM"},
             {"lps_start_delayed_rounds", 	"check", "SERVER",	"LPS_START_DELAYED"},
-            {"lps_start_every_x_rounds", 	"slider", {min=2,max=PHX:GetCVar( "ph_rounds_per_map" ), dec=0, kind="SERVER"},	"LPS_START_X_ROUNDS"},
+            {"lps_start_every_x_rounds", 	"slider", {min=2,max=30, dec=0, kind="SERVER"},	"LPS_START_X_ROUNDS"}, -- 30: the ph_rounds_per_map slider's max.
             
             {"", "label", false,    "LPS_HEALTH_ARMOR" },
             {"lps_use_normal_health",       "check", "SERVER", "LPS_SET_USEHEALTH" },
@@ -187,7 +188,8 @@ hook.Add("SetupMove", "LPS.CLShootWeapon",function( ply, mv ) --Move ?
         hasWeapon and ActiveWep:GetClass() == PHX.LPS.DUMMYWEAPON and
         ply:Team() == TEAM_PROPS and ply:IsLastStanding() and ply:Alive() and GetGlobalBool("InRound", false) then
 		
-		if mv:KeyPressed( IN_ATTACK2 ) and ply:LPSHolsterTime() <= CurTime() then
+		-- lps_allow_holster was never read. Still let an already-holstered prop unholster once it's turned off.
+		if mv:KeyPressed( IN_ATTACK2 ) and ( PHX:GetCVar( "lps_allow_holster" ) or ply:IsLPSHolstered() ) and ply:LPSHolsterTime() <= CurTime() then
 		
 			if ( ply:GetLPSWeaponState() == LPS_WEAPON_RELOAD ) then return end
 			--if ( ply:LPSNextFireDelay()+0.1 > CurTime() ) then return end

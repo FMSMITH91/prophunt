@@ -20,17 +20,28 @@ local function CheckUser(ply)
 	return false
 end
 
-local inEditing = false
+-- The lock remembers its holder: it is freed when they leave, they can re-request it if their
+-- window never opened, and it lapses after EDIT_LOCK_TIMEOUT seconds so nobody holds it all map.
+local EDIT_LOCK_TIMEOUT = 600
+local editor, editSince = nil, 0
+
+local function IsEditLocked( ply )
+	return IsValid( editor ) and editor ~= ply and CurTime() - editSince < EDIT_LOCK_TIMEOUT
+end
+
+hook.Add("PlayerDisconnected", "PCR.ReleaseEditLock", function(ply)
+	if ply == editor then editor = nil end
+end)
 
 -- verify user request, ONLY ONE INSTANCE IS DONE!
 net.Receive("phxpm.fb_RequestOpen_w", function(len, ply)
 	if CheckUser(ply) then
 	  if PHX:QCVar( "pcr_allow_custom" ) then
-		if !inEditing then
+		if !IsEditLocked( ply ) then
 			net.Start("phxpm.fb_openPM_Editor")
 				net.WriteTable({ global = "PCR", sub = "CustomProp" })
 			net.Send(ply)
-			inEditing = true
+			editor, editSince = ply, CurTime()
 		else
 			ply:PHXChatInfo("WARNING", "PCR_EDT_IN_USE")
 		end
@@ -115,7 +126,9 @@ local function SavePropData( tblToAdd )
 	for _,mdl in SortedPairs( tblToAdd ) do
 		local good = checkModelExistence( mdl )
 		
-		if good then
+		if PHX.PROHIBITTED_MDLS[ string.lower( mdl ) ] then
+			print("[Prop Menu] Cannot add model '" .. mdl .. "' because it is a prohibited model (PHX.PROHIBITTED_MDLS)!")
+		elseif good then
 			table.insert( ValidModels, mdl )
 		else
 			print("[Prop Menu] Cannot add model '" .. mdl .. "' because it seems not exists in the server!") --should verbose message?
@@ -141,8 +154,31 @@ local function InformEditor( ply, bool )
 	net.Send(ply)
 end
 
+-- Rebuild the lists and send them to everyone, then confirm to the editor. The editor is
+-- told it failed if a list was too big to send (SendPropNetData logs why), as players
+-- would not see the change.
+local function SendUpdatedProps( ply )
+	PCR:PopulateProp( true )
+	-- Broadcast to Players First
+	local sent = PCR:SendPropNetData("pcr.PropListData", PCR.propDatajson, PCR.propDataSize)
+	-- Send Custom Props for Editing
+	if !table.IsEmpty(PCR.CustomProp) then
+		sent = PCR:SendPropNetData("pcr.EditorCustomData", PCR.customPropJson, PCR.customPropSize) and sent
+	end
+	-- Confirm To Last Editor (who may have left during the delay)
+	if IsValid( ply ) then InformEditor(ply, !sent) end
+end
+
 net.Receive("PCR.EditedCustomPropData", function(len, ply)
 	if CheckUser(ply) then
+		
+		-- After a lapse a second editor can be open, and each save replaces the whole list,
+		-- so only the current holder (or anyone while the lock is free) may save.
+		if IsValid( editor ) and ply ~= editor then
+			ply:PHXChatInfo("WARNING", "PCR_EDT_IN_USE")
+			InformEditor(ply, true)
+			return
+		end
 		
 		local var = net.ReadString()
 		local sub = net.ReadString()
@@ -169,24 +205,10 @@ net.Receive("PCR.EditedCustomPropData", function(len, ply)
 		local stat = SavePropData( DataTable )
 		
 		if stat then
+			-- Saving counts as activity, so an editor who keeps working keeps the lock.
+			if ply == editor then editSince = CurTime() end
 			
-			timer.Simple(1, function()
-				PCR:PopulateProp( true )
-				-- Broadcast to Players First
-				net.Start("pcr.PropListData")
-				net.WriteUInt(PCR.propDataSize, 32)
-				net.WriteData(PCR.propDatajson, PCR.propDataSize)
-				net.Broadcast()
-				-- Send Custom Props for Editing
-				if !table.IsEmpty(PCR.CustomProp) then
-					net.Start("pcr.EditorCustomData")
-					net.WriteUInt(PCR.customPropSize, 32)
-					net.WriteData(PCR.customPropJson, PCR.customPropSize)
-					net.Broadcast()
-				end
-				-- Confirm To Last Editor
-				InformEditor(ply, false)
-			end)
+			timer.Simple(1, function() SendUpdatedProps( ply ) end)
 		else
 			-- Inform to the Last Editor that, something is causing Error.
 			InformEditor(ply, true)
@@ -196,21 +218,24 @@ net.Receive("PCR.EditedCustomPropData", function(len, ply)
 end)
 
 net.Receive("PCR.DoneEditing", function(len, ply)
-	if CheckUser(ply) then 
-		inEditing = false
+	-- Only the holder can release the lock, so a stale Close can't free someone else's.
+	if CheckUser(ply) and ply == editor then
+		editor = nil
 	end
 end)
 
 if SERVER then
 	local function checkifsomeoneediting(ply)
+		local inEditing = IsEditLocked()
+		
 		if ( game.IsDedicated() and ply == NULL ) then
-			print( "Is someone editing?: " .. tostring(inEditing == true) )
+			print( "Is someone editing?: " .. tostring(inEditing) )
 			return
 		end
 	
 		if CheckUser(ply) then
-			MsgAll( "Is someone editing?: " .. tostring(inEditing == true) .. "\n" )
-			ply:ChatPrint( "Is someone editing?: " .. tostring(inEditing == true) )
+			MsgAll( "Is someone editing?: " .. tostring(inEditing) .. "\n" )
+			ply:ChatPrint( "Is someone editing?: " .. tostring(inEditing) )
 		end
 	end
 	concommand.Add("is_someone_editing", checkifsomeoneediting)
