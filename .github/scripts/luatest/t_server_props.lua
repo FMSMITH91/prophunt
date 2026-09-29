@@ -158,6 +158,33 @@ pl.ph_prop:SetModel("models/crate.mdl")
 GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = "models/crate.mdl" })
 check("same model: no PH_OnChangeProp", changes, 0)
 
+print("\n== a map prop is banned whatever the case of its model ==")
+-- The ban list is stored lowercase; a map prop's GetModel() keeps the map's own spelling.
+local MIXED = "models/props_junk/Mixed_Case.mdl"
+local function told(p, key) for _, m in ipairs(p.chat) do if m[2] == key then return true end end return false end
+PHX.BANNED_PROP_MODELS = { "models/banned.mdl", MIXED:lower() }
+changes = 0
+pl = prop(100)
+GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = MIXED })
+check("mixed-case map model, banned in lowercase: refused", told(pl, "PHX_PROP_IS_BANNED"), true)
+check("  ... disguise untouched", pl.ph_prop:GetModel(), "models/props_c17/oildrum001.mdl")
+check("  ... no PH_OnChangeProp", changes, 0)
+pl = prop(100)
+GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = "models/banned.mdl" })
+check("lowercase map model on the list: refused (normal play)", told(pl, "PHX_PROP_IS_BANNED"), true)
+changes = 0
+pl = prop(100)
+GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = "models/props_junk/Not_Banned.mdl" })
+check("unbanned mixed-case model: disguise changes (normal play)", pl.ph_prop:GetModel(), "models/props_junk/Not_Banned.mdl")
+check("  ... not called banned", told(pl, "PHX_PROP_IS_BANNED"), false)
+check("  ... PH_OnChangeProp fired", changes, 1)
+S.cvars.ph_banned_models.v = "0"
+pl = prop(100)
+GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = MIXED })
+check("ph_banned_models 0: the banned model is used (normal play)", pl.ph_prop:GetModel(), MIXED)
+S.cvars.ph_banned_models.v = "1"
+PHX.BANNED_PROP_MODELS = { "models/banned.mdl" }
+
 print("\n== missing ph_prop / dead prop don't error ==")
 pl = prop(100); pl.ph_prop = nil
 check("no ph_prop (entity limit): exchange", attempt(GAMEMODE.PlayerExchangeProp, GAMEMODE, pl, crate), "ok")
