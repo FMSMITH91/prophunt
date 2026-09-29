@@ -74,7 +74,8 @@ loadblocks("init.lua@RoundControl",
     [[^local function ClearTimer]], [[^function GM:CanStartRound]],
     [[^local function IsRoundUnderstaffed]], [[^function GM:OnRoundEnd]],
     [[^function GM:RoundStart]], [[^function GM:CheckRoundEnd]],
-    [[^function GM:RoundTimerEnd]] }))
+    [[^function GM:RoundTimerEnd]], [[^local IS_ROUND_FORCED_END]],
+    [[^local function ForceEndRound]], [[^concommand\.Add\("ph_force_end_round"]] }))
 
 CreateConVar("ph_min_waitforplayers", "2")
 S.boolCVar("ph_waitforplayers", "0")
@@ -235,6 +236,40 @@ leave(TEAM_PROPS)
 advance(201)
 check("2v2 then a prop leaves: round still ended on time", GAMEMODE:InRound(), false)
 check("2v2 then a prop leaves: round counted", GetGlobalInt("RoundNumber"), 3)
+
+print("\n== ph_force_end_round tells a refused caller why ==")
+local printed
+local function forceEnd(ply, dedicated)
+  local realPrint, realDedicated = print, game.IsDedicated
+  printed = nil
+  print = function(s) printed = s end
+  game.IsDedicated = function() return dedicated ~= false end
+  local ok, err = pcall(S.concommands["ph_force_end_round"].fn, ply, "ph_force_end_round", {})
+  print, game.IsDedicated = realPrint, realDedicated
+  assert(ok, err)
+end
+local function lastChat(p) local m = p.chat[#p.chat]; return m and m[2] end
+reset(2, 2); startRound(1)
+forceEnd(NULL, false)
+check("listen console mid-round: round not ended", GAMEMODE:InRound(), true)
+check("  ...told access is denied", printed ~= nil and printed:find("Access denied", 1, true) ~= nil, true)
+check("  ...not that no round is running", printed ~= nil and printed:find("Not in active round", 1, true), nil)
+local joe = S.Player{ name = "joe" }
+forceEnd(joe)
+check("non-staff player mid-round: round not ended", GAMEMODE:InRound(), true)
+check("  ...told access is denied", lastChat(joe), "MISC_ACCESSDENIED")
+forceEnd(NULL)
+check("dedicated console mid-round: round ended", GAMEMODE:InRound(), false)
+check("  ...no refusal printed", printed, nil)
+forceEnd(NULL)
+check("dedicated console between rounds: told no round is running",
+  printed ~= nil and printed:find("Not in active round", 1, true) ~= nil, true)
+local admin = S.Player{ name = "admin", staff = true }
+forceEnd(admin)
+check("staff between rounds: still 'unavailable'", lastChat(admin), "[PHX] Sorry, this command is unavailable.")
+reset(2, 2); startRound(1)
+forceEnd(admin, false)
+check("staff player on a listen server: round ended", GAMEMODE:InRound(), false)
 
 S.boolCVar("ph_waitforplayers", "0")
 reset(2, 0)

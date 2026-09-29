@@ -1168,8 +1168,19 @@ end
 
 -- Force End current Round.
 local function ForceEndRound( ply )
-    if GAMEMODE:InRound() and ( util.IsStaff( ply ) ) then
-    
+    -- A refused caller is told so. The listen server's console is not staff, and
+    -- was told there was no active round even mid-round.
+    if !util.IsStaff( ply ) then
+        if ply == NULL then
+            print( "[PHX] Cannot end round: Access denied. On a listen server, run it as a staff player." )
+        else
+            ply:PHXChatInfo( "ERROR", "MISC_ACCESSDENIED" )
+        end
+        return
+    end
+
+    if GAMEMODE:InRound() then
+
         IS_ROUND_FORCED_END = true
     
         GAMEMODE:RoundEndWithResult(1001, "HUD_LOSE")

@@ -4,7 +4,6 @@
 	The entire server side bit of Fretta starts here.
 */
 
-util.AddNetworkString("PlayableGamemodes")
 util.AddNetworkString("fretta_teamchange")
 
 AddCSLuaFile( "cl_init.lua" )
