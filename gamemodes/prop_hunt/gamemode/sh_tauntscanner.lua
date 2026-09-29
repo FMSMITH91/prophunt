@@ -33,16 +33,29 @@ if SERVER then
 		-- Keep any team already stored under this category, otherwise scanning team 2
 		-- wipes team 1's taunts whenever both teams share a category folder name.
 		Taunts[tauntCat] = Taunts[tauntCat] or {}
-		Taunts[tauntCat][idTeam] = data
+		-- Merge the same team too: two scan folders with the same category name used
+		-- to keep only the last folder's taunts. On a name clash the first one wins.
+		local dest = Taunts[tauntCat][idTeam]
+		if !dest then
+			Taunts[tauntCat][idTeam] = data
+			return
+		end
+		for name,path in pairs(data) do
+			if dest[name] == nil then
+				dest[name] = path
+			else
+				PHX:VerboseMsg("[TauntScanner] Duplicate taunt name '" .. name .. "' in category " .. tauntCat .. ", keeping the first one.")
+			end
+		end
 	end
 	
-	local function addtaunt( teamID, tFile, fCat, format, tblTemp, sTauntPath )
+	local function addtaunt( teamID, tFile, fCat, ext, tblTemp, sTauntPath )
 		for _,FileExt in SortedPairs( tFile ) do
 			local namenoex = FileExt 				-- just initialize with default "taunt_name.wav"
 			if string.find(FileExt, "^taunt_") then	-- this was only used for my taunts for better organizing. otherwise you can name it whatever you want.
-				namenoex = string.gsub(FileExt, "taunt_([%w_]+)%."..format.."$", "%1")
+				namenoex = string.gsub(FileExt, "taunt_([%w_]+)%."..ext.."$", "%1")
 			else
-				namenoex = string.gsub(FileExt, "([%w_]+)%."..format.."$", "%1")
+				namenoex = string.gsub(FileExt, "([%w_]+)%."..ext.."$", "%1")
 			end
 			
 			local nicename = NiceTitle( string.Replace(namenoex, "_", " ") ) -- origin: string.upper
@@ -195,6 +208,27 @@ if SERVER then
 		ply.HasTauntScannedData = false
 	end)
 	
+	-- GMod caps one net message at about 64KB whatever the width of its length
+	-- field, so the compressed list goes out in slices the client joins back up.
+	-- Slices go out 0.1s apart so a big list doesn't flood the reliable stream.
+	local CHUNK_SIZE = 60000
+	
+	local function SendTauntChunk( ply, index, total )
+		if !IsValid(ply) then return end
+		
+		local chunk = string.sub( CompressedTaunt, (index - 1) * CHUNK_SIZE + 1, index * CHUNK_SIZE )
+		net.Start(netRecv)
+			net.WriteUInt(index, 16)
+			net.WriteUInt(total, 16)
+			net.WriteUInt(#chunk, 16)
+			net.WriteData(chunk, #chunk)
+		net.Send(ply)
+		
+		if index < total then
+			timer.Simple(0.1, function() SendTauntChunk( ply, index + 1, total ) end)
+		end
+	end
+	
     local function SendTauntsInfo( ply )
         if !PHX:QCVar( "ph_enable_taunt_scanner" ) then
 			ply:PrintMessage(HUD_PRINTCONSOLE, "[PHX] Taunt Scanner is Disabled.")
@@ -203,7 +237,7 @@ if SERVER then
 
 		local plName = ply:Nick()
 
-		if table.IsEmpty( Taunts ) then
+		if table.IsEmpty( Taunts ) or !CompressedTaunt then
 			MsgN("!! Not sending Taunt Scanner List to " .. plName .. " because the list is EMPTY!")
 			return
 		end
@@ -216,11 +250,7 @@ if SERVER then
 
 			PHX:VerboseMsg("[TauntScanner] Sending Taunt Scanner Data to player: " .. plName .. ", Size: " .. tostring(CompressedTauntSize) .. " Bytes")
 		    timer.Simple(0.1, function()
-				if !IsValid(ply) then return end
-				net.Start(netRecv)
-				net.WriteUInt(CompressedTauntSize, 32)
-				net.WriteData(CompressedTaunt, CompressedTauntSize)
-				net.Send(ply)
+				SendTauntChunk( ply, 1, math.ceil( CompressedTauntSize / CHUNK_SIZE ) )
 			end)
 		else
 			ply:PrintMessage(HUD_PRINTCONSOLE, "[PHX] Request Rejected: You have requested Taunt Scanner data ONCE. To refresh, please reconnect to the server!")
@@ -245,15 +275,29 @@ if CLIENT then
 		net.SendToServer()
 	end )
 	
+	-- The list arrives in slices (see SendTauntChunk). Net messages arrive in
+	-- order, so the last slice means the whole list is here.
+	local chunks = {}
 	net.Receive(netRecv, function()
+		local index = net.ReadUInt(16)
+		local total = net.ReadUInt(16)
+		local size = net.ReadUInt(16)
+		chunks[index] = net.ReadData(size)
+		
+		if index < total then return end
+		
+		for i = 1, total do
+			if !chunks[i] then
+				chunks = {}
+				ErrorNoHalt("[TauntScanner] Taunt scanner data arrived incomplete, ignoring it.\n")
+				return
+			end
+		end
+		
 		PHX:VerboseMsg("[TauntScanner] Received taunt scanner data, Processing...")
-
-		-- Set TAUNT_FALLBACK to nil
-		-- 32 bits to match the server. At 16 the length silently wrapped once a
-		-- server's compressed taunt list passed 64KB, and the client then read
-		-- the wrong number of bytes and decompressed garbage.
-		local size = net.ReadUInt(32)
-		local taunts = net.ReadData(size)
+		
+		local taunts = table.concat( chunks, "", 1, total )
+		chunks = {}
 		local Conv = util.PHXQuickDecompress( taunts )
 		
 		if PHX and PHX.ManageTaunt ~= nil then

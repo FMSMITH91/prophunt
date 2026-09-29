@@ -23,5 +23,6 @@ local function ph_motel_blacke_v3_config()
 
 end
 
-hook.Add("PreCleanupMap", "PHX.ph_motel_blacke_v3.config_pre", ph_motel_blacke_v3_config)
+-- PostCleanupMap only: CleanUpMap deletes and respawns info_player_start, so
+-- whatever a PreCleanupMap pass moved or added was thrown away straight after.
 hook.Add("PostCleanupMap", "PHX.ph_motel_blacke_v3.config", ph_motel_blacke_v3_config)

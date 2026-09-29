@@ -28,8 +28,9 @@ RunConsoleCommand("ph_min_waitforplayers", "4")
 check("set 4 -> global reads 4", GetGlobalInt("ph_min_waitforplayers", -1), 4)
 RunConsoleCommand("ph_min_waitforplayers", "6")
 check("set 6 -> global reads 6", GetGlobalInt("ph_min_waitforplayers", -1), 6)
-RunConsoleCommand("ph_min_waitforplayers", "0")
-check("rejected 0 does not land in the global", GetGlobalInt("ph_min_waitforplayers", -1) >= 1, true)
+-- The engine clamps to the ConVar's min before any callback runs, which the
+-- shim does not emulate, so assert the bound that refuses 0.
+check("0 is refused: the ConVar's min is 1", S.cvars["ph_min_waitforplayers"].min, 1)
 
 -- The other three custom-callback cvars must sync too.
 loadCVar([==[^CVAR\["ph_prop_jumppower"\]]==])

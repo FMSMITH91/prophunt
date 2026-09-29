@@ -26,12 +26,20 @@ local function PostCreatePlayerClip()
 		PHX:CreatePlayerClip(bounds.mins, bounds.maxs)
 	end
 	
-	-- Disable all shadows
-	local ShadowControl = ents.Create( "shadow_control" )
-	ShadowControl:SetPos( Vector( 0, 0, 0 ) )
-	ShadowControl:SetKeyValue( "disableallshadows", "1" )
-	ShadowControl:Spawn()
-	ShadowControl:Activate()
+	-- Disable all shadows. CleanUpMap keeps shadow_control entities, so reuse the
+	-- one already there; creating one every round stacked up a new edict each time.
+	local ShadowControl = ents.FindByClass( "shadow_control" )[1]
+	if IsValid( ShadowControl ) then
+		ShadowControl:Fire( "SetShadowsDisabled", "1" )
+	else
+		ShadowControl = ents.Create( "shadow_control" )
+		if IsValid( ShadowControl ) then
+			ShadowControl:SetPos( Vector( 0, 0, 0 ) )
+			ShadowControl:SetKeyValue( "disableallshadows", "1" )
+			ShadowControl:Spawn()
+			ShadowControl:Activate()
+		end
+	end
 	
 	-- Force all players become Kleiner on respawn!
 	timer.Simple(2, function()

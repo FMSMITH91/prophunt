@@ -1,21 +1,26 @@
 PHX.Messagedata = {}
 
+-- Only a 2xx carrying valid update JSON counts. The primary URL now redirects
+-- to an HTML page, which used to pass as success and stop there, so the backup
+-- was never tried. A failed check logs one line; details are verbose-only.
+local function IsUpdateInfo( body, code )
+	code = tonumber(code) or 0
+	return code >= 200 and code < 300 and PHX:NotifyUpdate( body )
+end
+
 local function UPDATE_DO_FETCH_BACKUP()
 	
-	print( "[!PH:X Update] Retrying with backup update... " )
+	PHX:VerboseMsg( "[Update] Retrying with backup update..." )
 	
 	http.Fetch(
 		GAMEMODE.UPDATEURLBACKUP,
-		function(body,len,_,code)
-			if code < 400 and (body ~= "" and tonumber(len) > 0) then
-				PHX:NotifyUpdate( body )
-				return
-			end
+		function(body,_,_,code)
+			if IsUpdateInfo( body, code ) then return end
 			
-			print( "[!PH:X Update] Error retreiving backup update info. Reason: Data is Empty or Unknown Error. (HTTP Code: "..tostring(code)..", Size: ".. len )
+			print( "[!PH:X Update] Update info unavailable (backup HTTP Code: "..tostring(code)..")." )
 		end,
 		function(err)
-			print("[!PH:X Update] Error retreiving backup update info. Reason: " .. err)
+			print("[!PH:X Update] Update info unavailable. Reason: " .. tostring(err))
 		end
 	)
 	
@@ -25,17 +30,14 @@ local function UPDATE_DO_FETCH()
 
 	http.Fetch(
 		GAMEMODE.UPDATEURL,
-		function(body,len,_,code)
-			if tonumber(code) < 400 and (body ~= "" and tonumber(len) > 0) then
-				PHX:NotifyUpdate( body )
-				return
-			end
+		function(body,_,_,code)
+			if IsUpdateInfo( body, code ) then return end
 			
-			print( "[!PH:X Update] Error retreiving update info. Reason: Data is Empty or Unknown Error. (HTTP Code: "..tostring(code)..", Size: ".. len )
+			PHX:VerboseMsg( "[Update] No update info at the primary URL (HTTP Code: "..tostring(code)..")." )
 			UPDATE_DO_FETCH_BACKUP()
 		end,
 		function(err)
-			print("[!PH:X Update] Error retreiving update info. Reason: " .. err)
+			PHX:VerboseMsg( "[Update] Primary update URL failed: " .. tostring(err) )
 			UPDATE_DO_FETCH_BACKUP()
 		end
 	)
@@ -61,19 +63,27 @@ function PHX:PrintUpdateConsole()
 	MsgC(Color(220,220,220), "[*] Full Description update: \n" .. self.Messagedata.info .. "\n")
 end
 
+-- Revisions are dd.mm.yy; turn one into a number that sorts by date.
+local function RevisionStamp( rev )
+	local d, m, y = string.match( rev or "", "^(%d%d)%.(%d%d)%.(%d%d)$" )
+	if !d then return nil end
+	return tonumber(y) * 10000 + tonumber(m) * 100 + tonumber(d)
+end
+
+-- Returns true only when `result` held usable update info.
 function PHX:NotifyUpdate(result)
 	
 	if (!result or result == "") then
-		print("[!PH:X Update] Warning: Data contains nothing!")
-		return false,false,false
+		self:VerboseMsg("[Update] Warning: Data contains nothing!", 2)
+		return false
 	end
 	
 	self:VerboseMsg("[*PH: X Update] Incoming update result data, parsing infos...")
 	local data = util.JSONToTable(result)
 	
-	if !data or data == nil then
-		print("[!PH:X Update] Error: Unable to parse update info, aborting!")
-		return false,false,false
+	if !istable(data) or !isstring(data.version) or !isstring(data.revision) or !isstring(data.url) or !isstring(data.notice) then
+		self:VerboseMsg("[Update] Error: Unable to parse update info.", 2)
+		return false
 	end
 	
 	local ver = data.version
@@ -93,18 +103,23 @@ function PHX:NotifyUpdate(result)
 		file.Write(PHX.ConfigPath .. "/phx_update_info.txt", result)
 	end
 	
-	local text
-	local color = Color(0,160,230)
+	local text = "[*PH: X Update] Your gamemode is up to date."
+	local color = Color(0,200,40)
 	local isNew = false
+	-- Compare revisions as dates when both parse: this build's revision can be
+	-- newer than the published one, and plain inequality called that an update.
+	local localStamp, remoteStamp = RevisionStamp( GAMEMODE.REVISION ), RevisionStamp( rev )
+	local revIsNew = GAMEMODE.REVISION ~= rev
+	if localStamp and remoteStamp then revIsNew = remoteStamp > localStamp end
+	
 	if GAMEMODE._VERSION ~= ver then
 		text = "[!PH: X Update] New version of "..ver.." is available."
+		color = Color(0,160,230)
 		isNew = true
-	elseif GAMEMODE.REVISION ~= rev then
+	elseif revIsNew then
 		text = "[!PH: X Update] New Revision of "..rev.." is available."
+		color = Color(0,160,230)
 		isNew = true
-	elseif GAMEMODE._VERSION == ver && GAMEMODE.REVISION == rev then
-		text = "[*PH: X Update] Your gamemode is up to date."
-		color = Color(0,200,40)
 	end
 	
 	MsgC(color, text .. "\n")
@@ -112,6 +127,8 @@ function PHX:NotifyUpdate(result)
 	if isNew then
 		self:PrintUpdateConsole()
 	end
+	
+	return true
 end
 
 function PHX:CheckUpdate()

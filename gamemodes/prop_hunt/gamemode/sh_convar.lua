@@ -62,11 +62,16 @@ local ConVarTranslate = {
 	},
 	[CTYPE_NUMBER] = {
 		Set = function(name, value, fcvar, help, data, f)
-			if (data and data ~= nil) then
-				if type(data) == "table" then  CreateConVar(name, value, fcvar, help, data.min, data.max) end
-			else
-				CreateConVar(name, value, fcvar, help)
+			-- Always create the ConVar. A 5th argument that isn't a table (a callback,
+			-- which is where STRING and BOOL take it) used to skip CreateConVar, and
+			-- PostCleanupMap's SyncCVar then indexed a nil ConVar every round.
+			local mn, mx
+			if istable(data) then
+				mn, mx = data.min, data.max
+			elseif isfunction(data) and f == nil then
+				f = data
 			end
+			CreateConVar(name, value, fcvar, help, mn, mx)
 			SetGlobalInt(name, tonumber(value))
 			
 			-- Always keep the replicated global in step, under an identifier of its
@@ -91,11 +96,14 @@ local ConVarTranslate = {
 	},
 	[CTYPE_FLOAT] = {
 		Set = function(name, value, fcvar, help, data, f)
-			if (data and data ~= nil) then
-				if type(data) == "table" then  CreateConVar(name, value, fcvar, help, data.min, data.max) end
-			else
-				CreateConVar(name, value, fcvar, help)
+			-- Always create the ConVar; see CTYPE_NUMBER above.
+			local mn, mx
+			if istable(data) then
+				mn, mx = data.min, data.max
+			elseif isfunction(data) and f == nil then
+				f = data
 			end
+			CreateConVar(name, value, fcvar, help, mn, mx)
 			SetGlobalFloat(name, value)
 			
 			-- Always keep the replicated global in step, under an identifier of its
@@ -161,11 +169,13 @@ CVAR["ph_enable_taunt_scanner"]			=	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, "(Requ
 -- Convars for Armor
 CVAR["ph_allow_armor"]			        =	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, "Allow use of Armor? May require round restart." }
 
-CVAR["ph_prop_jumppower"]				=	{ CTYPE_FLOAT, 	"1.5", CVAR_SERVER_ONLY_NO_NOTIFY, "Multipliers for Prop Jump Power (Do not confused with Gravity!). Default is 1.4. Min. 1.", {min=1, max=50}, -- in menu, it only limits to 5.
+-- A mid-round change applies 200 x the multiplier, so the defaults 1 and 1.5
+-- give the stock 200 and 300 a player spawns with; 160 made them jump lower.
+CVAR["ph_prop_jumppower"]				=	{ CTYPE_FLOAT, 	"1.5", CVAR_SERVER_ONLY_NO_NOTIFY, "Multipliers for Prop Jump Power (Do not confused with Gravity!). Default is 1.5. Min. 1.", {min=1, max=50}, -- in menu, it only limits to 5.
 function(cvarname, val)
     cvars.AddChangeCallback( cvarname, function(_,_,new )    
         for _,v in pairs(team.GetPlayers(TEAM_PROPS)) do
-            if v:Alive() then v:SetJumpPower(160 * tonumber(new)) end
+            if v:Alive() then v:SetJumpPower(200 * tonumber(new)) end
         end
         SetGlobalFloat( cvarname, tonumber(new) )
     end, "phx.cvflt_" .. cvarname)
@@ -175,7 +185,7 @@ CVAR["ph_hunter_jumppower"]		=	{ CTYPE_FLOAT, 	"1", CVAR_SERVER_ONLY_NO_NOTIFY, 
 function(cvarname, val)
     cvars.AddChangeCallback( cvarname, function(_,_,new )    
         for _,v in pairs(team.GetPlayers(TEAM_HUNTERS)) do
-            if v:Alive() then v:SetJumpPower(160 * tonumber(new)) end
+            if v:Alive() then v:SetJumpPower(200 * tonumber(new)) end
         end
         SetGlobalFloat( cvarname, tonumber(new) )
     end, "phx.cvflt_" .. cvarname)
@@ -188,7 +198,8 @@ CVAR["ph_freezecam_hunter"]				=	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, "Enable F
 CVAR["ph_fc_use_single_sound"]			=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY, "Use single Freezecam sound instead of sound list?" }
 CVAR["ph_fc_cue_path"]					=	{ CTYPE_STRING, "misc/freeze_cam.wav", CVAR_SERVER_ONLY, "Path for single Freezecam sound.", 
 	function(cvarname, val)
-		-- override default callback because this is important part.
+		-- Runs alongside ConVarTranslate's phx.sync_ callback, which already
+		-- mirrors the value into the global; this one only fixes backslashes.
 		cvars.AddChangeCallback( cvarname, function(_,_,new)
 			if string.find(new, "\\") then
 				print("[ConVar:FreezeCam] Warning: Detected Backslash (\\) character! Please use \"/\" instead!")
@@ -196,12 +207,18 @@ CVAR["ph_fc_cue_path"]					=	{ CTYPE_STRING, "misc/freeze_cam.wav", CVAR_SERVER_
 			-- replace escaped backslash char, if any.
 			local ReplaceIllegalPath = string.Replace(new, "\\", "/")
 			
-			RunConsoleCommand( cvarname, ReplaceIllegalPath )
-			SetGlobalString( cvarname, ReplaceIllegalPath )
+			-- Only the server may write the replicated ConVar or the global; from a
+			-- client the engine refuses it with a console error.
+			if SERVER and new ~= ReplaceIllegalPath then
+				RunConsoleCommand( cvarname, ReplaceIllegalPath )
+				SetGlobalString( cvarname, ReplaceIllegalPath )
+			end
 			PHX.LegalSoundPath = ReplaceIllegalPath
 		end, "phx.cvstr_" .. cvarname)
 	end
 }
+-- Load-time snapshot, kept for addons that read it. It is taken before the
+-- server's value reaches a client, so read PHX:GetCVar("ph_fc_cue_path") instead.
 PHX.LegalSoundPath							= 	GetGlobalString("ph_fc_cue_path", "misc/freeze_cam.wav")
 
 CVAR["ph_notify_player_join_leave"]			=	{ CTYPE_BOOL, 	"1", CVAR_SERVER_ONLY, "Notify Player Join and Leave in the Chat?" }
@@ -226,25 +243,11 @@ CVAR["ph_hunter_blindlock_time"]			=	{ CTYPE_NUMBER, "30", CVAR_SERVER_ONLY, "Ho
 CVAR["ph_round_time"]						=	{ CTYPE_NUMBER, "300", CVAR_SERVER_ONLY, "(Require Map Restart) Time (in seconds) for each rounds." }
 CVAR["ph_rounds_per_map"]					=	{ CTYPE_NUMBER, "10", CVAR_SERVER_ONLY, "(Require Map Restart) Numbers of rounds played on a single map (Default: 10)" }
 CVAR["ph_waitforplayers"]					=	{ CTYPE_BOOL, 	"0", CVAR_SERVER_ONLY, 	"Should we wait for players for proper round?" }
-CVAR["ph_min_waitforplayers"]				=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, 	"Numbers of mininum players that we should wait for round start. Value must not contain less than 1.", { min = 1, max = game.MaxPlayers() }, 
-function(cvarname, value)
-    cvars.AddChangeCallback(cvarname, function(_, _, new)
-        -- Supplying a callback REPLACES the default SetGlobalInt sync above, so
-        -- this has to do it itself. It only did so on the rejection path, which
-        -- meant a valid change never reached PHX:GetCVar (it kept reading the
-        -- boot value until the next PostCleanupMap re-synced everything), while
-        -- an invalid 0 was the one value that did get written through.
-        local num = tonumber(new) or 1
-
-        if num < 1 then
-            print("[ConVar:WaitForPlayers] Warning: "..cvarname.." cannot be less than 1. Use 'ph_waitforplayers 0' to disable waiting!")
-            num = 1
-            RunConsoleCommand( cvarname, "1" )
-        end
-
-        SetGlobalInt( cvarname, num )
-    end, "phx.cvnum_" .. cvarname)
-end }
+-- ph_min_waitforplayers is the TOTAL of Hunters and Props (spectators don't
+-- count), and each team also needs at least one player, so the default of 2 is
+-- the smallest that can start a round. It needs no callback: the engine clamps
+-- to min = 1 before any callback runs, and phx.sync_ mirrors it to the global.
+CVAR["ph_min_waitforplayers"]				=	{ CTYPE_NUMBER, "2", CVAR_SERVER_ONLY, 	"Minimum number of players, Hunters and Props combined, needed to start a round. Each team also needs at least one player. Cannot be less than 1. Default is 2.", { min = 1, max = game.MaxPlayers() } }
 
 CVAR["ph_sv_enable_obb_modifier"]			=	{ CTYPE_BOOL, 	"1",CVAR_SERVER_ONLY_NO_NOTIFY, "Developer: Enable OBB Model Data Override/Modifier" }
 CVAR["ph_reload_obb_setting_everyround"]	=	{ CTYPE_BOOL, 	"1",CVAR_SERVER_ONLY_NO_NOTIFY, "Developer: Reload OBB Model Data Override/Modifier Every round Restarts" }
@@ -437,7 +440,10 @@ if CLIENT then
 
 	local CLCVAR = {} -- Move outside "Client" Realm for convar dump. Once you're done, get back in.
 
-	CLCVAR["ph_cl_language"]				=	{ CTYPE_STRING, GetGlobalString("ph_default_lang", "en_us"), true, true, "Prefered language to use" }
+	-- ph_default_lang is applied at InitPostEntity below. Reading the global here
+	-- always gave en_us: the loop above had just reset it on this client, and the
+	-- server's value had not arrived yet.
+	CLCVAR["ph_cl_language"]				=	{ CTYPE_STRING, "en_us", true, true, "Prefered language to use" }
 	
 	-- Old convars that previously placed in cl_init.lua is moved HERE.
 	CLCVAR["ph_cl_halos"]					=	{ CTYPE_BOOL, 	"1",	 true, true,  "Toggle Enable/Disable Halo effects when choosing a prop.", {min=0,max=1} }
@@ -490,14 +496,16 @@ if CLIENT then
 	cTranslate[CTYPE_FLOAT] 	= function(name) return GetConVar(name):GetFloat() 	end
 	
 	local function SetClientConVar (name, value, shouldSave, isUserInfo, help, data, func)
-		if (data and data ~= nil) then
-			-- Note: if value contains String, it wouldn't work if data.min and data.max is present. You've been warned!
-			if type(data) == "table" and (not table.IsEmpty(data)) then
-				CreateClientConVar(name, value, shouldSave, isUserInfo, help, data.min, data.max)
-			end
-		else
-			CreateClientConVar(name, value, shouldSave, isUserInfo, help)
+		-- Always create the ConVar. An empty table or a callback in `data` used to
+		-- skip it, and GetCLCVar then indexed a nil ConVar.
+		-- Note: if value contains String, it wouldn't work if data.min and data.max is present. You've been warned!
+		local mn, mx
+		if istable(data) then
+			mn, mx = data.min, data.max
+		elseif isfunction(data) and func == nil then
+			func = data
 		end
+		CreateClientConVar(name, value, shouldSave, isUserInfo, help, mn, mx)
 		
 		-- do something within the function with associated cvar, if any.
 		if (func and func ~= nil) then
@@ -530,6 +538,25 @@ if CLIENT then
 		
 		return nil
 	end
+	
+	-- First-time language: apply the server's ph_default_lang once, unless the
+	-- player has picked a language (the F1 menu sets this cookie).
+	hook.Add("InitPostEntity", "PHX.ApplyDefaultLanguage", function()
+		if cookie.GetString( "phx_lang_chosen" ) then return end
+		
+		-- Anything but the stock default was picked before this cookie existed.
+		if PHX:GetCLCVar( "ph_cl_language" ) ~= "en_us" then
+			cookie.Set( "phx_lang_chosen", "1" )
+			return
+		end
+		
+		-- The replicated ConVar already holds the server's value; its global may not.
+		local lang = PHX:QCVar( "ph_default_lang" )
+		if lang ~= "en_us" and PHX.LANGUAGES and PHX.LANGUAGES[lang] then
+			RunConsoleCommand( "ph_cl_language", lang )
+			cookie.Set( "phx_lang_chosen", "1" )
+		end
+	end)
 end
 
 -- END OF CLIENT

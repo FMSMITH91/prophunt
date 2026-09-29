@@ -235,6 +235,8 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 			surface.DrawRect(0,0,motd:GetWide(),motd:GetTall())
 		end
 		motd.DoClick = function() ply:ConCommand("ulx motd"); PHX.UI.MainForm:Close() end
+		-- The MOTD is ULX's; without it the button only closed the menu.
+		if !ulx then motd:SetVisible(false) end
 		
 		local bnext = vgui.Create("DButton", pBottom)
 		bnext:Dock(RIGHT)
@@ -255,7 +257,7 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 			pnl:SetTextColor(color_white)
 		end
 			surface.SetDrawColor(pnl.hover.r,pnl.hover.g,pnl.hover.b,255)
-			surface.DrawRect(0,0,motd:GetWide(),motd:GetTall())
+			surface.DrawRect(0,0,pnl:GetWide(),pnl:GetTall())
 		end
 		bnext.DoClick = function(pnl)
 			helpImage.Count = helpImage.Count + 1
@@ -284,7 +286,7 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 			pnl:SetTextColor(color_white)
 		end
 			surface.SetDrawColor(pnl.hover.r,pnl.hover.g,pnl.hover.b,255)
-			surface.DrawRect(0,0,motd:GetWide(),motd:GetTall())
+			surface.DrawRect(0,0,pnl:GetWide(),pnl:GetTall())
 		end
 		bprev.DoClick = function(pnl)
 			helpImage.Count = helpImage.Count - 1
@@ -382,7 +384,7 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 				[0]	= player_manager.AllValidModels(),
 				[1]	= list.Get("PlayerOptionsModel")
 			}
-			if plMode == nil then plWhich = 0 end
+			if plWhich[plMode] == nil then plMode = 0 end
 			
 			-- Get All Valid Paired Models and sort 'em out.
 			for name, model in SortedPairs( plWhich[plMode] ) do
@@ -498,7 +500,10 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 
 		PHX.UI:CreateVGUIType("", "label", "PHX.MenuCategoryLabel", gridpl, "PHXM_PLAYER_LANG")
 		if (PHX:GetCVar( "ph_use_lang" )) then
-			PHX.UI:CreateVGUIType("", "label", false, gridpl, "Server is currently using a forced language. Current Language is: " .. PHX.LANGUAGES[PHX:GetCVar( "ph_force_lang" )].NameEnglish)
+			-- ph_force_lang set from server.cfg or rcon is never validated.
+			local fcode = PHX:GetCVar( "ph_force_lang" )
+			local flang = PHX.LANGUAGES[fcode]
+			PHX.UI:CreateVGUIType("", "label", false, gridpl, "Server is currently using a forced language. Current Language is: " .. (flang and flang.NameEnglish or tostring(fcode) .. " (unknown)"))
 		else
 			PHX.UI:CreateVGUIType(nil, "langcombobox", nil, gridpl, nil)
 			PHX.UI:CreateVGUIType("", "btn", {
@@ -836,9 +841,9 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 		PHX.UI:CreateVGUIType("mv_map_prefix","textentry","SERVER",grid, "TEXTENTRY_MV_PREFIX")
 		PHX.UI:CreateVGUIType("mv_change_when_no_player","check","SERVER",grid, "PHXM_MV_CHANGEMAP_NOPLAYER")
         PHX.UI:CreateVGUIType("","spacer",nil,grid,"" )
-		PHX.UI:CreateVGUIType("mv_maplimit", "slider", 	{min = 2, max = 80, init = GetConVar("mv_maplimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, "PHXM_MV_MAPLIMIT")
+		PHX.UI:CreateVGUIType("mv_maplimit", "slider", 	{min = 5, max = 80, init = GetConVar("mv_maplimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, "PHXM_MV_MAPLIMIT")
 		PHX.UI:CreateVGUIType("mv_timelimit", "slider", {min = 15, max = 90, init = GetConVar("mv_timelimit"):GetInt(), dec = 0, kind = "SERVER"}, grid, "PHXM_MV_TIMELIMIT")
-		PHX.UI:CreateVGUIType("mv_mapbeforerevote", "slider", 	{min = 1, max = 10, init = GetConVar("mv_mapbeforerevote"):GetInt(), dec = 0, kind = "SERVER"}, grid, "PHXM_MV_MAPBEFOREREVOTE")
+		PHX.UI:CreateVGUIType("mv_mapbeforerevote", "slider", 	{min = 2, max = 20, init = GetConVar("mv_mapbeforerevote"):GetInt(), dec = 0, kind = "SERVER"}, grid, "PHXM_MV_MAPBEFOREREVOTE")
 		PHX.UI:CreateVGUIType("mv_rtvcount", "slider", 	{min = 2, max = game.MaxPlayers(), init = GetConVar("mv_rtvcount"):GetInt(), dec = 0, kind = "SERVER"}, grid, "PHXM_MV_RTVCOUNT")
 		PHX.UI:CreateVGUIType("","spacer",nil,grid,"" )
 		PHX.UI:CreateVGUIType("", "label", false, grid, "PHXM_MV_EXPLANATION1")
@@ -883,8 +888,12 @@ function PHX.UI.BaseMainMenu(ply, cmd, args)
 	PHX.UI:DonationPanel()
 	
 	-- Custom Hook Menu here. Give 0.25 second for better "safe-calling"...
+	-- Bind this menu's sheet now: if it was closed or rebuilt meanwhile, the
+	-- listeners would add tabs to a removed panel or to the new menu twice.
+	local pnlTab = PHX.UI.PnlTab
 	timer.Simple(0.25, function() 
-		hook.Call("PH_CustomTabMenu", nil, PHX.UI.PnlTab, 
+		if !IsValid(pnlTab) or pnlTab != PHX.UI.PnlTab then return end
+		hook.Call("PH_CustomTabMenu", nil, pnlTab, 
 		function(cmd,typ,data,panel,text) 
 			PHX.UI:CreateVGUIType(cmd,typ,data,panel,text)
 		end,

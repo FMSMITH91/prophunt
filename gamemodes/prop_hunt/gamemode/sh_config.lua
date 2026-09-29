@@ -166,10 +166,14 @@ end
 
 -- Called only from cvars.AddChangeCallback. Do Not use outside from cvar's callback function!
 function PHX:SetUsableEntity( number )
-	if !number and !isnumber(number) then return end
+	-- Round down the way ConVar:GetInt() does. The engine clamps to 1-4 but
+	-- keeps fractions, and CVARUseAbleEnts[2.5] is nil, which left every
+	-- IsUsablePropEntity call indexing nil.
+	number = math.floor( tonumber(number) or 0 )
+	local usable = self.CVARUseAbleEnts[number]
 
-	if number >= 1 and number <= 4 then
-		self.USABLE_PROP_ENTITIES = self.CVARUseAbleEnts[number]
+	if usable then
+		self.USABLE_PROP_ENTITIES = usable
 	else
 		ErrorNoHalt("Error: SetUsableEntity number argument is out of range! (min = 1, max = 4)")
 	end
@@ -467,15 +471,21 @@ function PHX:ManageTaunt( category, tauntData )
 		for i=TEAM_HUNTERS,TEAM_PROPS do
 			if tauntData[i] and tauntData[i] ~= nil then
 				for name,path in pairs(tauntData[i]) do
+					-- The category may so far hold only the other team's taunts, so
+					-- this team's table can be missing; it is created on first add.
+					local teamTaunts = self.TAUNTS[category][i]
 					-- Double Check, if somehow found any duplicates
-					if ( self.TAUNTS[category][i][name] ) or ( self.CachedTaunts[i][name] ) then
+					if ( teamTaunts and teamTaunts[name] ) or ( self.CachedTaunts[i][name] ) then
 						self:VerboseMsg(string.format("[Taunts] Skipping taunt NAME '%s' (Cat: %s) because it exist in Taunt Table & Cache.", name,category))
-					elseif (table.HasValue( self.TAUNTS[category][i], path )) and (table.HasValue( self.CachedTaunts[i], path )) then
+					elseif ( teamTaunts and table.HasValue( teamTaunts, path ) ) and (table.HasValue( self.CachedTaunts[i], path )) then
 						self:VerboseMsg(string.format("[Taunts] Skipping taunt PATH '%s' (Cat: %s, path: %s) because it exist in Taunt Table & Cache.", name,category,path))
 					else
 						self:VerboseMsg(string.format("[Taunts] Adding taunt '%s' (Cat: %s) to their Existing Taunt Table and Cache.", name,category))
+						self.TAUNTS[category][i] = teamTaunts or {}
 						self.TAUNTS[category][i][name] 	= path
 						self.CachedTaunts[i][name] 		= path
+						-- A merged taunt needs downloading as much as a new category's.
+						if SERVER then AddResources( { [name] = path } ) end
 					end
 				end
 			end
@@ -516,8 +526,6 @@ end
 
 -- Taunts Addition & Removal
 function PHX:AddCustomTaunt( idTeam, category, tblTaunt )
-	self:CheckCache( tblTaunt, category )
-
 	-- `or` between the two team tests matched every id (nothing can equal both),
 	-- so the guard let anything through; the argument checks were chained with
 	-- `and` and only rejected a value that failed all of them at once.
@@ -534,13 +542,22 @@ function PHX:AddCustomTaunt( idTeam, category, tblTaunt )
 	-- Was `self.TAUNT[category]` - a typo for TAUNTS that is never assigned, so
 	-- this errored before adding anything. Create the category if it is new
 	-- (that is the normal case for an addon) and refuse only a genuine clash.
-	self.TAUNTS[category] = self.TAUNTS[category] or {}
-
-	if self.TAUNTS[category][idTeam] ~= nil then
+	if self.TAUNTS[category] and self.TAUNTS[category][idTeam] ~= nil then
 		print("[Taunts] Error: Category "..category.." already holds "..team.GetName(idTeam).."'s taunts! Try a different name." )
 		return
 	end
 
+	-- CheckCache reads a { [team] = taunts } table. Handed the flat list it
+	-- checked nothing, so a same-named taunt replaced another category's entry
+	-- in the cache and the server then refused that one. It also ran before the
+	-- checks above, so a nil table raised instead of printing their error.
+	self:CheckCache( { [idTeam] = tblTaunt }, category )
+	if table.IsEmpty(tblTaunt) then
+		print("[Taunts] Warning: Every taunt in "..category.." is already loaded. Nothing to add." )
+		return
+	end
+
+	self.TAUNTS[category] = self.TAUNTS[category] or {}
 	self.TAUNTS[category][idTeam] = tblTaunt
 	self:AddToCache(idTeam, tblTaunt)
 	if SERVER then AddResources( tblTaunt ) end
@@ -622,28 +639,16 @@ function PHX:GetAllTeamTaunt( teamid, category )
 	return taunt
 end
 
--- Use with your own risk.
-function PHX:RefreshTauntList()
-	local t = table.Copy(self.TAUNTS)
-	local getCategories = table.GetKeys(self.TAUNTS)
+-- Broadcasts, or sends to one player when `ply` is given (a late joiner).
+local function UpdatePropBansInfo( PHXKey, tbl, ply )
+	local compress,len = util.PHXQuickCompress( tbl )
 	
-	print( "[Taunts] Warning: Using this command is DEPRECATED and while in active round is very dangerous! Anyway, refreshing!" )
-	
-	-- Empty Table
-	self.TAUNTS = {}
-	
-	-- Resort them.
-	for _,Category in pairs( getCategories ) do
-		if t[Category][TEAM_PROPS]   ~= nil then table.sort( t[Category][TEAM_PROPS] ) 	 end
-		if t[Category][TEAM_HUNTERS] ~= nil then table.sort( t[Category][TEAM_HUNTERS] ) end
-	end
-	
-	self.TAUNTS = t
+	net.Start( "PHX.UpdatePropbanInfo" )
+		net.WriteString( PHXKey )
+		net.WriteUInt( len, 32 )
+		net.WriteData( compress, len )
+	if ply then net.Send( ply ) else net.Broadcast() end
 end
-
-concommand.Add("ph_refresh_taunt_list", function( ply ) 
-	if ( util.IsStaff( ply ) ) then PHX:RefreshTauntList() end
-end, nil, "(Deprecated: Use with your own risk) Refresh Taunt List and Sort them.")
 
 -- Add the custom player model bans for props AND prop banned models
 local config_path = PHX.ConfigPath
@@ -710,10 +715,13 @@ if SERVER then
 			for _,v in pairs(PROP_MODEL_BANS_READ) do
 				PHX:VerboseMsg("[Models] Adding entry of restricted model to be used -> "..string.lower(v))
                 
-                if table.HasValue(PHX.BANNED_PROP_MODELS, v) then
-                    PHX:VerboseMsg("[Models] Models " .. v .. " is already exists in the prop model banlist. Ignoring...!")
+                -- Test the lowercased name that gets stored; testing `v` added a
+                -- mixed-case entry again on every refresh.
+                local mdl = string.lower(v)
+                if table.HasValue(PHX.BANNED_PROP_MODELS, mdl) then
+                    PHX:VerboseMsg("[Models] Models " .. mdl .. " is already exists in the prop model banlist. Ignoring...!")
                 else
-                    table.insert(PHX.BANNED_PROP_MODELS, string.lower(v))
+                    table.insert(PHX.BANNED_PROP_MODELS, mdl)
                 end
 			end
 		else
@@ -723,7 +731,7 @@ if SERVER then
     
     -- First, Add Permanent Ban
     for _,v in pairs( phx_PermaBannedModels ) do
-        table.insert( PHX.BANNED_PROP_MODELS, v )
+        table.insert( PHX.BANNED_PROP_MODELS, string.lower(v) )
     end
         
     -- Add Extra Banned Models
@@ -731,23 +739,27 @@ if SERVER then
     AddBannedPropModels()
 	
 	-- Add ConCommands.
+	-- Resend after a refresh, or clients keep the old list until the next round.
 	concommand.Add("ph_refresh_plmodel_ban", function(ply)
-		if ( util.IsStaff( ply ) ) then AddBadPLModels() end
+		if ( util.IsStaff( ply ) ) then
+			AddBadPLModels()
+			UpdatePropBansInfo( "PROP_PLMODEL_BANS", PHX.PROP_PLMODEL_BANS )
+		end
 	end, nil, "Refresh Server Playermodel Ban Lists (Auto-update on round restart) and read from prop_plymodel_bans/bans.txt")
 	
 	concommand.Add("ph_refresh_propmodel_ban", function(ply)
-		if ( util.IsStaff( ply ) ) then AddBannedPropModels() end
+		if ( util.IsStaff( ply ) ) then
+			AddBannedPropModels()
+			UpdatePropBansInfo( "BANNED_PROP_MODELS", PHX.BANNED_PROP_MODELS )
+		end
 	end, nil, "Refresh Server Prop Models Ban Lists (Auto-update on round restart) and read from prop_model_bans/model_bans.txt")
-end
-
-local function UpdatePropBansInfo( PHXKey, tbl )
-	local compress,len = util.PHXQuickCompress( tbl )
 	
-	net.Start( "PHX.UpdatePropbanInfo" )
-		net.WriteString( PHXKey )
-		net.WriteUInt( len, 32 )
-		net.WriteData( compress, len )
-	net.Broadcast()
+	-- The lists were only sent at round start, so a mid-round joiner's prop menu
+	-- showed banned models as usable until the next round.
+	hook.Add("PHX.PlayerFullLoad", "PHX.SendPropBansInfo", function( ply )
+		UpdatePropBansInfo( "BANNED_PROP_MODELS", PHX.BANNED_PROP_MODELS, ply )
+		UpdatePropBansInfo( "PROP_PLMODEL_BANS", PHX.PROP_PLMODEL_BANS, ply )
+	end)
 end
 
 if SERVER then
@@ -767,15 +779,18 @@ hook.Add("PostCleanupMap", "PHX.UpdateUsablePropEnt", function()
 	
 	if SERVER then
     
-        -- Prohibit specific prop from spawning
-        for _,ent in pairs(ents.GetAll()) do
-            timer.Simple(0.1, function()
-                if IsValid(ent) and PHX.PROHIBITTED_MDLS[ ent:GetModel() ] then
-                    PHX:VerboseMsg("[Config] Removing " .. ent:GetModel() .. " to prevent server crash or gameplay-breaking exploits.")
+        -- Prohibit specific prop from spawning. One deferred pass rather than a
+        -- timer per entity. The table is lowercase and GetModel() keeps the map's
+        -- own spelling, so compare lowercased.
+        timer.Simple(0.1, function()
+            for _,ent in ipairs(ents.GetAll()) do
+                local mdl = IsValid(ent) and ent:GetModel()
+                if mdl and PHX.PROHIBITTED_MDLS[ string.lower(mdl) ] then
+                    PHX:VerboseMsg("[Config] Removing " .. mdl .. " to prevent server crash or gameplay-breaking exploits.")
                     ent:Remove()
                 end
-            end)
-        end
+            end
+        end)
         
         -- Always update the prop bans info.
 		UpdatePropBansInfo( "BANNED_PROP_MODELS", PHX.BANNED_PROP_MODELS )
@@ -822,14 +837,3 @@ hook.Add("InitPostEntity", "PHX.SetDefaultTaunt", function()
 	end
 end)
 --TODO: FIX ME
-
--- AAAAAAARGGHHHHHH
-if CLIENT then
-	function PHX:AAAAAAARGGHHHHHH()
-		print("oh no, it\'s the AAAAAAARGGHHHHHH AAAHHHHHHHHHHHHHHHH!")
-		surface.PlaySound(PHX.TAUNTS[PROP_TAUNTS]["DX: AAAAAAARGGHHHHHH"])
-	end
-	concommand.Add("aaaaaaargghhhhhh", function() 
-		PHX:AAAAAAARGGHHHHHH()
-	end, nil, "The classic AAAAAAARGGHHHHHH from Deus Ex.", 0x10)
-end

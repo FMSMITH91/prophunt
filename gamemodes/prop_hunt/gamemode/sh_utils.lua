@@ -73,7 +73,11 @@ if (!ulx or ulx == nil) then
 end
 -- Force End Round, sadmin
 local function ForceEND( calling_ply )
-    if (calling_ply) and IsValid(calling_ply) then
+    -- ULX has already authorised the caller. Run as the player, the command
+    -- re-checked PH:X's own staff groups and refused a ULX group granted
+    -- phforceend, so run it as the server console. That console is only trusted
+    -- on a dedicated server; listen-server players still run it as themselves.
+    if (calling_ply) and IsValid(calling_ply) and !game.IsDedicated() then
         calling_ply:ConCommand("ph_force_end_round")
     else
         print("Forcing End Round...")
@@ -86,6 +90,8 @@ endround:help( "Force End current round" )
 
 -- TPS Adjust
 local function AdjustTPS( calling_ply )
+	-- From the server console ULX passes NULL, and there is no window to open.
+	if !IsValid(calling_ply) then return end
 	calling_ply:SendLua("OpenTPSAdjust()")
     calling_ply:ConCommand("xgui hide")
 end
@@ -95,6 +101,7 @@ adjtps:help( "Adjust 3rd person view, you need to be alive Hunter in order to op
 
 -- Open Menu
 local function OpenMenu( calling_ply )
+	if !IsValid(calling_ply) then return end
 	calling_ply:ConCommand("ph_x_menu")
 end
 local openmenu = ulx.command( PHX.TITLE, "ulx phmenu", OpenMenu, "!phmenu" )
