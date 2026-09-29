@@ -276,7 +276,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "Número de rodadas por mapa"
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"]			= "Habilitar funcionalidade das bolas da sorte para serem geradas em Objetos quebráveis (A chance é de 8%)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"]			= "Habilitar funcionalidade das bolas maldosas para serem geradas quando o caçador morrer (A c hance é de 70%)"
 L["PHXM_ADMIN_WAIT_PLAYERS"]				= "Wait for Players to begin the gameplay"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Jogadores mínimos para o jogo começar (Padrão: 1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Jogadores mínimos para o jogo começar (Padrão: 2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 		= "Habilitar notificação quando o player juntar-se ou deixar a partida?"
 
 L["PHXM_ADMIN_FORCEJOINBALANCE"]			= "Forçar players a balanceamento"

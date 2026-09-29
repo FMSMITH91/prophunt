@@ -294,7 +294,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"] = "(맵 재시작 필요) 맵당 총 게임 라�
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"] = "파괴 가능한 프롭에 행운의 공이 생성되도록 허용 (8% 확률)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"] = "헌터가 죽을 때 악마 공이 생성되도록 허용 (100% 확률)"
 L["PHXM_ADMIN_WAIT_PLAYERS"] = "플레이어가 게임 플레이를 시작할 때까지 기다리기"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"] = "게임 시작 전에 기다려야하는 최소 플레이어 수 (기본값 : 1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"] = "게임 시작 전에 기다려야하는 최소 플레이어 수 (기본값 : 2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] =
     "플레이어 참가 및 퇴장에 대한 채팅 알림을 활성화 하시겠습니까? 사용자 지정 채팅 애드온을 사용하려면 0으로 설정하세요."
 

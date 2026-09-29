@@ -2,7 +2,6 @@
 -- Props will autotaunt at specified intervals
 local isEnabled = false
 local isProp = false
-local delay = PHX:GetCVar( "ph_autotaunt_delay" )
 local started = false
 local timerID = "ph_autotaunt_timer"
 local teamCheckTimer = "ph_autotaunt_teamchecktimer"
@@ -17,10 +16,16 @@ local tweenTime = 0
 
 local state
 
+-- Read live, as sv_tauntmgr does. A copy taken at file load (or only refreshed
+-- when auto-taunt was already on at spawn) counted down from a stale delay.
+local function AutoTauntDelay()
+	return PHX:GetCVar( "ph_autotaunt_delay" )
+end
+
 local function TimeLeft()
 	local ply = LocalPlayer()
 	local lastTauntTime = ply:GetLastTauntTime( "LastTauntTime" ) --ply:GetNWFloat("LastTauntTime")
-	local nextTauntTime = lastTauntTime + delay
+	local nextTauntTime = lastTauntTime + AutoTauntDelay()
 	local currentTime = CurTime()
 	return nextTauntTime - currentTime
 end
@@ -82,7 +87,7 @@ local function AutoTauntPaint()
 	end
 
 	local timeLeft = math.ceil(TimeLeft())
-	local percentage = timeLeft / delay
+	local percentage = timeLeft / math.max( AutoTauntDelay(), 1 )
 
 	local txt = PHX:FTranslate("HUD_AUTOTAUNT_ALT", timeLeft)
 
@@ -95,6 +100,11 @@ local matw          = Material("vgui/phehud/res_wep")
 local matFkTaunt    = Material("vgui/phehud/ftaunt_count")
 local matDecoyHUD   = Material("vgui/phehud/decoy_hud")
 local posw = { x = ScrW() - 480, y = ScrH()-130 }
+-- Same as cl_hud's RecalculateLayout: follow a resolution change, or the panel
+-- background stays at the old position while its circle and text move.
+hook.Add("OnScreenSizeChanged", "PHX.AutoTauntRelayout", function()
+	posw.x, posw.y = ScrW() - 480, ScrH() - 130
+end)
 
 local indic = {
 	auto = Material("vgui/phehud/ataunt_timer"),
@@ -118,7 +128,7 @@ local function AutoTauntPaint_phx()
 
 	if IsValid(LocalPlayer()) && LocalPlayer():Alive() && LocalPlayer():Team()==TEAM_PROPS && started then
 		local timeLeft = math.ceil(TimeLeft())
-		local percentage = timeLeft / delay
+		local percentage = timeLeft / math.max( AutoTauntDelay(), 1 )
 		local taunttext = ""
 		
 		surface.SetDrawColor( 255, 255, 255, 255 )
@@ -182,7 +192,10 @@ local function AutoTauntPaint_phx()
         local decoyKey = "..."
         if LocalPlayer():HasFakePropEntity() then
             colText = Color(240, 200, 30, 255)
-            decoyKey = PHX:FTranslate("HUD_DECOY_ACTIVE", input.GetKeyName( GetConVar("ph_cl_decoy_spawn_key"):GetInt() ))
+            -- A cleared bind is 0, which GetKeyName maps to nil; FTranslate then
+            -- skips formatting and the HUD showed a literal "Press [%s]".
+            local keyName = input.GetKeyName( GetConVar("ph_cl_decoy_spawn_key"):GetInt() ) or PHX:FTranslate( "MISC_NA" )
+            decoyKey = PHX:FTranslate("HUD_DECOY_ACTIVE", keyName)
         else
             colText = Color(200, 200, 200, 128)
             decoyKey = PHX:FTranslate( "MISC_NA" )
@@ -253,7 +266,6 @@ local function Setup()
 	tweenTime = 0
 
 	if isEnabled && isProp then
-		delay = PHX:GetCVar( "ph_autotaunt_delay" )
 		timer.Create(timerID, 1, 0, CheckAutoTaunt)
 	end
 end
@@ -278,7 +290,9 @@ local function AutoTauntSpawn()
 	xEnd = ScrW() - 195
 	y = ScrH() - 65
 
-	if isEnabled && !CheckPlayer() then
+	-- Never gate this on isEnabled: only Setup() sets it, so the gate meant the
+	-- prop HUD never drew at all. Setup() reads ph_autotaunt_enabled itself.
+	if !CheckPlayer() then
 		timer.Create(teamCheckTimer, 0.1, 10, CheckPlayer)
 	end
 end

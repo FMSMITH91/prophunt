@@ -318,7 +318,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "(Require Map Restart) Total game Rounds per 
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"]			= "Allow Lucky Balls Features to be spawned on breakable props (Chance is 8%)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"]			= "Allow Devil Balls Features to be spawned when hunter dies (Always Spawn)"
 L["PHXM_ADMIN_WAIT_PLAYERS"]				= "Wait for Players to begin the gameplay"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Mininum Players to Wait before the game starts (default: 1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Minimum total players (Hunters + Props) before the game starts; each team also needs at least one (default: 2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 		= "Enable chat notification for player join and leave? Set this 0 if you prefer to use with your own Custom Chat addon."
 
 L["PHXM_ADMIN_FORCEJOINBALANCE"]			= "Force players to even out teams upon joining (Disable This if Team Rotation is ON)"

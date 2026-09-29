@@ -34,8 +34,6 @@ include("cl_tauntwindow.lua")
 include("cl_autotaunt.lua")
 include("cl_credits.lua") -- Credits and Contributors message
 
-overlaydraw = 0
-
 -- /!\ Convars are now moved on sh_convars.lua.
 
 -- Local Functions & Variables collection
@@ -167,7 +165,9 @@ local function DrawLine( pl, spriteMat, forTeam, dist, sizex, sizey, convarToChe
         if tr.Hit then
             if tr.HitNormal.z > 0.5 then
                 colour = color_white
-                decoyCanBePlaced = PHX:FTranslate( "DECOY_INDICATOR_OK", input.GetKeyName(GetConVar("ph_cl_decoy_spawn_key"):GetInt()) )
+                -- A cleared bind (0) has no key name, which left a literal %s.
+                local keyName = input.GetKeyName(GetConVar("ph_cl_decoy_spawn_key"):GetInt()) or PHX:FTranslate( "MISC_NA" )
+                decoyCanBePlaced = PHX:FTranslate( "DECOY_INDICATOR_OK", keyName )
             else
                 decoyCanBePlaced = PHX:FTranslate( "DECOY_INDICATOR_INVALID" )
                 colour = DecoyColor.invalid
@@ -200,11 +200,17 @@ local function getIndicColor( trace, fallback, colorTrue, colorFalse )
 end
 
 -- ShowHelp is now moved to prop_hunt gamemodedir.
+local HelpPanel
+
 function GM:ShowHelp()
 	
 	if GAMEMODE.VGUISplash and GAMEMODE.VGUISplash ~= nil and istable(GAMEMODE.VGUISplash) then
 	
-		local Help = vgui.CreateFromTable( GAMEMODE.VGUISplash )
+		-- As ShowTeam does: two quick F1s used to stack two full-screen splashes.
+		if IsValid( HelpPanel ) then HelpPanel:MakePopup() return end
+
+		HelpPanel = vgui.CreateFromTable( GAMEMODE.VGUISplash )
+		local Help = HelpPanel
 		Help:SetHeaderText( GAMEMODE.Name or "Prop Hunt: X2Z" )
 		Help:SetForHelp( "HELP_F1", GAMEMODE.PHXContributors )
 		
@@ -280,11 +286,10 @@ function GM:ShowTeam()
 					--[[ if ID ~= TEAM_SPECTATOR then
 						self:SetDisabled( GAMEMODE:TeamHasEnoughPlayers( ID ) ) 
 					end ]]
-					self:SetDisabled(GAMEMODE:CustomTeamHasEnoughPlayers(ID, LocalPlayer()))
-				end
-				
-				if (  IsValid( LocalPlayer() ) && LocalPlayer():Team() == ID ) then
-					btn:SetDisabled( true )
+					-- Your own team stays disabled here: a one-off SetDisabled(true)
+					-- after building was overwritten by this on the next frame.
+					local lp = LocalPlayer()
+					self:SetDisabled( IsValid( lp ) && ( lp:Team() == ID || GAMEMODE:CustomTeamHasEnoughPlayers( ID, lp ) ) )
 				end
 				
 			end
@@ -461,13 +466,7 @@ local ply = LocalPlayer()
 		
 		if blindlock_time_left < 1 && blindlock_time_left > -6 then
 			blindlock_time_left_msg = PHX:FTranslate("HUD_UNBLINDED")
-			overlaydraw = 0
 		elseif blindlock_time_left > 0 then
-			if ply:Team() == TEAM_HUNTERS then
-				if ply:Alive() then
-					overlaydraw = 1
-				end
-			end
 			blindlock_time_left_msg = PHX:FTranslate("HUD_BLINDED", PHX:TranslateName(TEAM_HUNTERS), string.ToMinutesSeconds(blindlock_time_left))
 		else
 			blindlock_time_left_msg = nil
@@ -572,7 +571,8 @@ local ply = LocalPlayer()
 end
 hook.Add("HUDPaint", "PH_HUDPaint", HUDPaint)
 
-function DrawMaterial()
+-- Local: a global this generic could clash with an addon's.
+local function DrawMaterial()
 	if blind then
 		draw.RoundedBox( 0, 0, 0, ScrW(), ScrH(), Color( 50, 50, 50, 255 ) )
 	end
@@ -818,7 +818,8 @@ function PHX:ShowTutorPopup()
 			incH=incH+32
 			
 			for cv,text in pairs(DefaultKeysTut[LocalPlayer():Team()].ConVars) do
-				local var = input.GetKeyName( GetConVar(cv):GetInt() ):upper()
+				-- A key cleared in the binder is 0, which has no name.
+				local var = ( input.GetKeyName( GetConVar(cv):GetInt() ) or "?" ):upper()
 				local item = createItems(grW,grH,var,text)
 				incH=incH+32
 				gr:AddItem( item )
@@ -901,7 +902,9 @@ end)
 
 net.Receive("PlayFreezeCamSound", function()
 	if PHX:GetCVar( "ph_fc_use_single_sound" ) then
-		surface.PlaySound( PHX.LegalSoundPath )
+		-- Read the replicated value now. PHX.LegalSoundPath is set at load and by a
+		-- change callback, which never fires client-side for a replicated cvar.
+		surface.PlaySound( string.Replace( PHX:GetCVar( "ph_fc_cue_path" ), "\\", "/" ) )
 	else
 		surface.PlaySound( PHX.FreezeCamSounds[math.random(1, #PHX.FreezeCamSounds)] )
 	end
@@ -948,6 +951,9 @@ net.Receive( "PHX.DeathNoticeDecoy", function()
     local attacker = net.ReadEntity()
     local inflictor = net.ReadEntity()
     
+    -- NULL for a client that has not received this player yet (still joining).
+    if !IsValid( attacker ) || !attacker:IsPlayer() then return end
+
     PHX:DrawDecoyDeathNotice( attacker, inflictor )
 end )
 
@@ -1063,10 +1069,13 @@ function PHX:showLangPreview()
 	lgWind.scroll:DockMargin(4,4,4,4)
 	
 	local langList = PHX.LANGUAGES
+	local en = langList["en_us"] or {}
 	for code, data in pairs(langList) do
-		local Name = data.Name
-		local NameEnglish = data.NameEnglish
-		local Author = data.Author
+		-- External packs only have to provide `code`; a missing field used to
+		-- error here and leave the window half-built.
+		local Name = tostring( data.Name or code )
+		local NameEnglish = tostring( data.NameEnglish or code )
+		local Author = tostring( data.Author or "?" )
 		local URLs = data.AuthorURL
 		
 		local dPanel = lgWind.scroll:Add("DPanel")
@@ -1087,7 +1096,7 @@ function PHX:showLangPreview()
 		PreviewText:Dock(TOP)
 		PreviewText:DockMargin( 6, 0, 6, 5 )
 		PreviewText:SetSize(0,25)
-		PreviewText:SetText( string.format("Example: %q, %q", langList[code]["MISC_GAMEEND"], langList[code]["HUD_HP"] ) )
+		PreviewText:SetText( string.format("Example: %q, %q", tostring( data["MISC_GAMEEND"] or en["MISC_GAMEEND"] or "" ), tostring( data["HUD_HP"] or en["HUD_HP"] or "" ) ) )
 		PreviewText:SetTextColor(Color(150,210,235))
 		PreviewText:SetFont("PHX.TopBarFont")
 		

@@ -290,7 +290,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"]				= "Ilość rund na mapę"
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"]			= "Zezwalaj na towrzenie się Kulek Szczęścia po zniszczeniu przedmiotu (Szansa na pojawienie się: 8%)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"]				= "Zezwalaj na tworzenie się Diabelskich Kulek po śmierci Łowcy (Szansa na pojawienie się: 70%)"
 L["PHXM_ADMIN_WAIT_PLAYERS"]					= "Czekaj na graczy zanim zacznie się rozgrywka"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Minimalna ilość graczy, aby czekać za rozpoczęciem rozgrywki (domyślnie: 1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Minimalna ilość graczy, aby czekać za rozpoczęciem rozgrywki (domyślnie: 2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 	= "Włączyć informacje o dołączaniu lub odłączaniu się graczy? Ustaw na 0 jeżeli chcesz użyć własnej modyfikacji czatu."
 
 L["PHXM_ADMIN_FORCEJOINBALANCE"]			= "Wymuś wyrównanie drużyn podczas dołączania graczy."

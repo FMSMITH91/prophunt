@@ -248,7 +248,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "(Haritayı Yeniden Başlatma Gerektirir) Har
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"]			= "Şanslı Topların kırılabilir nesnelerde çıkmasına izin ver (Çıkma şansı %8)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"]			= "Şeytan Toplarının avcı öldüğünde çıkmasına izin ver (Her zaman çıkar)"
 L["PHXM_ADMIN_WAIT_PLAYERS"]				= "Oyuna başlamak için oyuncuları bekle"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Oyunun başlaması için gereken en az oyuncu sayısı (varsayılan: 1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Oyunun başlaması için gereken en az oyuncu sayısı (varsayılan: 2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 		= "Oyuncu ayrılıp katıldığında sohbet bildirimini etkinleştir. (Kendi özel sohbet eklentinizi kullanmak istiyorsanız bu değeri '0' yapın."
 
 L["PHXM_ADMIN_FORCEJOINBALANCE"]			= "Oyuncular katıldıklarında takımları eşitlemesini sağla. (Takım Değişmesi açıksa bu ayarı devre dışı bırakın)"

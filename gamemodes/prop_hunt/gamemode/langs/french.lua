@@ -283,7 +283,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "(Redémarrage de la Map requis) Nombres de m
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"]			= "Faire apparaitre les Lucky Balls lorsqu'un Prop est cassé (chance de 8%)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"]			= "Faire apparaitre les Devil Balls quand un Hunter est mort (Toujours au spawn)"
 L["PHXM_ADMIN_WAIT_PLAYERS"]				= "Attendre les joueurs pour que le jeu commence"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Nombre de joueur minimum pour commencer la partie (par défaut: 1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Nombre de joueur minimum pour commencer la partie (par défaut: 2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 		= "Activer la notification des joueurs qui se connectent? Mettez 0 si vous préférez un autre Addon personnalisé ."
 
 L["PHXM_ADMIN_FORCEJOINBALANCE"]			= "Forcer les joueurs a prendre une équipe pour équilibrer la partie"

@@ -287,7 +287,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "每張地圖的總遊戲回合數"
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"]			= "允許在易碎的物品上產生幸運球 (機率為8%)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"]			= "允許獵人死亡時產生惡魔球 (機率為70%)"
 L["PHXM_ADMIN_WAIT_PLAYERS"]				= "等待玩家開始遊戲"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "遊戲開始前等待的最少玩家數(預設值:1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "遊戲開始前等待的最少玩家數(預設值:2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 		= "要開啟玩家加入或離開的聊天通知嗎? 如果你希望使用自己的自訂聊天外掛，請設定為0."
 
 L["PHXM_ADMIN_FORCEJOINBALANCE"]			= "強迫玩家加入後平衡隊伍"

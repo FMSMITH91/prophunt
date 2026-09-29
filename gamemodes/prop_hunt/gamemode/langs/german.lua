@@ -278,7 +278,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "Rounden gespielt per Karte"
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"]			= "Erlaube Das 'lucky balls' auf Zerbrechbaren Requisiten Spawnen können (Chance ist 8%)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"]			= "Erlabue das 'Devil Balls' Gespawnt werden können wenn ein Jäger stirbt (Chance is 70%)"
 L["PHXM_ADMIN_WAIT_PLAYERS"]				= "Warte auf Spieler um das Spiel zu beginnen"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Minimunvon Spielern befor das spiel startet (Standard: 1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Minimunvon Spielern befor das spiel startet (Standard: 2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 		= "Aktivire Chat notifkationen für Spieler die Das Spiel Verlassen Und beitreten? Setze dies zu 0 Wenn du lieber dein eigenes Chat addon haben willst."
 
 L["PHXM_ADMIN_FORCEJOINBALANCE"]			= "Zwingt Spieler Die Teams Auszugleichen Wenn sie dem Server beitreten"

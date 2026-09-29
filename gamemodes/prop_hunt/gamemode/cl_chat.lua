@@ -34,6 +34,10 @@ end
 
 local font = "PHX_NicePrintCenter"
 local sx,sy = ScrW()*0.5,ScrH()*0.2
+-- Follow a resolution change, as cl_hud does; these were fixed at load time.
+hook.Add("OnScreenSizeChanged", "PHX.CenterPrintRelayout", function()
+	sx, sy = ScrW()*0.5, ScrH()*0.2
+end)
 hook.Add("HUDPaint", "PHX.DrawCenteredText", function()
 	if printCenter:notify_wait() then
 		surface.SetFont(font)
@@ -48,8 +52,12 @@ function PHX:CenterPrint( msg, color, showInput, inputNum )
 	
 	--if !printCenter:notify_wait() then // what if ?
 		if (showInput and showInput ~= nil) and (inputNum and inputNum ~= nil) then
+			-- Translate before formatting: msg is usually a key, which has no %s.
+			-- An unbound key (0, PrintCenter's default) has no name.
+			local keyName = input.GetKeyName(inputNum)
+			keyName = keyName and keyName:upper() or "?"
 			printCenter:SetColor(color)
-			printCenter:SetText( string.format(msg,  input.GetKeyName(inputNum):upper()) )
+			printCenter:SetText( string.format(PHX:FTranslate(msg), keyName) )
 		else
 			printCenter:SetColor(color)
 			printCenter:SetText( msg )

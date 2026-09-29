@@ -279,7 +279,7 @@ L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "Totaal aantal rondes per game"
 L["PHXM_ADMIN_ENABLE_LUCKYBALL"]			= "Sta Lucky Balls functie toe, om gespawned te worden bij breekbare props (Kans is 8%)"
 L["PHXM_ADMIN_ENABLE_CRYSTAL"]			= "Sta Devil Balls functie toe, bij het doodgaan van een huntZoekerr (Kans is 70%)"
 L["PHXM_ADMIN_WAIT_PLAYERS"]				= "Wachten op spelers voor het starten van de gameplay"
-L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Mininum Spelers bij het wachten voordat de game begint (standaard: 1)"
+L["PHXM_ADMIN_WAIT_MIN_PLAYERS"]			= "Mininum Spelers bij het wachten voordat de game begint (standaard: 2)"
 L["PHXM_ENABLE_PLAYER_JOIN_LEAVE"] 		= "Schakel chat notificaties voor spelers binnekomst en verlaten in? Zet dit naar 0 als je voorkeur hebt naar je eigen custom chat plugin."
 
 L["PHXM_ADMIN_FORCEJOINBALANCE"]			= "Forceer spelers naar het joinen van teams om het eerlijk te maken"

@@ -86,6 +86,11 @@ local function RecalculateLayout()
 		{ x = xAdd,			y = yArmorAdd + 15 },
 		{ x = xAdd,			y = yArmorAdd + 20 }
 	}
+
+	-- The avatar is only positioned when it is created, i.e. on spawn.
+	if IsValid(PHX.HUD.ava) then
+		PHX.HUD.ava:SetPos(35, pos.y+85)
+	end
 end
 
 RecalculateLayout()
@@ -275,11 +280,13 @@ hook.Add("HUDPaint", "PHX.MainHUD", function()
 			
 			if maxclip < 0 then maxclip = 0 end
 			
-			if (clip < 0 || maxclip < 0) then
+			-- Both were clamped to 0 above, so testing `< 0` never fired and a
+			-- clipless weapon (the crowbar) drew with 0/0 = NaN.
+			if maxclip <= 0 then
 				percent = 0
 			else
 				--percent = math.Round(clip / maxclip * 260)
-				percent = clip / maxclip
+				percent = math.Clamp(clip / maxclip, 0, 1)
 			end
 			
 			surface.SetDrawColor(150,90,0,180)
