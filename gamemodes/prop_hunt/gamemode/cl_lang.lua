@@ -2,7 +2,6 @@
 function PHX:AddLanguage( tbl )
 	if (tbl and type(tbl) == "table" and tbl ~= nil) then
 		local code = tbl.code
-		local name = tbl.Name
 		
 		-- table.IsEmpty(nil) errors, and the old condition reached it for every
 		-- genuinely new language, which is the case this branch exists to handle.
@@ -11,6 +10,10 @@ function PHX:AddLanguage( tbl )
 			return
 		end
 		
+		-- Concatenating a nil Name errored inside the Initialize hook and skipped
+		-- every plugin phrase insertion after it.
+		local name = tostring(tbl.Name or code)
+
 		if PHX.LANGUAGES[code] then
 			PHX:VerboseMsg("[LANG] It appears that Language " .. name .. " ("..code..") is already exist. Ignoring...")
 		else
@@ -74,12 +77,14 @@ hook.Add("Initialize", "PHX.AddExternalLanguage", addExtLang)
 hook.Add("OnReloaded", "PHX.ReLoadExternalLang", addExtLang)
 
 -- Normal Translation. 
--- This will output error and does not revert the original text from textToFind.
+-- Falls back to English like FTranslate, but outputs error text instead of
+-- reverting to textToFind when English does not have it either.
 function PHX:Translate( textToFind, ... )
 	if !textToFind then textToFind = "ERROR" end
 
 	local args = {...}
 	local lg = "en_us"
+	local fallback = self.LANGUAGES["en_us"] or {}
 	
 	-- if this was forced by server, we'll use that instead.
 	if PHX:GetCVar( "ph_use_lang" ) then
@@ -88,23 +93,25 @@ function PHX:Translate( textToFind, ... )
 		lg = PHX:GetCLCVar( "ph_cl_language" )
 	end
 	
-	local code = self.LANGUAGES[lg]
-	if !code or code == nil then return "Cannot translate [" .. textToFind .. "], Language code " .. lg .. " not found" end
+	-- An unloaded language code, or a key the language lacks (LPS ships no
+	-- Turkish file), used to show the error text instead of English.
+	local code = self.LANGUAGES[lg] or fallback
+	local text = code[textToFind] or fallback[textToFind]
 
 	if args ~= nil and (not table.IsEmpty(args)) then
-		if !code[textToFind] then
+		if !text then
 			return "Error: Cannot translate, " .. textToFind .. " not found"
 		else
-			local NiceFormat = string.format(code[textToFind], ...)
+			local NiceFormat = string.format(text, ...)
 			return NiceFormat
 		end
 	end
 	
-	if !code[textToFind] or code[textToFind] == nil then
+	if !text then
 		return "Error: Translation ".. textToFind .." not found"
 	end
 	
-	return code[textToFind]
+	return text
 end
 
 -- Fallback Translate
@@ -202,10 +209,12 @@ function PHX:GetRandomTranslated( tblKey )
 		lg = PHX:GetCVar( "ph_force_lang" )
 	end
 	
-	local code = self.LANGUAGES[lg]
-	if !code or code == nil then return "Cannot find random table [" .. tblKey .. "], Language " .. lg .. " not found." end
+	-- Fall back to English for an unloaded language or a missing table, as
+	-- Translate does.
+	local fallback = self.LANGUAGES["en_us"] or {}
+	local code = self.LANGUAGES[lg] or fallback
 	
-	local tbl = code[tblKey]
+	local tbl = code[tblKey] or fallback[tblKey]
 	if !tbl then return "cannot find "..tblKey.." table." end
 	
 	if type(tbl) == "table" then
