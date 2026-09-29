@@ -38,7 +38,8 @@ for _,convars in ipairs(convarlist) do
 	end
 end
 
--- Todo: Purpose?
+-- Override hook kept from the upstream addon: replace it to return true for
+-- players whose vote should count twice. Nobody gets that by default.
 function MapVote.HasExtraVotePower(ply)
 	return false
 end
@@ -52,17 +53,23 @@ MapVote.UPDATE_VOTE = 1
 MapVote.UPDATE_WIN = 3
 
 if SERVER then
+	-- The server console and game.ConsoleCommand run these with ply = NULL, so
+	-- answer in the console rather than calling player methods on it.
+	local function Reply( ply, msg )
+		if ( IsValid( ply ) ) then ply:ChatPrint( msg ) else print( msg ) end
+	end
+
 	concommand.Add("mv_start", function(ply, _, args)
 		if ( util.IsStaff( ply ) ) then
 			
 			if PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) then
-				ply:ChatPrint("Custom External MapVote is enabled. You need to disable them in order to use PH:X's MapVote system.")
+				Reply(ply, "Custom External MapVote is enabled. You need to disable them in order to use PH:X's MapVote system.")
 				return
 			end
 			
 			local time = tonumber(args[1]) or MapVote.PHXConfig.TimeLimit or 28
 			MapVote.PHXStart(time, nil, nil, nil)
-		else
+		elseif ( IsValid( ply ) ) then
 			ply:PHXChatInfo("ERROR", "MISC_ACCESSDENIED")
 		end
 	end, nil, "Start MapVote (without ULX)")
@@ -70,13 +77,15 @@ if SERVER then
 	concommand.Add("mv_stop", function(ply)
 		if ( util.IsStaff( ply ) ) then
 			
-			if PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) then
-				ply:ChatPrint("Couldn't stop PH:X MapVote because Custom External MapVote is currently enabled!")
+			-- A running vote is PH:X's own even in custom mode: that falls back
+			-- to it when the custom settings point back at PH:X.
+			if !MapVote.Allow and ( PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) ) then
+				Reply(ply, "Couldn't stop PH:X MapVote because Custom External MapVote is currently enabled!")
 				return
 			end
 		
 			MapVote.PHXCancel()
-		else
+		elseif ( IsValid( ply ) ) then
 			ply:PHXChatInfo("ERROR", "MISC_ACCESSDENIED")
 		end
 	end, nil, "Stop MapVote (without ULX)")
@@ -89,17 +98,17 @@ local function PHX_MapVote( calling_ply, votetime, should_cancel )
 
 	if PHX and PHX ~= nil and (IS_PHX) then
 	  if not should_cancel then
+		-- PHX.StartMapVote does the dispatch, including the guard against the
+		-- default values, which point straight back at PH:X.
 		if PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) then
 			ulx.fancyLogAdmin( calling_ply, "(Command) #A called a Vote Map!" )
-			local c = PHX:GetCVar( "ph_custom_mv_concmd" )
-			game.ConsoleCommand( c .. "\n" )
+			PHX.StartMapVote()
 			return
 		end
 
 		if PHX:GetCVar( "ph_use_custom_mapvote" ) then
 			ulx.fancyLogAdmin( calling_ply, "(Addon) #A called a Vote Map!" )
-			local f = PHX:GetCVar( "ph_custom_mv_func" )
-			RunString(f, "MapVote_CVAR")
+			PHX.StartMapVote()
 			return
 		end
 	  end

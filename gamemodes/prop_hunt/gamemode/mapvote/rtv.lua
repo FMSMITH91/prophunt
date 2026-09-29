@@ -1,6 +1,10 @@
 local RTV = {}
 local MapVote = PHX.MV
 
+-- sv_mapvote.lua loads first and cannot see this file's locals; it resets RTV
+-- through here when a vote starts or is cancelled.
+MapVote.RTV = RTV
+
 RTV.ChatCommands = {
 	"!rtv",
 	"/rtv",
@@ -38,19 +42,38 @@ function RTV.ChatPrint( mType, ply, bBroadcast, msg, ... )
 	
 end
 
+-- Humans only: bots never type rtv, so counting them could put the threshold
+-- out of reach.
 function RTV.ShouldChange()
-	return RTV.TotalVotes >= math.Round(player.GetCount()*0.66)
+	return RTV.TotalVotes >= math.Round(#player.GetHumans()*0.66)
 end
 
 function RTV.RemoveVote()
 	RTV.TotalVotes = math.Clamp( RTV.TotalVotes - 1, 0, math.huge )
 end
 
+-- Clears the tally and any countdown. Left at the threshold, every later
+-- disconnect or late "rtv" started the vote again, reshuffling the list and
+-- wiping everyone's picks.
+function RTV.Reset()
+	timer.Remove( "PHX.RTV.Start" )
+	RTV.Pending = false
+	RTV.TotalVotes = 0
+
+	for _,v in pairs(player.GetAll()) do
+		v.RTVoted = nil
+	end
+end
+
 function RTV.Start()
+	if RTV.Pending or MapVote.Allow then return end
+
+	RTV.Pending = true
 	RTV.ChatPrint( "NOTICE", nil, true, "PHXM_MV_VOTEROCKED_IMMINENT" )
-	timer.Simple(4, function()
+	timer.Create( "PHX.RTV.Start", 4, 1, function()
+		RTV.Reset()
 		PHX.StartMapVote()
-	end)
+	end )
 end
 
 
@@ -61,7 +84,7 @@ function RTV.AddVote( ply )
 		ply.RTVoted = true
 		MsgN( ply:Nick().." has voted to Rock the Vote." )
 		
-		RTV.ChatPrint( "NOTICE", nil, true, "PHXM_MV_VOTEROCKED_PLY_TOTAL", ply:Nick(), RTV.TotalVotes, math.Round(player.GetCount()*0.66) )
+		RTV.ChatPrint( "NOTICE", nil, true, "PHXM_MV_VOTEROCKED_PLY_TOTAL", ply:Nick(), RTV.TotalVotes, math.Round(#player.GetHumans()*0.66) )
 		
 		if RTV.ShouldChange() then
 			RTV.Start()
@@ -70,19 +93,31 @@ function RTV.AddVote( ply )
 
 end
 
-hook.Add( "PlayerDisconnected", "Remove RTV", function( ply )
+-- PH:X's own hook names. They used to be the upstream MapVote addon's, which
+-- replaced its RTV outright; retire the addon's explicitly instead, so a server
+-- running both still keeps a single RTV tally.
+hook.Remove( "PlayerDisconnected", "Remove RTV" )
+hook.Remove( "PlayerSay", "RTV Chat Commands" )
+
+hook.Add( "PlayerDisconnected", "PHX.RTV.Remove", function( ply )
 
 	if ply.RTVoted then
 		RTV.RemoveVote()
 	end
 
 	timer.Simple( 0.1, function()
-		if (player.GetCount() < 1 && !MapVote.PHXConfig.ChangeMapNoPlayer) then 
+		-- Someone leaving a vote that is running, about to run, or already
+		-- decided must not start it over.
+		if MapVote.Allow or RTV.Pending or MapVote.ChangingMap then return end
+
+		if (#player.GetHumans() < 1 && !MapVote.PHXConfig.ChangeMapNoPlayer) then 
 			print("MapVote: There is no player to force change map...")
 		else
 			if RTV.ShouldChange() then
-				local time = MapVote.PHXConfig.TimeLimit or 28
-				print("MapVote: Server emptied, attempting to force change map and voting random map in "..time.." seconds!")
+				if #player.GetHumans() < 1 then
+					local time = MapVote.PHXConfig.TimeLimit or 28
+					print("MapVote: Server emptied, attempting to force change map and voting random map in "..time.." seconds!")
+				end
 				RTV.Start()
 			end
 		end
@@ -91,7 +126,7 @@ hook.Add( "PlayerDisconnected", "Remove RTV", function( ply )
 end )
 
 function RTV.CanVote( ply )
-	local plyCount = player.GetCount()
+	local plyCount = #player.GetHumans()
 	
 	if !IsValid( ply ) then return false, "PHXM_MV_MUST_WAIT" end	-- console/server has no vote.
 	
@@ -100,9 +135,14 @@ function RTV.CanVote( ply )
 	end
 
 	-- MapVote.Allow is the real "a vote is running" flag; the old globals here
-	-- ("In_Voting" / RTV.ChangingMaps) were never set by anything.
-	if MapVote.Allow then
+	-- ("In_Voting" / RTV.ChangingMaps) were never set by anything. Pending
+	-- covers RTV's own countdown, when Allow is still false.
+	if MapVote.Allow or RTV.Pending then
 		return false, "PHXM_MV_VOTEINPROG"
+	end
+
+	if MapVote.ChangingMap then
+		return false, "PHXM_MV_ALR_IN_VOTE"
 	end
 
 	if ply.RTVoted then
@@ -131,7 +171,7 @@ end
 
 concommand.Add( "rtv_start", RTV.StartVote )
 
-hook.Add( "PlayerSay", "RTV Chat Commands", function( ply, text )
+hook.Add( "PlayerSay", "PHX.RTV.Chat", function( ply, text )
 
 	if table.HasValue( RTV.ChatCommands, string.lower(text) ) then
 		RTV.StartVote( ply )

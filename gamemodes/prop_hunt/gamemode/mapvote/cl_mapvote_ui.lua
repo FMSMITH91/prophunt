@@ -5,16 +5,14 @@
 	thumbnail, live vote count, a share bar and the avatars of everyone who
 	voted for it.
 
-	Registered as PHXMapVote, deliberately NOT as "VoteScreen". base_phx's
-	vgui/vgui_vote.lua already registers a control by that name - Fretta's
-	gamemode vote, which cl_gmchanger.lua creates - and prop_hunt loads second,
-	so the old map vote silently overwrote it. Two different panels answering to
-	one name meant whichever loaded last won.
+	Registered as PHXMapVote rather than "VoteScreen", the name the old map vote
+	shared with Fretta's gamemode vote panel, so it cannot collide with anything
+	else registered under that generic name.
 
-	The net protocol is untouched, so the server side needs no changes:
-	  RAM_MapVoteStart   amt, map strings, seconds
-	  RAM_MapVoteUpdate  UPDATE_VOTE -> entity + map id, UPDATE_WIN -> map id
-	  RAM_MapVoteCancel
+	The net protocol is the classic screen's, so both share the server side:
+	  PHX.MV.Start   amt, map strings, seconds
+	  PHX.MV.Update  UPDATE_VOTE -> entity + map id, UPDATE_WIN -> map id
+	  PHX.MV.Cancel
 */
 
 local MapVote = PHX.MV
@@ -60,6 +58,15 @@ local function Tr( key, fallback, ... )
 end
 
 local MAX_FACES = 6
+
+// cl_scores.lua leaves the screen clicker on while the vote is up, since the
+// vote's popup drives the cursor. Whatever takes the vote off screen has to
+// release it, unless the scoreboard is open and still wants it.
+function MapVote.ReleaseCursor()
+	if ( !IsValid( g_ScoreBoard ) || !g_ScoreBoard:IsVisible() ) then
+		gui.EnableScreenClicker( false )
+	end
+end
 
 /*
 	Map thumbnails are content, not guaranteed. GMod's own map list looks for
@@ -426,14 +433,40 @@ function PANEL:Init()
 		LocalPlayer():ConCommand( "mv_stop" )
 	end
 
+	// A mid-round vote (RTV, mv_start) otherwise blinds everyone and takes
+	// their mouse for its whole length. ph_mapvote_show brings it back.
+	self.HideBtn = vgui.Create( "DButton", self.Canvas )
+	self.HideBtn:SetText( "" )
+	self.HideBtn:SetTooltip( "ph_mapvote_show" )
+	self.HideBtn.Paint = function( pnl, w, h )
+		if ( pnl:IsHovered() ) then
+			draw.RoundedBox( MVScale( 5 ), 0, 0, w, h, Color( 255, 255, 255, 18 ) )
+		end
+
+		surface.SetDrawColor( COL_TEXT )
+		surface.DrawRect( math.floor( w * 0.3 ), math.floor( h * 0.5 ), math.ceil( w * 0.4 ), MVScale( 2 ) )
+	end
+	self.HideBtn.DoClick = function()
+		self:Minimise()
+	end
+
+end
+
+function PANEL:Minimise()
+
+	// Think sends a debounced vote, and a hidden panel does not think.
+	if ( self.Pending ) then self:SendVote( self.Pending ) end
+
+	self:SetVisible( false )
+	MapVote.ReleaseCursor()
+
 end
 
 /*
-	The server drops votes that arrive inside its cooldown
-	(sv_mapvote.lua, VOTE_COOLDOWN). Sending blindly would let a quick change of
-	mind be silently thrown away, so the pick is shown immediately and the send
-	is debounced on the trailing edge - the last map clicked is always the one
-	that reaches the server.
+	The server records every vote but only broadcasts one per player inside its
+	cooldown (sv_mapvote.lua, VOTE_COOLDOWN), so clicking faster than that gains
+	nothing. The pick is shown immediately and the send is debounced on the
+	trailing edge, which keeps traffic down and still sends the last map clicked.
 */
 function PANEL:CastVote( id )
 
@@ -457,7 +490,7 @@ function PANEL:SendVote( id )
 	self.NextSend = CurTime() + 0.45
 	self.Pending  = nil
 
-	net.Start( "RAM_MapVoteUpdate" )
+	net.Start( "PHX.MV.Update" )
 		net.WriteUInt( MapVote.UPDATE_VOTE, 3 )
 		net.WriteUInt( id, 32 )
 	net.SendToServer()
@@ -622,6 +655,10 @@ function PANEL:PerformLayout( w, h )
 	local staff = LocalPlayer().PHXIsStaff and LocalPlayer():PHXIsStaff()
 	self.CancelBtn:SetVisible( staff and !self.Winner )
 
+	local hb = MVScale( 28 )
+	self.HideBtn:SetSize( hb, hb )
+	self.HideBtn:SetPos( cw - pad - hb, MVScale( 24 ) )
+
 end
 
 function PANEL:Paint( w, h )
@@ -664,8 +701,9 @@ function PANEL:PaintChrome( cw, ch )
 	draw.SimpleText( sub, "PHX.MV.Sub", cx + pad, cy + MVScale( 56 ),
 		self.Winner and COL_WIN or COL_DIM, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
 
+	// Left of the hide button.
 	if ( !self.Winner ) then
-		draw.SimpleText( secs, "PHX.MV.Clock", cx + cw - pad, cy + MVScale( 20 ),
+		draw.SimpleText( secs, "PHX.MV.Clock", cx + cw - pad - MVScale( 38 ), cy + MVScale( 20 ),
 			urgent and COL_URGENT or COL_TEXT, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP )
 	end
 
