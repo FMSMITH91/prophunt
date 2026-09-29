@@ -653,7 +653,7 @@ function PANEL:PerformLayout( w, h )
 	self.CancelBtn:SetPos( cw - pad - MVScale( 150 ), ch - footerH + MVScale( 8 ) )
 
 	local staff = LocalPlayer().PHXIsStaff and LocalPlayer():PHXIsStaff()
-	self.CancelBtn:SetVisible( staff and !self.Winner )
+	self.CancelBtn:SetVisible( staff and MapVote.CanCancel( self.Winner ) )
 
 	local hb = MVScale( 28 )
 	self.HideBtn:SetSize( hb, hb )

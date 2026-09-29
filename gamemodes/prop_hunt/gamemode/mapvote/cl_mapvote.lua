@@ -31,7 +31,9 @@ net.Receive("PHX.MV.Start", function()
     
     MapVote.Panel = vgui.Create( cvarModern:GetBool() and "PHXMapVote" or "PHXMapVoteClassic" )
     MapVote.Panel:SetMaps(MapVote.CurrentMaps)
-    
+    // Keyed on the panel: GMod passes it in and drops the hook once it is gone.
+    hook.Add( "Think", MapVote.Panel, MapVote.RecheckCancel )
+
     // GM:OnEndOfGame force-opens the scoreboard just before the vote starts.
     // Close it now the panel exists, so it cannot sit on top of the vote.
     if ( GAMEMODE && GAMEMODE.ScoreboardHide ) then GAMEMODE:ScoreboardHide() end
@@ -71,6 +73,20 @@ end)
 concommand.Add( "ph_mapvote_show", function()
     if ( IsValid( MapVote.Panel ) ) then MapVote.Panel:SetVisible( true ) end
 end, nil, "Show the map vote screen again after hiding it." )
+
+// Whether the staff Cancel button shows, on either screen. Not once a map has
+// won, and never in the end-of-game vote: that is the only way off the map, and
+// the server refuses to cancel it (MapVote.PHXCancel), which is the real guard.
+function MapVote.CanCancel( winner )
+    return !winner && !GetGlobalBool( "IsEndOfGame", false )
+end
+
+// Both screens lay the button out once, but a vote open when the game ends is
+// kept (PHX.StartMapVote), not started again, so no new layout comes. Run every
+// frame while the screen exists, this drops the button when the game ends.
+function MapVote.RecheckCancel( pnl )
+    if ( !MapVote.CanCancel( pnl.Winner ) ) then pnl.CancelBtn:SetVisible( false ) end
+end
 
 local PANEL = {}
 
@@ -176,7 +192,7 @@ function PANEL:PerformLayout()
 	
 	self.CancelBtn:CenterHorizontal()
 	self.CancelBtn:SetY( self.CancelBtn:GetParent():GetTall() - 200 )
-	if ( LocalPlayer():PHXIsStaff() ) then
+	if ( LocalPlayer():PHXIsStaff() && MapVote.CanCancel() ) then
 		self.CancelBtn:SetVisible( true )
 	else
 		self.CancelBtn:SetVisible( false )

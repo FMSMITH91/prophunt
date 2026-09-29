@@ -46,9 +46,11 @@ end
 print("\n== every notice rtv.lua sends is still translated ==")
 -- PHXM_MV_VOTEROCKED lost its last reader and was removed. check_langs.py only
 -- compares the files with each other, so a key deleted from all 12 passes it.
+-- CHAT_STARTING_MAPVOTE is borrowed from the end of the game.
 local rtvKeys = {}
-for key in extract("gamemodes/prop_hunt/gamemode/mapvote/rtv.lua", "1-999999"):gmatch('"(PHXM_[%w_]+)"') do
-  rtvKeys[key] = true
+local rtvSrc = extract("gamemodes/prop_hunt/gamemode/mapvote/rtv.lua", "1-999999")
+for _, rx in ipairs({ '"(PHXM_[%w_]+)"', '"(CHAT_[%w_]+)"' }) do
+  for key in rtvSrc:gmatch(rx) do rtvKeys[key] = true end
 end
 rtvKeys = table.GetKeys(rtvKeys)
 table.sort(rtvKeys)
@@ -59,6 +61,13 @@ for _, key in ipairs(rtvKeys) do
     if type(PHX.LANGUAGES[code][key]) == "string" then have = have + 1 end
   end
   check(key .. " in every language", have, #codes)
+end
+
+print("\n== the F1 ph_game_time slider says what 0 does, in every language ==")
+-- It reaches 0, which turns the time limit off; the label is also the tooltip.
+for _, code in ipairs(codes) do
+  local s = PHX.LANGUAGES[code].PHXM_ADMIN_GAME_TIME
+  check(code .. " PHXM_ADMIN_GAME_TIME explains 0", type(s) == "string" and s:find("0 =", 1, true) ~= nil, true)
 end
 
 report()

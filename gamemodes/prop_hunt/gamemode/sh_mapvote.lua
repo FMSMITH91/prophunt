@@ -78,13 +78,16 @@ if SERVER then
 		if ( util.IsStaff( ply ) ) then
 			
 			-- A running vote is PH:X's own even in custom mode: that falls back
-			-- to it when the custom settings point back at PH:X.
-			if !MapVote.Allow and ( PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) ) then
+			-- to it when the custom settings point back at PH:X. So is RTV's
+			-- countdown, which starts the custom vote when it runs out; refused
+			-- here, it survived the Stop and started it anyway.
+			local ours = MapVote.Allow or ( MapVote.RTV and MapVote.RTV.Pending )
+			if !ours and ( PHX:GetCVar( "ph_use_custom_mapvote_cmd" ) or PHX:GetCVar( "ph_use_custom_mapvote" ) ) then
 				Reply(ply, "Couldn't stop PH:X MapVote because Custom External MapVote is currently enabled!")
 				return
 			end
 		
-			MapVote.PHXCancel()
+			MapVote.PHXCancel(ply)
 		elseif ( IsValid( ply ) ) then
 			ply:PHXChatInfo("ERROR", "MISC_ACCESSDENIED")
 		end
@@ -96,7 +99,7 @@ local CATEGORY_NAME = PHX.TITLE
 
 local function PHX_MapVote( calling_ply, votetime, should_cancel )
 
-	if PHX and PHX ~= nil and (IS_PHX) then
+	if IS_PHX then
 	  if not should_cancel then
 		-- PHX.StartMapVote does the dispatch, including the guard against the
 		-- default values, which point straight back at PH:X.
@@ -115,12 +118,13 @@ local function PHX_MapVote( calling_ply, votetime, should_cancel )
 	end
 	-- Return to MapVote.
 
-	if MapVote and MapVote ~= nil then
+	if MapVote then
 		if not should_cancel then
 			MapVote.PHXStart(votetime, nil, nil, nil)
 			ulx.fancyLogAdmin( calling_ply, "#A called a votemap!" )
-		else
-			MapVote.PHXCancel()
+		elseif MapVote.PHXCancel(calling_ply) ~= false then
+			-- Not when refused: the end-of-game vote carries on, and this
+			-- would tell everyone the opposite.
 			ulx.fancyLogAdmin( calling_ply, "#A canceled the votemap!" )
 		end
 	else

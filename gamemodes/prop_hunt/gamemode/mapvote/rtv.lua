@@ -65,13 +65,32 @@ function RTV.Reset()
 	end
 end
 
+-- The game is over and its vote starts after GAMEMODE.VotingDelay: RTV treats
+-- that like a vote already on its way. Only until it starts (sv_mapvote.lua
+-- clears it), not for the rest of the map: that left players no way to a vote
+-- after EndOfGame(false), or when a custom vote addon never opened one.
+local function VoteDue()
+	return MapVote.EndOfGameDue
+end
+
 function RTV.Start()
+	-- A tally that crosses the line in the voting delay (a disconnect) is
+	-- spent, not started.
+	if VoteDue() then
+		RTV.Reset()
+		return
+	end
+
 	if RTV.Pending or MapVote.Allow then return end
 
 	RTV.Pending = true
 	RTV.ChatPrint( "NOTICE", nil, true, "PHXM_MV_VOTEROCKED_IMMINENT" )
 	timer.Create( "PHX.RTV.Start", 4, 1, function()
 		RTV.Reset()
+		-- The game ended during the countdown. Its own vote is seconds away
+		-- and is the one that counts; starting here too asked a custom vote
+		-- addon twice.
+		if VoteDue() then return end
 		PHX.StartMapVote()
 	end )
 end
@@ -106,9 +125,9 @@ hook.Add( "PlayerDisconnected", "PHX.RTV.Remove", function( ply )
 	end
 
 	timer.Simple( 0.1, function()
-		-- Someone leaving a vote that is running, about to run, or already
-		-- decided must not start it over.
-		if MapVote.Allow or RTV.Pending or MapVote.ChangingMap then return end
+		-- Someone leaving a vote that is running, about to run (the end-of-game
+		-- one included), or already decided must not start it over.
+		if MapVote.Allow or RTV.Pending or MapVote.ChangingMap or VoteDue() then return end
 
 		if (#player.GetHumans() < 1 && !MapVote.PHXConfig.ChangeMapNoPlayer) then 
 			print("MapVote: There is no player to force change map...")
@@ -143,6 +162,12 @@ function RTV.CanVote( ply )
 
 	if MapVote.ChangingMap then
 		return false, "PHXM_MV_ALR_IN_VOTE"
+	end
+
+	-- The end-of-game vote is on its way: say so, in the words everyone was
+	-- just given when the game ended.
+	if VoteDue() then
+		return false, "CHAT_STARTING_MAPVOTE"
 	end
 
 	if ply.RTVoted then

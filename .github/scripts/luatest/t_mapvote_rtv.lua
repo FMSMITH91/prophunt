@@ -5,10 +5,10 @@ local boot, run, count, players, vote, timerAt =
   F.boot, F.run, F.count, F.players, F.vote, F.timerAt
 
 -- Map vote RTV, cancel and the round controller: rock-the-vote starts one
--- vote, a cancel sticks, ph_enable_mapvote 0 only forces the end-of-game vote,
--- and ChangingMap tells the round controller the truth. Also checks PH:X's own
--- net, hook and timer names. Setup shared with t_mapvote_lifecycle.lua is in
--- mapvote_fixture.lua.
+-- vote, a mid-game cancel sticks, ph_enable_mapvote 0 only forces the
+-- end-of-game vote, and ChangingMap tells the round controller the truth. Also
+-- checks PH:X's own net, hook and timer names. Setup shared with the other map
+-- vote tests is in mapvote_fixture.lua.
 
 -- print, captured around a call so log lines can be asserted on.
 local function capture(fn, ...)
@@ -236,17 +236,19 @@ do
   run(60); run(4)   -- vote timer, then the changelevel it schedules
   check("  ...and no map change", S.changelevel, nil)
 
-  -- The end-of-game fallback is a built-in vote like any other: staff can stop it.
+  -- The end-of-game fallback is the only way off the map, like any end-of-game
+  -- vote, so staff cannot stop it (t_mapvote_endgame.lua covers the rest).
   S.files = {}
   boot{ enable = false, ulxmaps = { "ph_a", "ph_b", "ph_c" } }
   local admin = players(2)[1]; admin._staff = true
   GAMEMODE:EndOfGame(true); run(GAMEMODE.VotingDelay)
   check("vote off, end of game: the fallback vote runs", PHX.MV.Allow, true)
   S.concommands["mv_stop"].fn(admin, "mv_stop", {})
-  check("  ...mv_stop cancels it", PHX.MV.Allow, false)
-  check("  ...and tells clients", count("PHX.MV.Cancel"), 1)
+  check("  ...mv_stop is refused", PHX.MV.Allow, true)
+  check("  ...so clients keep the vote", count("PHX.MV.Cancel"), 0)
+  check("  ...and staff are told why", lastMsg(admin), "PHXM_MV_ENDGAME_NOCANCEL")
   run(60); run(4)   -- vote timer, then the changelevel it schedules
-  check("  ...so it never changes map", S.changelevel, nil)
+  check("  ...and it still changes map", S.changelevel ~= nil, true)
 end
 
 ------------------------------------------------------------------------------

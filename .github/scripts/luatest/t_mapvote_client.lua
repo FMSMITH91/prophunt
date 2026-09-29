@@ -171,4 +171,88 @@ do
   vgui = realVgui
 end
 
+------------------------------------------------------------------------------
+print("\n== the staff Cancel button is gone in the end-of-game vote ==")
+------------------------------------------------------------------------------
+-- The server refuses that cancel; this is the cosmetic half. Both screens run
+-- their real PerformLayout, the modern one with its whole file loaded.
+do
+  local function Stub()
+    return setmetatable(Panel(), { __index = function() return function() end end })
+  end
+  local realVgui, realChat, realLP = vgui, chat, LocalPlayer
+  ScrW, ScrH = function() return 1920 end, function() return 1080 end
+  chat = { GetChatBoxPos = function() return 0, 0 end }
+  surface, Material = { CreateFont = function() end }, function() return {} end
+  local registered = {}
+  vgui = { Create = function() return Stub() end, Register = function(n, t) registered[n] = t end }
+
+  loadblocks(CLV, extract(CLV, [[^function MapVote\.CanCancel]]), "local MapVote = PHX.MV\n")
+  loadblocks(CUI, extract(CUI, "1-999999"))
+  local ClassicLayout = chunkReturningPanel(CLV, { [[^function PANEL:Init]], [[^function PANEL:AddWindowButtons]],
+                                                   [[^function PANEL:PerformLayout]] })
+
+  local function classic()
+    local c = Stub()
+    for k, v in pairs(ClassicLayout) do c[k] = v end
+    c:Init()
+    c.CancelBtn.GetParent = function() return Panel() end
+    -- The Stub would answer this with a function; the classic screen has none.
+    c.Winner = false
+    return c
+  end
+  local function modern(winner)
+    -- Not a Stub: that answers every missing field with a function, so an unset
+    -- self.Winner would read as a winner, where a real panel reads nil.
+    local m = Panel()
+    m.SetSize = function() end
+    for k, v in pairs(registered.PHXMapVote) do m[k] = v end
+    m.Cards, m.Winner = {}, winner
+    m.Canvas, m.Scroll, m.CancelBtn, m.HideBtn = Stub(), Stub(), Stub(), Stub()
+    return m
+  end
+  -- Lays the screen out as `ply` at this point of the game; nil if it errors.
+  local function shown(pnl, ply, endOfGame)
+    LocalPlayer = function() return ply end
+    SetGlobalBool("IsEndOfGame", endOfGame or nil)
+    local ok = attempt(pnl.PerformLayout, pnl, 1920, 1080)
+    if ok ~= "ok" then print("  layout error: " .. ok) return nil end
+    return pnl.CancelBtn:IsVisible()
+  end
+
+  local staff, pleb = S.Player{ staff = true }, S.Player{}
+  check("classic, mid-game vote: staff see Cancel", shown(classic(), staff), true)
+  check("classic, end-of-game vote: staff do not", shown(classic(), staff, true), false)
+  check("classic, mid-game vote: players never did", shown(classic(), pleb), false)
+  check("modern, mid-game vote: staff see Cancel", shown(modern(), staff), true)
+  check("modern, end-of-game vote: staff do not", shown(modern(), staff, true), false)
+  check("modern, once a map has won: gone, as before", shown(modern(2), staff), false)
+  check("modern, mid-game vote: players never did", shown(modern(), pleb), false)
+
+  -- A mid-game vote kept when the game ends gets no new layout. Opening a
+  -- screen hooks Think on it, and GMod calls that with the panel.
+  loadblocks(CLV, extractAll(CLV, { [[^function MapVote\.RecheckCancel]], [[^net\.Receive\("PHX\.MV\.Start"]] }),
+    "local MapVote = PHX.MV\nlocal cvarModern = { GetBool = function() return true end }\n")
+  for _, kind in ipairs{ "classic", "modern" } do
+    local pnl = kind == "classic" and classic() or modern()
+    pnl.SetMaps = function() end
+    vgui.Create = function() return pnl end
+    S.net.readq = { 1, "ph_b", 30 }
+    S.receivers["PHX.MV.Start"]()
+    local think = S.hooks.Think and S.hooks.Think[pnl]
+    check(kind .. ": opening the vote hooks Think on its screen", type(think), "function")
+    if think then
+      shown(pnl, staff)
+      think(pnl)
+      check("  ...mid-game, staff keep Cancel", pnl.CancelBtn:IsVisible(), true)
+      SetGlobalBool("IsEndOfGame", true)
+      think(pnl)
+      check("  ...the game ends under it: Cancel goes", pnl.CancelBtn:IsVisible(), false)
+    end
+  end
+
+  SetGlobalBool("IsEndOfGame", nil)
+  vgui, chat, LocalPlayer = realVgui, realChat, realLP
+end
+
 report()

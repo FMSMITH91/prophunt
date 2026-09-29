@@ -153,7 +153,7 @@ end
 ---------------------------------------------------------------- cl_menu
 print("\n== cl_menu: F1 menu (ph_x_menu) ==")
 -- Record the menu types instead of building them; they are covered above.
-local made = {}
+local made, realCLUI = {}, PHX.CLUI
 PHX.CLUI = setmetatable({}, { __index = function(_, typ)
   return function(c, d, _, l) made[#made + 1] = { typ = typ, c = c, d = d, l = l }; return D.create("DPanel") end
 end })
@@ -275,5 +275,58 @@ check("mv_mapbeforerevote slider spans the ConVar",
 local gameTime = madeWhere(function(m) return m.typ == "slider" and m.c == "ph_game_time" end)
 check("ph_game_time slider reaches 0 (no time limit)", gameTime and gameTime.d.min, 0)
 check("ph_game_time slider still goes up to 300", gameTime and gameTime.d.max, 300)
+
+-- ...and the ConVar agrees: the server's own floor is the slider's.
+local cvarLine = extract(GM .. "sh_convar.lua", [=[^CVAR\["ph_game_time"\]]=])
+local cvarMin = cvarLine:match("{%s*min%s*=%s*(%-?%d+)")
+check("ph_game_time ConVar min is the slider's", tonumber(cvarMin), gameTime and gameTime.d.min)
+
+-- The slider says what 0 does, on its label and its tooltip, both of which
+-- cl_menutypes builds from this key.
+local english = loadblocks("english.lua", extract(GM .. "langs/english.lua", "1-999999") .. "\nreturn L",
+  "local PHX = setmetatable({ LANGUAGES = {} }, { __index = PHX })")
+check("ph_game_time slider label is PHXM_ADMIN_GAME_TIME", gameTime and gameTime.l, "PHXM_ADMIN_GAME_TIME")
+check("  ...which says 0 is no limit", tostring(english.PHXM_ADMIN_GAME_TIME):find("0 = no limit", 1, true) ~= nil, true)
+-- Built for real, in English.
+local qtrans = PHX.QTrans
+function PHX:QTrans(k) return english[k] or k end
+D.all = {}
+realCLUI["slider"](gameTime.c, gameTime.d, grid, gameTime.l)
+PHX.QTrans = qtrans
+local gtSlider = D.find(D.class("DNumSlider"))
+local gtLabel = D.find(function(p) return p._class == "DLabel" and p._text == english.PHXM_ADMIN_GAME_TIME end)
+check("  ...on the slider's tooltip", gtSlider and gtSlider._tooltip, english.PHXM_ADMIN_GAME_TIME)
+check("  ...and its label", gtLabel ~= nil, true)
+check("  ...which can be dragged to 0", gtSlider and gtSlider._min, 0)
+
+-- The Map Vote tab's buttons. Once the game has ended the server refuses to
+-- cancel its vote, so the Stop button goes; mid-game both stay.
+local function mvButtons()
+  local b = madeWhere(function(m) return m.typ == "btn" and m.d and m.d[1] and m.d[1][1] == "PHXM_MV_START" end)
+  local names = {}
+  for i = 1, b and #b.d or 0 do names[i] = b.d[i][1] end
+  return table.concat(names, ","), b
+end
+local function pressed(b, i)
+  local lp = LocalPlayer
+  LocalPlayer, staff.concmds = function() return staff end, {}
+  local res = attempt(b.d[i][2])
+  LocalPlayer = lp
+  return res == "ok" and staff.concmds[#staff.concmds] or res
+end
+SetGlobalBool("IsEndOfGame", nil)
+openMenu(staff)
+local names, btns = mvButtons()
+check("mid-game: the Map Vote tab has Start and Stop", names, "PHXM_MV_START,PHXM_MV_STOP")
+check("  ...Stop still runs mv_stop", btns and pressed(btns, 2), "mv_stop")
+SetGlobalBool("IsEndOfGame", true)
+check("end of game: the menu builds", openMenu(staff), "ok")
+names, btns = mvButtons()
+check("  ...with Start and no Stop", names, "PHXM_MV_START")
+check("  ...Start still runs mv_start", btns and pressed(btns, 1), "mv_start")
+D.all = {}
+realCLUI["btn"]("", btns.d, grid, "")
+check("  ...and cl_menutypes draws the one button", D.count(D.class("DButton")), 1)
+SetGlobalBool("IsEndOfGame", nil)
 
 report()
