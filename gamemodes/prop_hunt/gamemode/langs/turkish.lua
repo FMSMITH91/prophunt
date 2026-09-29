@@ -243,7 +243,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 				= "Her raunt takım değiştir - Bu ayar devre dı
 L["PHXM_ADMIN_HUNTER_PENALTY"]			= "Avcı can cezası"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "Avcı leş bonusu "
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]		= "Avcı SMG bombaları"
-L["PHXM_ADMIN_GAME_TIME"]				= "(Haritayı Yeniden Başlatma Gerektirir) Toplam oyun süresi (Dakika)"
+L["PHXM_ADMIN_GAME_TIME"]				= "(Haritayı Yeniden Başlatma Gerektirir) Toplam oyun süresi (Dakika, 0 = sınırsız)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]			= "Avcı yumma zamanı (Saniye)"
 L["PHXM_ADMIN_ROUND_TIME"]				= "(Haritayı Yeniden Başlatma Gerektirir) Oyun raunt süresi (Saniye)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "(Haritayı Yeniden Başlatma Gerektirir) Harita başı toplam oyun raundu"

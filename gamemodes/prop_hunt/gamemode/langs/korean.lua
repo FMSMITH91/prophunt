@@ -289,7 +289,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] = "매 라운드마다 팀 교대 - 비활성시 팀�
 L["PHXM_ADMIN_HUNTER_PENALTY"] = "헌터 체력 패널티"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"] = "헌터 처치 보너스"
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"] = "헌터 SMG 수류탄"
-L["PHXM_ADMIN_GAME_TIME"] = "(맵 재시작 필요) 총 게임 시간 (분)"
+L["PHXM_ADMIN_GAME_TIME"] = "(맵 재시작 필요) 총 게임 시간 (분, 0 = 제한 없음)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"] = "헌터 눈가림 시간 (초)"
 L["PHXM_ADMIN_ROUND_TIME"] = "(맵 재시작 필요) 게임 라운드 시간 (초)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"] = "(맵 재시작 필요) 맵당 총 게임 라운드"

@@ -274,7 +274,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 				= "hussel team elke ronde - Uitzetten resulteert i
 L["PHXM_ADMIN_HUNTER_PENALTY"]			= "Zoeker levens straf"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "Zoeker kill bonus"
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]		= "Zoeker SMG granaten"
-L["PHXM_ADMIN_GAME_TIME"]				= "Totalen Game tijd (Minuten)"
+L["PHXM_ADMIN_GAME_TIME"]				= "Totale speeltijd (Minuten, 0 = geen limiet)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]			= "Zoeker blindlock time (Seconden)"
 L["PHXM_ADMIN_ROUND_TIME"]				= "Game ronde tijd (Seconden)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "Totaal aantal rondes per game"

@@ -285,7 +285,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 						= "Zamieniaj drużyny po każdej rundzie - wył�
 L["PHXM_ADMIN_HUNTER_PENALTY"]				= "Kara dla Łowców za strzał w nieprawidłowy cel"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "Bonus dla Łowców za zabicie Przedmiotu"
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]	= "Ilość granatników SMG dla Łowców"
-L["PHXM_ADMIN_GAME_TIME"]						= "Czas gry (w minutach)"
+L["PHXM_ADMIN_GAME_TIME"]						= "Czas gry (w minutach, 0 = bez limitu)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]				= "Czas na chowanie się (w sekundach)"
 L["PHXM_ADMIN_ROUND_TIME"]						= "Czas rudny (w sekundach)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]				= "Ilość rund na mapę"

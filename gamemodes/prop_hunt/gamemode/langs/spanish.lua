@@ -280,7 +280,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 				= "Cambiar equipos cada ronda (si no se activa, lo
 L["PHXM_ADMIN_HUNTER_PENALTY"]			= "Penalización de salud de los cazadores."
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "Bonificación de los cazadores por matar."
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]		= "Granadas de subfusil para los cazadores."
-L["PHXM_ADMIN_GAME_TIME"]				= "Tiempo total de la partida (min.)"
+L["PHXM_ADMIN_GAME_TIME"]				= "Tiempo total de la partida (min., 0 = sin límite)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]			= "Cuenta atrás de los cazadores (min.)"
 L["PHXM_ADMIN_ROUND_TIME"]				= "Tiempo de ronda (min.)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "Total de rondas por mapa"

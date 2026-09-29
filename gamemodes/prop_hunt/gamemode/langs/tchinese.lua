@@ -282,7 +282,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 				= "每輪交換隊伍 - 禁用意味著隊伍始�
 L["PHXM_ADMIN_HUNTER_PENALTY"]			= "獵人生命懲罰"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "獵人擊殺紅利"
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]		= "獵人衝鋒槍榴彈"
-L["PHXM_ADMIN_GAME_TIME"]				= "總遊戲時間(分鐘)"
+L["PHXM_ADMIN_GAME_TIME"]				= "總遊戲時間(分鐘，0 = 無限制)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]			= "獵人矇眼時間(秒)"
 L["PHXM_ADMIN_ROUND_TIME"]				= "遊戲回合時間(秒)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "每張地圖的總遊戲回合數"

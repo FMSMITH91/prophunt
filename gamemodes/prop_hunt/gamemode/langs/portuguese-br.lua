@@ -271,7 +271,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 				= "Habilitar troca de time todo round - Desabilita
 L["PHXM_ADMIN_HUNTER_PENALTY"]			= "Penalidade de vida do Caçador"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "Bonus de kill do Caçador"
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]		= "Granadas de SMG para o Caçador"
-L["PHXM_ADMIN_GAME_TIME"]				= "Tempo total de jogo (Minutos)"
+L["PHXM_ADMIN_GAME_TIME"]				= "Tempo total de jogo (Minutos, 0 = sem limite)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]			= "Tempo da cegueira do Caçador"
 L["PHXM_ADMIN_ROUND_TIME"]				= "Tempo da rodada (Segundos)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "Número de rodadas por mapa"

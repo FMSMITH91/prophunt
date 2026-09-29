@@ -273,7 +273,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 				= "Jede Runde Teamwechsel -Dies zu Deaktivieren he
 L["PHXM_ADMIN_HUNTER_PENALTY"]			= "Jäger Lebens Bestrafung"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "Jäger Tötungs Bonus"
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]		= "Jäger SMG Granaten"
-L["PHXM_ADMIN_GAME_TIME"]				= "Spielzeit (Minuten)"
+L["PHXM_ADMIN_GAME_TIME"]				= "Spielzeit (Minuten, 0 = kein Zeitlimit)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]			= "Jäger Blindenzeit (Sekunden)"
 L["PHXM_ADMIN_ROUND_TIME"]				= "Rounden Zeit (Sekunden)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "Rounden gespielt per Karte"

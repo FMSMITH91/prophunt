@@ -282,7 +282,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 				= "每轮交换队伍 - 禁用意味着队伍始�
 L["PHXM_ADMIN_HUNTER_PENALTY"]			= "猎人生命惩罚"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "猎人击杀红利"
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]		= "猎人冲锋枪榴弹"
-L["PHXM_ADMIN_GAME_TIME"]				= "总游戏时间(分钟)"
+L["PHXM_ADMIN_GAME_TIME"]				= "总游戏时间(分钟，0 = 无限制)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]			= "猎人失明时间(秒)"
 L["PHXM_ADMIN_ROUND_TIME"]				= "游戏回合时间(秒)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "每张地图的总游戏回合数"

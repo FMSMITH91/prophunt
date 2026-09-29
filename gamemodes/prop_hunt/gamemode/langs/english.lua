@@ -313,7 +313,7 @@ L["PHXM_ADMIN_SWAP_TEAM"] 				= "Swap team every round - Disabling means team wi
 L["PHXM_ADMIN_HUNTER_PENALTY"]			= "Hunter health penalty"
 L["PHXM_ADMIN_HUNTER_KILL_BONUS"]		= "Hunter kill bonus"
 L["PHXM_ADMIN_HUNTER_SMG_GRENADES"]		= "Hunter SMG grenades"
-L["PHXM_ADMIN_GAME_TIME"]				= "(Require Map Restart) Total Game time (Minutes)"
+L["PHXM_ADMIN_GAME_TIME"]				= "(Require Map Restart) Total Game time (Minutes, 0 = no limit)"
 L["PHXM_ADMIN_BLINDLOCK_TIME"]			= "Hunter blindlock time (Seconds)"
 L["PHXM_ADMIN_ROUND_TIME"]				= "(Require Map Restart) Game round time (Seconds)"
 L["PHXM_ADMIN_ROUNDS_PER_MAP"]			= "(Require Map Restart) Total game Rounds per Map"

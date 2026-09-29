@@ -276,6 +276,29 @@ local gameTime = madeWhere(function(m) return m.typ == "slider" and m.c == "ph_g
 check("ph_game_time slider reaches 0 (no time limit)", gameTime and gameTime.d.min, 0)
 check("ph_game_time slider still goes up to 300", gameTime and gameTime.d.max, 300)
 
+-- ...and the ConVar agrees: the server's own floor is the slider's.
+local cvarLine = extract(GM .. "sh_convar.lua", [=[^CVAR\["ph_game_time"\]]=])
+local cvarMin = cvarLine:match("{%s*min%s*=%s*(%-?%d+)")
+check("ph_game_time ConVar min is the slider's", tonumber(cvarMin), gameTime and gameTime.d.min)
+
+-- The slider says what 0 does, on its label and its tooltip, both of which
+-- cl_menutypes builds from this key.
+local english = loadblocks("english.lua", extract(GM .. "langs/english.lua", "1-999999") .. "\nreturn L",
+  "local PHX = setmetatable({ LANGUAGES = {} }, { __index = PHX })")
+check("ph_game_time slider label is PHXM_ADMIN_GAME_TIME", gameTime and gameTime.l, "PHXM_ADMIN_GAME_TIME")
+check("  ...which says 0 is no limit", tostring(english.PHXM_ADMIN_GAME_TIME):find("0 = no limit", 1, true) ~= nil, true)
+-- Built for real, in English.
+local qtrans = PHX.QTrans
+function PHX:QTrans(k) return english[k] or k end
+D.all = {}
+realCLUI["slider"](gameTime.c, gameTime.d, grid, gameTime.l)
+PHX.QTrans = qtrans
+local gtSlider = D.find(D.class("DNumSlider"))
+local gtLabel = D.find(function(p) return p._class == "DLabel" and p._text == english.PHXM_ADMIN_GAME_TIME end)
+check("  ...on the slider's tooltip", gtSlider and gtSlider._tooltip, english.PHXM_ADMIN_GAME_TIME)
+check("  ...and its label", gtLabel ~= nil, true)
+check("  ...which can be dragged to 0", gtSlider and gtSlider._min, 0)
+
 -- The Map Vote tab's buttons. Once the game has ended the server refuses to
 -- cancel its vote, so the Stop button goes; mid-game both stay.
 local function mvButtons()
