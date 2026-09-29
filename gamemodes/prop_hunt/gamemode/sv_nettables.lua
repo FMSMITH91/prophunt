@@ -57,3 +57,21 @@ local nets = {
 for _,init in pairs(nets) do
 	util.AddNetworkString( init )
 end
+
+-- GMod caps one net message at about 64KB, so a payload compressed past that never
+-- arrives. Refuse it with an error naming the message instead. The wire format is
+-- the one the clients already read: a 32-bit length, then the data. Sends to
+-- target, or to everyone without one; returns whether it was sent.
+local MAX_NET_DATA = 60000
+function util.PHXSendCompressed( netName, data, size, target )
+	if size > MAX_NET_DATA then
+		ErrorNoHalt( "[PHX] Not sending " .. netName .. ": it is " .. size .. " bytes compressed, over the " .. MAX_NET_DATA .. " byte net message limit.\n" )
+		return false
+	end
+
+	net.Start( netName )
+		net.WriteUInt( size, 32 )
+		net.WriteData( data, size )
+	if target then net.Send( target ) else net.Broadcast() end
+	return true
+end
