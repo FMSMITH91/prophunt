@@ -40,7 +40,7 @@ local function SendPropData( ply )
 end
 
 function PCR:ReadBannedProps()
-	-- Empty the table first
+	-- Empty the table first. Entries are stored lowercase, as the scan and the pick check compare lowercased paths.
 	self.BannedProp = {}
 	local path = PHX.ConfigPath .. "/prop_model_bans"
 	
@@ -53,7 +53,7 @@ function PCR:ReadBannedProps()
 		PHX:VerboseMsg("[Prop Menu] Reading Prop Hunt: X's Prop Ban Data...")	-- PHX.BANNED_PROP_MODELS
 		local read = util.JSONToTable(file.Read(path.."/model_bans.txt") or "") or {}
 		for _,mdl in pairs(read) do
-			table.insert(self.BannedProp, mdl)
+			table.insert(self.BannedProp, string.lower( mdl ))
 		end
 	else
 		PHX:VerboseMsg("[Prop Menu] !!WARNING: Prop Hunt: X's Prop Ban Data does not exists, Ignoring..!")
@@ -63,7 +63,7 @@ function PCR:ReadBannedProps()
 		PHX:VerboseMsg("[Prop Menu] Reading Prop Menu's additional ban list...")
 		local read = util.JSONToTable(file.Read(path.."/pcr_bans.txt") or "") or {}
 		for _,mdl in pairs(read) do
-			table.insert(self.BannedProp, mdl)
+			table.insert(self.BannedProp, string.lower( mdl ))
 		end
 	else
 		PHX:VerboseMsg("[Prop Menu] !!WARNING: Prop Menu's additional ban list does not exists, Creating new one...")
@@ -72,7 +72,7 @@ function PCR:ReadBannedProps()
 		local json = util.TableToJSON(proplist,true)
 		file.Write(path.."/pcr_bans.txt", json)
 		for _,mdl in pairs(proplist) do
-			table.insert(self.BannedProp, mdl)
+			table.insert(self.BannedProp, string.lower( mdl ))
 		end
 		
 		PHX:VerboseMsg("[Prop Menu] Prop Menu additional ban list has successfully created.")
@@ -146,7 +146,7 @@ function PCR:PopulateProp( bUseModCustomProp )
 			-- update: Do not include Forbidden models that can cause server crashes or exploits
 			if PHX.PROHIBITTED_MDLS[ string.lower(prop:GetModel()) ] then continue end
 			if table.HasValue(self.PropList, string.lower(prop:GetModel())) then continue end
-			if (PHX:QCVar( "pcr_enable_prop_ban" ) && table.HasValue(self.BannedProp, prop:GetModel())) then
+			if (PHX:QCVar( "pcr_enable_prop_ban" ) && table.HasValue(self.BannedProp, string.lower(prop:GetModel()))) then
 				PHX:VerboseMsg("[Prop Menu] Banning prop of "..prop:GetModel().." @Index #"..prop:EntIndex().."!")
 				continue
 			end
@@ -175,7 +175,12 @@ function PCR:PopulateProp( bUseModCustomProp )
 		PHX:VerboseMsg("[Prop Menu] Adding custom props...")
 		if !bUseModCustomProp then self:GetCustomProps() end
 		for _,prop in pairs(self.CustomProp) do
-			table.insert(self.PropList, prop)
+			-- Custom props get the same prohibited-model filter as map props.
+			if PHX.PROHIBITTED_MDLS[ string.lower(prop) ] then
+				PHX:VerboseMsg("[Prop Menu] Custom prop "..prop.." is a prohibited model, Ignoring!")
+			else
+				table.insert(self.PropList, prop)
+			end
 		end
 	end
 	
@@ -198,16 +203,18 @@ end)
 
 hook.Add("PlayerInitialSpawn","pcr.InitPropRequestData",function(ply)
 	ply.pcrHasPropData = false
-	ply:SetNWInt("CurrentUsage", 0)
+	-- Full allowance, not 0: the per-round reset (PostCleanupMap) has already run for someone joining mid-round.
+	ply:ResetUsage()
 end)
 
 net.Receive("pcr.ClientRequestPropData", function(len, ply)
+    -- The sender may disconnect before the timer runs; SendPropData writes to the player.
     if ply:IsListenServerHost() then
         -- Host don't retreive the prop data at first spawn, for some reason. We might have to DELAY it.
-        timer.Simple(2, function() SendPropData( ply ) end)
+        timer.Simple(2, function() if IsValid( ply ) then SendPropData( ply ) end end)
     else
         timer.Simple(0, function() -- send the data on next frame instead, for safety.
-            SendPropData( ply ) -- Dedicated servers should be no problem. Listen Servers however, don't.
+            if IsValid( ply ) then SendPropData( ply ) end -- Dedicated servers should be no problem. Listen Servers however, don't.
         end)
     end
 end)
@@ -268,6 +275,9 @@ end
 net.Receive("pcr.SetMetheProp",function(len,ply)
 	local mdl = net.ReadString()
 	
+	-- The client's pcr_enable check only hides the menu; a crafted client can still send this.
+	if !PHX:QCVar( "pcr_enable" ) then return end
+	
 	if PHX:GetCVar( "pcr_only_allow_certain_groups" ) and !PCR:CheckUserGroup( ply ) then
 		ply:PHXChatInfo("ERROR", "PCR_ONLY_GROUP")
 		return
@@ -284,7 +294,7 @@ net.Receive("pcr.SetMetheProp",function(len,ply)
 		if ( PHX:QCVar( "pcr_kick_invalid" ) ) then
 			ply.warnInvalidModel = ply.warnInvalidModel + 1
 			ply:PHXChatInfo("ERROR", "PCR_NOT_EXIST_COUNT", tostring(ply.warnInvalidModel))
-			if ply.warnInvalidModel > 4 then
+			if ply.warnInvalidModel >= 4 then -- the message counts to "4 / 4", so kick on the 4th.
 				ply:Kick("[PHX Prop Menu] Kicked for Reason: trying to access invalid prop!")
 			end
 		else
@@ -300,6 +310,10 @@ net.Receive("pcr.SetMetheProp",function(len,ply)
         print("[Prop Menu] Warning: ".. ply:Nick() .. " is trying to access model: ".. mdl ..", did you forgot to enable your game content?")
         return
     end
+	
+	-- Only a living prop in a round can change. A dead prop has no ph_prop: PlayerExchangeProp
+	-- errors on it after the temporary prop below is created, leaking that prop.
+	if !GAMEMODE:InRound() or ply:Team() ~= TEAM_PROPS or !ply:Alive() or !IsValid( ply.ph_prop ) then return end
 	
 	-- Make sure that the player is On Ground and Not crouching.
 	if PHX:GetCVar( "ph_prop_must_standing" ) and ( ply:Crouching() or (not ply:IsOnGround()) ) then
@@ -319,10 +333,14 @@ net.Receive("pcr.SetMetheProp",function(len,ply)
 			ply:PHXChatInfo("GOOD", "PCR_REACHED_LIMIT")
 			return
 		end
+		
+		-- Stamp first: this delay is the only throttle on creating the temporary prop below.
+		ply:SetNWFloat( "pcr.LastUsedTime", CurTime() )
 	
 		local pos = ply:GetPos()
 		--Temporarily Spawn a prop.
 		local ent = ents.Create("prop_physics")
+		if !IsValid( ent ) then return end
 		ent:SetPos( Vector( pos.x, pos.y, pos.z-512 ) )
 		ent:SetAngles(Angle(0,0,0))
 		ent:SetKeyValue("spawnflags","654")
@@ -340,18 +358,20 @@ net.Receive("pcr.SetMetheProp",function(len,ply)
 		elseif PHX:GetCVar( "ph_banned_models" ) and table.HasValue( PHX.BANNED_PROP_MODELS, ent:GetModel() ) then
 			ply:PHXChatInfo("WARNING", "PCR_PROPBANNED")
 		else
-			if usage <= -1 then
-				GAMEMODE:PlayerExchangeProp(ply,ent)
-				PCR.NotifyPlayer( ply, "PCR_USAGE_UNLIMIT", "UNDO" )
-			elseif usage > 0 then
-				ply:UsageSubstractCount()
-				GAMEMODE:PlayerExchangeProp(ply,ent)
-				PCR.NotifyPlayer( ply, "PCR_USAGE_COUNT", "GENERIC", (usage-1) )
+			-- PlayerExchangeProp can quietly do nothing (e.g. the prop is already worn),
+			-- so only spend and announce a use when the disguise actually changed.
+			local oldMdl, oldSkin = ply.ph_prop:GetModel(), ply.ph_prop:GetSkin()
+			GAMEMODE:PlayerExchangeProp(ply,ent)
+			if IsValid( ply.ph_prop ) and ( ply.ph_prop:GetModel() ~= oldMdl or ply.ph_prop:GetSkin() ~= oldSkin ) then
+				if usage <= -1 then
+					PCR.NotifyPlayer( ply, "PCR_USAGE_UNLIMIT", "UNDO" )
+				elseif usage > 0 then
+					ply:UsageSubstractCount()
+					PCR.NotifyPlayer( ply, "PCR_USAGE_COUNT", "GENERIC", usage - 1 )
+				end
 			end
 		end
 		ent:Remove()
-		
-		ply:SetNWFloat( "pcr.LastUsedTime", CurTime() )
 		
 	else
 	

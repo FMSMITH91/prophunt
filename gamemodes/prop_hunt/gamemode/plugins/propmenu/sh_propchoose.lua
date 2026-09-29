@@ -20,6 +20,7 @@ function PCR:CheckUserGroup( ply )
 end
 function PCR:AddToGroup( strGroup )
 	if !strGroup then return end
+	strGroup = string.lower( strGroup ) -- CheckUserGroup looks groups up in lowercase.
 	
 	if self.ConfigGroup[strGroup] then
 		PHX:VerboseMsg("[Prop Menu:User] The usergroup you entered '" .. strGroup .. "' was exist.")

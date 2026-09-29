@@ -47,11 +47,11 @@ net.Receive("pcr.EditorCustomData", function()
 	end
 end)
 
-if ( PHX:GetCVar( "pcr_notify_messages" ) ) then
-	timer.Create("pcrT.NotifyAddon", math.random(70,120), math.random(4,10), function()
-		chat.AddText( Color(10,235,235), "[PHX Prop Menu]", Color(220,220,220), PHX:FTranslate("PCR_NOTIFY_1", PCR._VERSION), Color(235,235,0), "\"pcr_help\"" , Color(220,220,220), PHX:FTranslate("PCR_NOTIFY_2") )
-	end)
-end
+-- Checked on each tick, not once at file load: the server's value arrives later and can change.
+timer.Create("pcrT.NotifyAddon", math.random(70,120), math.random(4,10), function()
+	if !PHX:GetCVar( "pcr_notify_messages" ) then return end
+	chat.AddText( Color(10,235,235), "[PHX Prop Menu]", Color(220,220,220), PHX:FTranslate("PCR_NOTIFY_1", PCR._VERSION), Color(235,235,0), "\"pcr_help\"" , Color(220,220,220), PHX:FTranslate("PCR_NOTIFY_2") )
+end)
 
 -- Add 'PropChooser Help' menu on F1 selection screen.
 hook.Add("PH_AddSplashHelpButton", "PCR.AddSplashScreen", function(helpUI)
@@ -177,8 +177,9 @@ function PCR:MainWindow()
 	
 	f.RefreshItems()
     
-    f.frame.OnClose = function( self )
-        self.currentlyOpen = false
+    -- Clear the flag on f, which the toggle reads (self here would be the frame).
+    f.frame.OnClose = function()
+        f.currentlyOpen = false
     end
     
     f.currentlyOpen = true
@@ -199,7 +200,7 @@ function PCR:OpenPropMenu()
 		return
 	end
     
-    if !LocalPlayer():Alive() && LocalPlayer():Team() ~= TEAM_PROPS && !GetGlobalBool("InRound",false) then
+    if !LocalPlayer():Alive() || LocalPlayer():Team() ~= TEAM_PROPS || !GetGlobalBool("InRound",false) then
         chat.AddText(Color(10,235,30), "[PHX Prop Menu]", Color(220,220,220), PHX:FTranslate("PCR_CL_MENU_NOTREADY"))
         return
     end
@@ -228,6 +229,7 @@ function PCR:OpenPropMenu()
     if f.frame and f.frame ~= nil and ispanel(f.frame) and f.frame:IsValid() then
         if (!f.currentlyOpen or !f.frame:IsVisible()) then
             f.frame:SetVisible(true)
+            f.currentlyOpen = true
         else
             f.frame:Close()
         end
