@@ -746,16 +746,6 @@ function PANEL:RebuildCells()
 end
 
 /*
-	Compatibility shim for the PH_AddColumnScoreboard hook. Third-party columns
-	keep the classic signature:
-
-		AddColumn( Name, iFixedSize, fncValue, UpdateRate, TeamID, HeaderAlign, ValueAlign, Font )
-
-	fncValue may return a value to print or a Panel to embed; both are handled.
-	The returned table is the column, matching the classic board's contract.
-*/
-
-/*
 	Asks a custom column for this row's value, at most once per UpdateRate
 	seconds (0 = once), the way the classic board does. Rows paint every frame,
 	and a column that builds a fresh label each call - Fretta's own pattern -
@@ -802,6 +792,15 @@ local function UpdateCustomCell( row, cell, ply )
 
 end
 
+/*
+	Compatibility shim for the PH_AddColumnScoreboard hook. Third-party columns
+	keep the classic signature:
+
+		AddColumn( Name, iFixedSize, fncValue, UpdateRate, TeamID, HeaderAlign, ValueAlign, Font )
+
+	fncValue may return a value to print or a Panel to embed; both are handled.
+	The returned table is the column, matching the classic board's contract.
+*/
 function PANEL:AddColumn( Name, iFixedSize, fncValue, UpdateRate, TeamID, HeaderAlign, ValueAlign, Font )
 
 	local col = {

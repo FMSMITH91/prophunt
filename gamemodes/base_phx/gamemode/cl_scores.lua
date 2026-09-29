@@ -193,6 +193,8 @@ function GM:AddScoreboardVoice( ScoreBoard )
 		return main
 	end
  
+	// DERMA_MUTE is not in the language files yet (it has to land in all of
+	// them at once), so this shows the English fallback until it is.
 	ScoreBoard:AddColumn( PHX:SBTranslate( "DERMA_MUTE", "Mute" ), 40, f, 0.5, nil, 6, 6 )
  
 end
