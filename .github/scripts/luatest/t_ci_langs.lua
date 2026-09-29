@@ -43,4 +43,22 @@ for _, code in ipairs(codes) do
         shoot == "absent (falls back to english)" and "ok" or shoot, "ok")
 end
 
+print("\n== every notice rtv.lua sends is still translated ==")
+-- PHXM_MV_VOTEROCKED lost its last reader and was removed. check_langs.py only
+-- compares the files with each other, so a key deleted from all 12 passes it.
+local rtvKeys = {}
+for key in extract("gamemodes/prop_hunt/gamemode/mapvote/rtv.lua", "1-999999"):gmatch('"(PHXM_[%w_]+)"') do
+  rtvKeys[key] = true
+end
+rtvKeys = table.GetKeys(rtvKeys)
+table.sort(rtvKeys)
+check("rtv.lua's keys were found", #rtvKeys >= 5, true)
+for _, key in ipairs(rtvKeys) do
+  local have = 0
+  for _, code in ipairs(codes) do
+    if type(PHX.LANGUAGES[code][key]) == "string" then have = have + 1 end
+  end
+  check(key .. " in every language", have, #codes)
+end
+
 report()

@@ -29,7 +29,6 @@ AddCSLuaFile( 'cl_hud.lua' )
 AddCSLuaFile( 'cl_deathnotice.lua' )
 AddCSLuaFile( 'cl_scores.lua' )
 AddCSLuaFile( 'cl_scoreboard_admin.lua' )
-AddCSLuaFile( 'cl_notify.lua' )
 AddCSLuaFile( 'player_colours.lua' )
 
 include( "shared.lua" )

@@ -159,6 +159,12 @@ CURTIME = 1801
 GAMEMODE:PreRoundStart(3)
 check("30 min, 1801s in: game ends", ends, 1)
 check("30 min, 1801s in: no round started", preRounds, 0)
+-- The shipped help text (help ph_game_time, rcon cvarlist) says what 0 does.
+local cvarHelp = loadchunk("local CTYPE_NUMBER, CVAR_SERVER_ONLY = 2, 0\nlocal CVAR = {}\n"
+  .. extract("gamemodes/prop_hunt/gamemode/sh_convar.lua", [==[^CVAR\["ph_game_time"\]]==])
+  .. "\nreturn CVAR", "sh_convar.lua@ph_game_time")()["ph_game_time"][4]
+check("help text: 0 = no time limit", cvarHelp:find("0 = no time limit", 1, true) ~= nil, true)
+check("help text: still needs a map restart", cvarHelp:find("(Require Map Restart)", 1, true), 1)
 
 print("\n== waiting for players before a round: its own flag for the HUD ==")
 reset(1, 0)

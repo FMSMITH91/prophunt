@@ -184,9 +184,11 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 
 	if ( !InRound && GAMEMODE.RoundBased ) then
 	
+		-- Before the first round. Not "waiting for players": a round held for
+		-- players sets RoundWaitingToStart, which RefreshHUD shows instead.
 		local RespawnText = vgui.Create( "DHudElement" );
 			RespawnText:SizeToContents()
-			RespawnText:SetText( PHX:SBTranslate( "HUD_WAITPLY", "Waiting for players..." ) )
+			RespawnText:SetText( PHX:SBTranslate( "HUD_WAITROUND", "Waiting for round start" ) )
 		GAMEMODE:AddHUDItem( RespawnText, 8 )
 		return
 		
