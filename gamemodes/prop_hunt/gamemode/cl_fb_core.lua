@@ -199,7 +199,7 @@ function PHXPM_openFileBrowser( ply, global, sub, svContents, wTitle )
 			f.btn:SetFont("RobotoWarn")
 			f.btn:DockMargin(20,5,10,5)
 			f.btn:SetText(PHX:FTranslate("PHZ_tooltip_removesel"))
-			f.btn:SetTooltip(PHX:FTranslate("PHZ_Tooltip_removesel"))
+			f.btn:SetTooltip(PHX:FTranslate("PHZ_msg_removesel"))
 			
 			f.list = vgui.Create("DIconBrowser", f.panelpm)
 			f.list:Dock(FILL)
@@ -311,7 +311,11 @@ function PHXPM_openFileBrowser( ply, global, sub, svContents, wTitle )
 				if (not table.IsEmpty(icons)) then
 					for _,ic in ipairs(icons) do
 						if ic.selected or (ic.markeddontexist and ic.markeddontexist ~= nil) then
-							table.RemoveByValue(tblModify, ic.model)
+							-- ic.model is only set by clicking, so a yellow icon nobody clicked
+							-- would stay in tblModify and be uploaded again on the next Apply.
+							local realIcon = ic:GetChildren()[1]
+							local mdl = ic.model or ( IsValid(realIcon) and realIcon:GetModelName() )
+							if mdl then table.RemoveByValue(tblModify, mdl) end
 							ic:Remove()
 						end
 					end

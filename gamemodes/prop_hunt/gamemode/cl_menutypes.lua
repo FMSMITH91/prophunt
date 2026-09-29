@@ -1,6 +1,6 @@
 local function ThrowError ( ErrMode, strCommand, strNeeded, strData )
 	if ErrMode == 1 then
-		ErrorNoHalt("!!PHX.UI.CreateVGUIType() --> [" .. strCommand .. "] argument 'data' is empty. Panel creation discarded.", 2)
+		ErrorNoHalt("!!PHX.UI.CreateVGUIType() --> [" .. tostring(strCommand) .. "] argument 'data' is empty. Panel creation discarded.\n")
 	elseif ErrMode == 2 then
 		error( "!!PHX.UI.CreateVGUIType() --> [" .. strCommand .. "] FAILED! - 'data' argument must contain ".. strNeeded .." value, got: " .. tostring(type(strData)) .." instead!!", 2 )
 	end
@@ -126,7 +126,7 @@ end,
 		
 		if !d.init or d.init == nil then
 			dval = PHX:QCVar(c)	-- use from 'c' instead.
-		elseif isstring(dval) or d.init == "DEF_CONVAR" then
+		elseif isstring(d.init) then
 			dval = PHX:QCVar(c)	-- any string, will revert to 'c' anyway.
 		else
 			dval = d.init -- assume it's correct number value. We keep this because there are still GetCVar() being used in cl_menu.lua
@@ -280,7 +280,8 @@ end,
 	bind:SetValue(keyNum)
 	function bind:OnChange( num )
 		RunConsoleCommand(c, tostring(num))
-		local tkeyName =  input.GetKeyName(num):upper()
+		-- GetKeyName is nil for KEY_NONE, which DBinder's own "Clear" sets.
+		local tkeyName = ( input.GetKeyName(num) or language.GetPhrase( "#dbinder.none" ) ):upper()
 		CvarChangedMessage(c, tostring(tkeyName))
 		surface.PlaySound("buttons/button9.wav")
 	end
@@ -353,10 +354,11 @@ end,
 	local langCode = cvlang
 	local langList = PHX.LANGUAGES
 	
-	if (!table.IsEmpty(langList[langCode])) then
+	-- The server cvars can hold any code when set from server.cfg or rcon.
+	if (langList[langCode] and !table.IsEmpty(langList[langCode])) then
 		cbox:SetValue( langList[langCode].Name )
 	else
-		cbox:SetValue( "Error: Language " .. langCode .. " doesn't exists." )
+		cbox:SetValue( "Error: Language " .. tostring(langCode) .. " doesn't exists." )
 	end
 	
 	for code,_ in pairs(langList) do
@@ -405,11 +407,15 @@ end,
 	btn:DockMargin(4,2,0,2)
 	btn:SetText(PHX:QTrans("MISC_SET"))
 	
-	textEntry.EnteredText = ""
+	-- Read the field itself: remembering the text from the last Enter made the
+	-- Set button send a stale value after any later edit.
+	local function GetProperText()
+		-- avoid using backslash for ph_fc_cue_path
+		return string.Replace(textEntry:GetValue(), "\\", "/")
+	end
 	
 	function textEntry:OnEnter()
-		-- avoid using backslash for ph_fc_cue_path
-		local properText = string.Replace(self:GetValue(), "\\", "/")
+		local properText = GetProperText()
         
         -- Hack: Hexadecimal colors
         if util.IsHexColor( properText ) then
@@ -417,21 +423,21 @@ end,
         else
             self:SetText( properText )
         end
-        self.EnteredText = properText
 	end
 	
 	function btn:DoClick()
-		if textEntry.EnteredText ~= "" then
+		local properText = GetProperText()
+		if properText ~= "" then
 			if d == "SERVER" then
 				net.Start("SvCommandTextEntry")
-				net.WriteString(textEntry.EnteredText)
+				net.WriteString(properText)
 				net.WriteString(c)
 				net.SendToServer()
 			else
-				RunConsoleCommand(c, textEntry.EnteredText)
+				RunConsoleCommand(c, properText)
 			end
-			ConfirmMessage(c, textEntry.EnteredText)
-			CvarChangedMessage(c, textEntry.EnteredText)
+			ConfirmMessage(c, properText)
+			CvarChangedMessage(c, properText)
 		else
 			PHX:MsgBox("PHXM_MSG_INPUT_IS_EMPTY", "MISC_WARN", "MISC_OK")
 		end

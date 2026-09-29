@@ -10,6 +10,7 @@ PHX.FavoriteTaunts = PHX.FavoriteTaunts or {}
 
 local window = {}
 local hastaunt = false
+local favChanged = false -- a star was toggled, so ShutDown must save even an empty list
 local conf = PHX.ConfigPath
 
 local function TauntFavPath( ply )
@@ -125,6 +126,11 @@ end)
 net.Receive("PH_AllowTauntWindow", function()
 	window.state = true
 end)
+
+-- Mirrors sv_tauntmgr: -1 is unlimited, otherwise a use must be left.
+local function HasFakeTauntLeft()
+	return LocalPlayer():GetTauntRandMapPropCount() > 0 or PHX:GetCVar( "ph_randtaunt_map_prop_max" ) == -1
+end
 
 local function SendToServer(name, snd, bFakeTaunt)
 	
@@ -316,14 +322,13 @@ local function MainFrame()
 	window.toppanel:SizeToChildren(false,true)
 	window.pitchpanel:InvalidateLayout(true)
 	window.pitchpanel:SizeToChildren(false,true)
-	window.pitchpanel.Think = function()
+	-- A hidden panel stops thinking, so the pitch panel could never show itself
+	-- again; the top panel is always visible. Only re-layout on a change.
+	window.toppanel.Think = function()
 		local stat = GetConVar( "ph_taunt_pitch_enable" ):GetBool()
 		
-		if stat then
-			window.pitchpanel:SetVisible( true )
-			window.pitchpanel:InvalidateParent()
-		else
-			window.pitchpanel:SetVisible( false )
+		if window.pitchpanel:IsVisible() != stat then
+			window.pitchpanel:SetVisible( stat )
 			window.pitchpanel:InvalidateParent()
 		end
 	end
@@ -399,6 +404,7 @@ local function MainFrame()
 				self:SetColor(Color(255,255,255))
 				PHX.FavoriteTaunts[name] = true
 			end
+			favChanged = true
 		end
 		--linePanel:Add(tmpIcon)
 	end
@@ -427,9 +433,13 @@ local function MainFrame()
 	end
 	
 	--in case categorie isn't set for the 2 teams
-	if defaultList[LocalPlayer():Team()]==nil or !istable(defaultList[LocalPlayer():Team()]) then
-		defaultList = PHX.TAUNTS[PHX.DEFAULT_CATEGORY]
+	if !defaultList or defaultList[LocalPlayer():Team()]==nil or !istable(defaultList[LocalPlayer():Team()]) then
+		-- DEFAULT_CATEGORY is "Favorite Taunts" (no TAUNTS entry) when the stock
+		-- taunts are off. Follow the fallback so play/search use the shown list.
+		defaultList = PHX.TAUNTS[PHX.DEFAULT_CATEGORY] or {}
+		LocalPlayer():SetVar("tauntWindowCategorie", PHX.DEFAULT_CATEGORY)
 	end
+	local teamList = defaultList[LocalPlayer():Team()] or {}
 	
 	-- Make sure each category isn't empty and has lines.
 	local hasLines = false
@@ -438,8 +448,8 @@ local function MainFrame()
 	--loadFavoriteTaunts()
 	
 	-- add default list and check if there is a taunt inside the category
-	if !table.IsEmpty(defaultList[LocalPlayer():Team()]) then
-		for name,_ in pairs( defaultList[LocalPlayer():Team()] ) do
+	if !table.IsEmpty(teamList) then
+		for name,_ in pairs( teamList ) do
 			local newCreatedLine = window.list:AddLine( name )
 			createIconForLine(newCreatedLine,name)
 		end
@@ -520,7 +530,8 @@ local function MainFrame()
 		
 		if !table.IsEmpty(ls) then
 			for name,_ in pairs( ls ) do
-				if string.find(string.lower(name), strToFind) then -- just accept upper case too.
+				-- plain find: the query is typed text, not a Lua pattern ('(' used to error)
+				if string.find(string.lower(name), string.lower(strToFind), 1, true) then -- just accept upper case too.
 					table.insert(tTemp, name)
 				end
 			end
@@ -608,7 +619,9 @@ local function MainFrame()
 	local function TranslateTaunt(category, linename)
 		local tm = LocalPlayer():Team()
 		if category != PHX.FAVORITE_CATEGORY then
-			return linename, PHX.TAUNTS[category][tm][linename]
+			local cat = PHX.TAUNTS[category]
+			local tl = cat and cat[tm]
+			return linename, tl and tl[linename]
 		else
 			--Easier method would be to save taunt path into favoriteTaunt table and only have to get it from there
 			for k,v in pairs(PHX.TAUNTS) do
@@ -669,8 +682,12 @@ local function MainFrame()
                 local Name,getline = TranslateTaunt(window.CurrentCategory, window.list:GetLine(window.list:GetSelectedLine()):GetValue(1))
 			
                 if PHX:GetCVar( "ph_randtaunt_map_prop_enable" ) then
-                    SendToServer(Name,getline, true)
-                    PHX:AddChat(PHX:Translate("PHX_CTAUNT_PLAYED_ON_RANDPROP"), Color(20,220,0))
+                    if HasFakeTauntLeft() then
+                        SendToServer(Name,getline, true)
+                        PHX:AddChat(PHX:Translate("PHX_CTAUNT_PLAYED_ON_RANDPROP"), Color(20,220,0))
+                    else
+                        PHX:AddChat(PHX:Translate("PHX_CTAUNT_RAND_PROPS_LIMIT"), Color(220,150,30))
+                    end
                 else
                     PHX:AddChat(PHX:Translate("PHX_CTAUNT_RANDPROP_DISABLED"), Color(220,20,0))
                 end
@@ -715,7 +732,7 @@ local function MainFrame()
 			if PHX:GetCVar( "ph_randtaunt_map_prop_enable" ) and LocalPlayer():Team() == TEAM_PROPS then
 				menu:AddOption(PHX:QTrans( textRandProp ), function()
 					if hasLines then
-                        if LocalPlayer():GetTauntRandMapPropCount() >= 0 then
+                        if HasFakeTauntLeft() then
                             SendToServer(Name,getline, true)
                             PHX:AddChat(PHX:Translate("PHX_CTAUNT_PLAYED_ON_RANDPROP"), Color(20,220,0))
                         else
@@ -747,8 +764,11 @@ local function MainFrame()
 	end
 	
 	window.list.DoDoubleClick = function(id,line)
+		-- the "no taunts" / "not found" placeholder line is not a taunt
+		if !hasLines then return end
 		hastaunt = true
 		local Name,getline = TranslateTaunt(window.CurrentCategory, window.list:GetLine(window.list:GetSelectedLine()):GetValue(1))
+		if !getline then return end
 		SendToServer(Name,getline)
 		if PHX:GetCLCVar( "ph_cl_autoclose_taunt" ) then window.frame:Close(); end
 	end
@@ -774,8 +794,9 @@ hook.Add("InitPostEntity", "PHX.LoadFavFile", function()
 end)
 
 hook.Add("ShutDown", "PHX.SaveFavFile", function()
+	-- An emptied list must be saved too, or the old favourites load next time.
 	if (PHX.FavoriteTaunts) and istable(PHX.FavoriteTaunts) and
-		!table.IsEmpty(PHX.FavoriteTaunts) then
+		(favChanged or !table.IsEmpty(PHX.FavoriteTaunts)) then
 		print("[Taunt Menu] Saving 'Favorite Taunt' into a file... Done!")
 		ManageFavTaunt( LocalPlayer(), PHX.FavoriteTaunts, true )
 	else
