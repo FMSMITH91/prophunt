@@ -320,44 +320,66 @@ function GM:PlayerCanSeePlayersChat(txt, onteam, listen, speaker)
 	return true
 end
 
--- Called when an entity takes damage
+-- Called when an entity takes damage: hits on a prop player go to its disguise,
+-- and a hunter who damages a map prop pays ph_hunter_fire_penalty.
+
+-- IsValid: ph_prop is nil when it hit the entity limit, or NULL after a map cleanup.
+local function IsDisguisedProp(ent)
+	return ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && IsValid(ent.ph_prop)
+end
+
+-- Code from: https://facepunch.com/showthread.php?t=1500179 , Special thanks from AlcoholicoDrogadicto(http://steamcommunity.com/profiles/76561198082241865/) for suggesting this.
+local function RedirectPropDamage(ent, att, dmginfo)
+	-- Prevent Prop 'Friendly Fire'
+	if ( IsValid(att) && att:IsPlayer() && att:Team() == ent:Team() ) then 
+		PHX:VerboseMsg("[TakeDamage] DMGINFO::ATTACKED!!-> "..ent:Nick().."(Victim) <- "..tostring(att).."! DMGTYPE: "..dmginfo:GetDamageType())
+		return
+	end
+	--Debug purpose.
+	PHX:VerboseMsg("[TakeDamage] " .. ent:Name() .. "'s PLAYER entity appears to have taken damage, we can redirect it to the prop! (Model is: " .. ent.ph_prop:GetModel() .. ")")
+	ent.ph_prop:TakeDamageInfo(dmginfo)
+end
+
+-- A prop hunters are penalised for damaging: usable as a disguise, but not
+-- a disguise itself (ph_prop) or one of the hunterdamagefix breakables.
+local function IsPenalisedProp(ent)
+	local cls = ent:GetClass()
+	return cls != "ph_prop" && !hunterdamagefix[cls] && PHX:IsUsablePropEntity(cls) && !ent:IsPlayer()
+end
+
+local function IsLivingHunter(att)
+	return IsValid(att) && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive()
+end
+
+-- With ph_allow_armor and 5+ armor, half the penalty comes off health and 15 off armor.
+local function ApplyFirePenalty(att)
+	local penalty = PHX:GetCVar( "ph_hunter_fire_penalty" )
+	local allow   = PHX:GetCVar( "ph_allow_armor" )
+	if allow and att:Armor() >= 5 && penalty >= 5 then
+		att:SetHealth(att:Health() - (math.Round( penalty/2 )))
+		att:SetArmor(att:Armor() - 15)
+		if att:Armor() < 0 then att:SetArmor(0) end
+	else
+		att:SetHealth(att:Health() - penalty)
+	end
+	if att:Health() <= 0 then
+		-- this is debug console, no need to be translated.
+		MsgAll(att:Name() .. " felt guilty for hurting so many innocent props and committed suicide\n")
+		att:Kill()
+		
+		hook.Call("PH_HunterDeathPenalty", nil, att)
+	end
+end
+
 local function EntityTakeDamage(ent, dmginfo)
 	local att = dmginfo:GetAttacker()
 	
-	-- Code from: https://facepunch.com/showthread.php?t=1500179 , Special thanks from AlcoholicoDrogadicto(http://steamcommunity.com/profiles/76561198082241865/) for suggesting this.
-	-- IsValid: ph_prop is nil when it hit the entity limit, or NULL after a map cleanup.
-	if GAMEMODE:InRound() && IsValid(ent) && ent:IsPlayer() && ent:Alive() && ent:Team() == TEAM_PROPS && IsValid(ent.ph_prop) then
-		-- Prevent Prop 'Friendly Fire'
-		if ( IsValid(att) && att:IsPlayer() && att:Team() == ent:Team() ) then 
-			PHX:VerboseMsg("[TakeDamage] DMGINFO::ATTACKED!!-> "..ent:Nick().."(Victim) <- "..tostring(att).."! DMGTYPE: "..dmginfo:GetDamageType())
-			return
-		end
-		--Debug purpose.
-		PHX:VerboseMsg("[TakeDamage] " .. ent:Name() .. "'s PLAYER entity appears to have taken damage, we can redirect it to the prop! (Model is: " .. ent.ph_prop:GetModel() .. ")")
-		ent.ph_prop:TakeDamageInfo(dmginfo)
-		
-		return	-- don't continue below.
-	end
+	if !GAMEMODE:InRound() || !IsValid(ent) then return end
 	
-	if GAMEMODE:InRound() && IsValid(ent) && (ent:GetClass() != "ph_prop" && !hunterdamagefix[ent:GetClass()] && PHX:IsUsablePropEntity(ent:GetClass()) && !ent:IsPlayer()) && 
-		(IsValid(att) && att:IsPlayer() && att:Team() == TEAM_HUNTERS && att:Alive()) then
-        
-        local penalty = PHX:GetCVar( "ph_hunter_fire_penalty" )
-        local allow   = PHX:GetCVar( "ph_allow_armor" )
-		if allow and att:Armor() >= 5 && penalty >= 5 then
-			att:SetHealth(att:Health() - (math.Round( penalty/2 )))
-			att:SetArmor(att:Armor() - 15)
-			if att:Armor() < 0 then att:SetArmor(0) end
-		else
-			att:SetHealth(att:Health() - penalty)
-		end
-		if att:Health() <= 0 then
-			-- this is debug console, no need to be translated.
-			MsgAll(att:Name() .. " felt guilty for hurting so many innocent props and committed suicide\n")
-			att:Kill()
-			
-			hook.Call("PH_HunterDeathPenalty", nil, att)
-		end
+	if IsDisguisedProp(ent) then
+		RedirectPropDamage(ent, att, dmginfo)
+	elseif IsPenalisedProp(ent) && IsLivingHunter(att) then
+		ApplyFirePenalty(att)
 	end
 end
 hook.Add("EntityTakeDamage", "PH_EntityTakeDamage", EntityTakeDamage)

@@ -80,10 +80,21 @@ loadblocks("sh_player.lua@hull", "local Player = S.PlyMeta\n" .. extractAll(sh_p
   [[^\s*function Player:PHSendHullInfo]], [[^\s*function Player:PHSendHullBounds]],
   [[^\s*function Player:PHAdjustView]] }))
 
--- (local )? lets the pre-fix code load too, so a reverted fix fails by name.
+-- The damage hook with the local helpers above it: from its header comment to
+-- its hook.Add (t_server_damage.lua covers every branch of it).
+local function lineRange(path, from, to)
+  local a, b, n = nil, nil, 0
+  for line in io.lines(ROOT .. path) do
+    n = n + 1
+    if not a and line:match(from) then a = n end
+    if a and not b and line:match(to) then b = n end
+  end
+  assert(a and b, "range not found in " .. path)
+  return a .. "-" .. b
+end
 loadblocks("init.lua@props", extractAll(INIT, {
-  [[^local hunterdamagefix]], [[^(local )?function EntityTakeDamage]],
-  [[^hook\.Add\("EntityTakeDamage", "PH_EntityTakeDamage"]],
+  [[^local hunterdamagefix]],
+  lineRange(INIT, "^%-%- Called when an entity takes damage", '^hook%.Add%("EntityTakeDamage", "PH_EntityTakeDamage"'),
   [[^hook\.Add\("PostEntityTakeDamage", "PHX\.SyncPropHealth"]],
   [[^function GM:PlayerShouldTakeDamage]], [[^function GM:PlayerExchangeProp]],
   [[^function GM:PlayerCanHearPlayersVoice]], [[^function GM:PlayerCanSeePlayersChat]],
