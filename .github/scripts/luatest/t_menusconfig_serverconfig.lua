@@ -239,8 +239,8 @@ check("save \"\" -> falls back", md(true, "") == known, true)
 check("save real data -> kept (normal)", md(true, '["1"]'), '["1"]')
 check("  ... and written", files["phx_addons_conflict.json"], '["1"]')
 
-local CheckTXT = loadchunk("local ErrorList = {}\n" .. extract(IG, [[^local function CheckGamemodeTXT]])
-  .. "\nreturn CheckGamemodeTXT", "integrity@CheckGamemodeTXT")()
+local CheckTXT = loadchunk("local ErrorList = {}\n" .. extractAll(IG, { [[^local function ReadGamemodeTXT]],
+  [[^local function CheckGamemodeTXT]] }) .. "\nreturn CheckGamemodeTXT", "integrity@CheckGamemodeTXT")()
 files["gamemodes/base_phx/base_phx.txt"] = "KV"; files["gamemodes/prop_hunt/prop_hunt.txt"] = "KV"
 util.KeyValuesToTable = function() return { isphx = "1" } end
 file.Find = function(pat) if pat == "gamemodes/*" then return {}, { "base_phx", "prop_hunt", "fretta13" } end return {}, {} end
