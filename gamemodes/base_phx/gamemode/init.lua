@@ -29,7 +29,6 @@ AddCSLuaFile( 'cl_hud.lua' )
 AddCSLuaFile( 'cl_deathnotice.lua' )
 AddCSLuaFile( 'cl_scores.lua' )
 AddCSLuaFile( 'cl_scoreboard_admin.lua' )
-AddCSLuaFile( 'cl_notify.lua' )
 AddCSLuaFile( 'player_colours.lua' )
 
 include( "shared.lua" )
@@ -64,6 +63,10 @@ function GM:Initialize()
 	end
 	
 end
+
+// Publish the time limit this map enforces for GetTimeLimit on clients. A hook,
+// because prop_hunt's GM:Initialize replaces the one above.
+hook.Add( "Initialize", "PHX.PublishTimeLimit", function() SetGlobalInt( "PHX.TimeLimit", GAMEMODE:GetTimeLimit() ) end )
 
 function GM:Think()
 

@@ -354,7 +354,6 @@ L["PHXM_ABOUT_BTN_WIKI"]			= "NAX Viki & Rehber"
 L["HUD_AUTOTAUNT_DISABLED"]		= 	"Otomatik Alay devre dışı."
 L["HUD_AUTOTAUNT_WAITFORUPDATE"]	=	"Otomatik Alay senkronize ediliyor..."
 
-L["PHXM_MV_VOTEROCKED"]				= "Oylama çağrısı yapıldı, harita oylaması raunt sonu başlayacak"
 L["PHXM_MV_VOTEROCKED_IMMINENT"]		= "Oylama çağrısı yapıldı, harita oylaması çok yakın"
 L["PHXM_MV_VOTEROCKED_PLY_TOTAL"]	= "%s oylama çağrısı yaptı. ( %d / %d )"
 

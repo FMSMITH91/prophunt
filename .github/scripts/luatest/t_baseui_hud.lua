@@ -154,8 +154,8 @@ check("spacer keeps its height", spacer.h, 12)
 check("spacer still tracked in Buttons", splash.Buttons[1], spacer)
 
 print("\n== Every client include still resolves and is sent to clients ==")
--- vgui_vote.lua is deleted and cl_notify.lua no longer included; make sure
--- nothing still includes a file that is not there, or one init.lua never sends.
+-- vgui_vote.lua and cl_notify.lua are deleted; make sure nothing still
+-- includes a file that is not there, or one init.lua never sends.
 local initSrc = read("gamemodes/base_phx/gamemode/init.lua")
 for _, file in ipairs{ "cl_init.lua", "cl_scores.lua", "cl_deathnotice.lua", "vgui/vgui_scoreboard.lua" } do
   local src = "\n" .. read("gamemodes/base_phx/gamemode/" .. file)
@@ -169,6 +169,15 @@ for _, file in ipairs{ "cl_init.lua", "cl_scores.lua", "cl_deathnotice.lua", "vg
       initSrc:find("AddCSLuaFile%(%s*[\"']" .. path:gsub("%p", "%%%0") .. "[\"']%s*%)") ~= nil, true)
   end
 end
+-- And the reverse: a deleted file whose AddCSLuaFile stayed behind makes the
+-- server print "AddCSLuaFile: Couldn't find" on every start.
+local sent = 0
+for path in ("\n" .. initSrc):gmatch("\nAddCSLuaFile%(%s*[\"']([^\"']+)[\"']%s*%)") do
+  sent = sent + 1
+  check(("init.lua AddCSLuaFile's %s, which exists"):format(path),
+    read("gamemodes/base_phx/gamemode/" .. path) ~= nil, true)
+end
+check("init.lua's AddCSLuaFile list was found", sent > 20, true)
 check("nothing creates the unregistered VoteScreen",
   read("gamemodes/base_phx/gamemode/cl_gmchanger.lua"):find('"VoteScreen"', 1, true), nil)
 
