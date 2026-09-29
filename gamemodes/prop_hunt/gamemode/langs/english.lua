@@ -393,6 +393,7 @@ L["PHXM_MV_WINNER"]		= "Next map"
 L["PHXM_MV_TALLY"]		= "%d / %d voted"
 L["PHXM_MV_HINT"]		= "Click a map to vote. You can change your mind."
 L["PHXM_MV_CANCEL"]		= "Cancel vote"
+L["PHXM_MV_ENDGAME_NOCANCEL"]	= "The game has ended: this map vote picks the next map and cannot be cancelled."
 
 L["PHXM_MV_START"]		= "Start the MapVote"
 L["PHXM_MV_STOP"]		= "Stop the MapVote"

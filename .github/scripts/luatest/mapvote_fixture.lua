@@ -1,6 +1,7 @@
--- Shared setup for the map vote server tests (t_mapvote_lifecycle.lua and
--- t_mapvote_rtv.lua). Not a test itself: run.sh only runs t_*.lua. Load it
--- after runner.lua; it returns the helpers the tests drive the code with.
+-- Shared setup for the map vote server tests (t_mapvote_lifecycle.lua,
+-- t_mapvote_rtv.lua and t_mapvote_endgame.lua). Not a test itself: run.sh only
+-- runs t_*.lua. Load it after runner.lua; it returns the helpers the tests
+-- drive the code with.
 --
 -- boot() runs the three shipped server files whole (sh_mapvote.lua,
 -- mapvote/sv_mapvote.lua, mapvote/rtv.lua) plus base_phx's real GM:EndOfGame,

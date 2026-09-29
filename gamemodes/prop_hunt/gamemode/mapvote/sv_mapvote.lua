@@ -360,7 +360,22 @@ end
 -- already trims the list to mv_mapbeforerevote entries, so it does not grow.
 
 -- Original: MapVote.Cancel()
-function MapVote.PHXCancel()
+-- ply is whoever asked; the server console (NULL) or a Lua caller (nil) is
+-- answered in the console. Returns false when the cancel is refused, so a
+-- caller does not report one that never happened.
+function MapVote.PHXCancel(ply)
+
+	-- The end-of-game vote is the only way off the map: no round starts once
+	-- the game is over, so cancelling it left every player frozen until someone
+	-- changed map by hand. It carries on; a mid-game vote can still be stopped.
+	if (GAMEMODE and GAMEMODE.IsEndOfGame) then
+		if IsValid(ply) then
+			ply:PHXChatInfo("WARNING", "PHXM_MV_ENDGAME_NOCANCEL")
+		else
+			print("[MapVote] The game has ended: this map vote picks the next map and cannot be cancelled.")
+		end
+		return false
+	end
 
 	-- RTV's 4 s countdown runs while Allow is still false, so it is stopped
 	-- before the checks below. Its tally goes too: left at the threshold, the

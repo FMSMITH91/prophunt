@@ -72,6 +72,13 @@ concommand.Add( "ph_mapvote_show", function()
     if ( IsValid( MapVote.Panel ) ) then MapVote.Panel:SetVisible( true ) end
 end, nil, "Show the map vote screen again after hiding it." )
 
+// Whether the staff Cancel button shows, on either screen. Not once a map has
+// won, and never in the end-of-game vote: that is the only way off the map, and
+// the server refuses to cancel it (MapVote.PHXCancel), which is the real guard.
+function MapVote.CanCancel( winner )
+    return !winner && !GetGlobalBool( "IsEndOfGame", false )
+end
+
 local PANEL = {}
 
 function PANEL:Init()
@@ -176,7 +183,7 @@ function PANEL:PerformLayout()
 	
 	self.CancelBtn:CenterHorizontal()
 	self.CancelBtn:SetY( self.CancelBtn:GetParent():GetTall() - 200 )
-	if ( LocalPlayer():PHXIsStaff() ) then
+	if ( LocalPlayer():PHXIsStaff() && MapVote.CanCancel() ) then
 		self.CancelBtn:SetVisible( true )
 	else
 		self.CancelBtn:SetVisible( false )
