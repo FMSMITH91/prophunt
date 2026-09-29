@@ -163,107 +163,130 @@ hook.Add("PH_RoundEnd", "LPS.RER_ResetWeaponState", function()
 end)
 hook.Add("PostCleanupMap", "LPS.CheckRespawnUnblind", function() LPSAllowed = false end)
 
+-- The five preconditions, in their original short-circuit order.
+local function CanStartLPS()
+    return team.NumPlayers(TEAM_PROPS) >= PHX:GetCVar( "lps_mins_prop_players" ) and LPSAllowed and GAMEMODE:GetTeamAliveCounts()[TEAM_PROPS] == 1 and GAMEMODE:InRound() and (not GetGlobalBool("LPS.InLastPropStanding", false))
+end
+
+-- false when lps_start_random_round or lps_start_delayed_rounds skips this round.
+local function IsLPSRound()
+    local RN = GetGlobalInt( "RoundNumber", 0 )
+    local XR = PHX:GetCVar( "lps_start_every_x_rounds" )
+
+    if PHX:GetCVar( "lps_start_random_round" ) then
+        if math.random(0,1) == 0 then
+            return false
+        end
+    elseif PHX:GetCVar( "lps_start_delayed_rounds" ) then
+        -- Skip over rounds that passed without LPS (props won on time, too few props...).
+        -- Waiting for an exact match stopped LPS for the rest of the map after one miss.
+        XR = math.max( XR, 1 )
+        while PHX.LPS.ROUND_LEFT < RN do
+            PHX.LPS.ROUND_LEFT = PHX.LPS.ROUND_LEFT + XR
+        end
+        if PHX.LPS.ROUND_LEFT ~= RN then return false end
+        PHX.LPS.ROUND_LEFT = RN + XR
+    end
+
+    return true
+end
+
+-- Fills PHX.LPS.WEAPON2 from lps_weapon, falling back to a random weapon.
+local function SelectLPSWeapon()
+    local SelWep = PHX:GetCVar( "lps_weapon" )
+    if SelWep == "random" then
+        PHX.LPS.WEAPON2.DATA,PHX.LPS.WEAPON2.NAME = table.Random( PHX.LPS.WEAPON_NEW )
+    else
+        local datacheck = PHX.LPS.WEAPON_NEW[ SelWep ]
+        if !datacheck or datacheck == nil then
+            print("[LPS] WARNING: Weapon data for " .. SelWep .. " was not found in table. Randomizing weapon instead!!")
+            PHX.LPS.WEAPON2.DATA,PHX.LPS.WEAPON2.NAME = table.Random( PHX.LPS.WEAPON_NEW )
+        else
+            PHX.LPS.WEAPON2.DATA = datacheck
+            PHX.LPS.WEAPON2.NAME = SelWep
+        end
+    end
+end
+
+local function CreateLPSTrail( pl )
+    local TrailCol = PHX.LPS:TrailColorTranslate( PHX:GetCVar( "lps_trail_color" ) )
+    local TrailTex = PHX:GetCVar( "lps_trail_texture" )
+
+    if !file.Exists("materials/" .. TrailTex .. ".vmt", "GAME") then
+        print("[LPS] Texture file for creating Trail: '" .. TrailTex .. "' was not found! Reverting back to default!!")
+        TrailTex = "trails/laser"
+    end
+
+    pl:CreateLPSTrail( 0, TrailCol, false, 15, 1, 4, 0.125, TrailTex )
+end
+
+-- Arms one surviving prop as the last prop standing.
+local function MakeLastProp( pl )
+    -- Remove previously weapon attached to player, if any.
+    if pl:HasLPSWeapon() then pl:RemoveLPSWeaponEntity() end
+
+    SelectLPSWeapon()
+    local ammo = util.LPSgetConValue( PHX.LPS.WEAPON2.DATA.AmmoCount )
+    pl:SetLPSAmmoCount( ammo )
+    pl:SetLPSWeapon( PHX.LPS.WEAPON2.NAME )
+    pl:CreateLPSWeaponEntity( PHX.LPS.WEAPON2.DATA.WorldModel, PHX.LPS.WEAPON2.DATA.FixAngles, PHX.LPS.WEAPON2.DATA.FixPos )
+    pl:SetLastStanding( true )
+    timer.Simple(0, function() -- Give the dummy weapon. We'll give it on the next frame.
+        if IsValid(pl) and pl:Alive() and pl:IsLastStanding() then pl:Give( PHX.LPS.DUMMYWEAPON ) end
+    end)
+    pl:SetLPSWeaponState( LPS_WEAPON_READY )
+
+    -- Health & Armor Options
+    if PHX:GetCVar( "lps_use_normal_health" ) then pl:SetHealthProp(100) end
+    if PHX:GetCVar( "ph_allow_armor" ) and PHX:GetCVar( "lps_use_armor" ) then pl:SetArmor(100) end
+
+    pl:PrintCenter( "LASTPROP_ANNOUNCE", Color(240,72,82) )
+
+    if PHX:GetCVar("lps_trail_show") then CreateLPSTrail( pl ) end
+end
+
+-- Tells everyone but the last prop, then plays the alert and queues the music.
+local function AnnounceLastProp( stand )
+    for _,p in pairs(player.GetAll()) do
+        if p:IsLastStanding() then
+            continue
+        else
+            p:PrintCenter( "LASTPROP_ANNOUNCE_ALL", Color(180,230,30) )
+            p:PHXNotify( "LASTPROP_ANNOUNCE_ALL", "ERROR", 4, true )
+        end
+    end
+
+    -- nil when no sound/lps/alert files are mounted: skip the alert, start the music at once.
+    local AlertSnd = PHX.LPS:GetAlertSound()
+    local world = game.GetWorld()
+    if AlertSnd then world:EmitSound( AlertSnd.sound, 0, 100, 0.8, CHAN_STATIC ) end
+
+    if PHX:GetCVar( "lps_enable_music" ) then
+        timer.Create(strAlertTimer, AlertSnd and AlertSnd.Len or 0, 1, function() PHX.LPS:CreateSound( stand ) end)
+    end
+end
+
 -- Doesn't need the prop that died, so PH_BlindTimeOver can run it as well.
 local function CheckLastProp()
-    if team.NumPlayers(TEAM_PROPS) >= PHX:GetCVar( "lps_mins_prop_players" ) and LPSAllowed and GAMEMODE:GetTeamAliveCounts()[TEAM_PROPS] == 1 and GAMEMODE:InRound() and (not GetGlobalBool("LPS.InLastPropStanding", false)) then
-		
-		local RN = GetGlobalInt( "RoundNumber", 0 )
-		local XR = PHX:GetCVar( "lps_start_every_x_rounds" )
-		
-		if PHX:GetCVar( "lps_start_random_round" ) then
-			if math.random(0,1) == 0 then 
-				return
-			end
-		elseif PHX:GetCVar( "lps_start_delayed_rounds" ) then
-			-- Skip over rounds that passed without LPS (props won on time, too few props...).
-			-- Waiting for an exact match stopped LPS for the rest of the map after one miss.
-			XR = math.max( XR, 1 )
-			while PHX.LPS.ROUND_LEFT < RN do
-				PHX.LPS.ROUND_LEFT = PHX.LPS.ROUND_LEFT + XR
-			end
-			if PHX.LPS.ROUND_LEFT ~= RN then return end
-			PHX.LPS.ROUND_LEFT = RN + XR
-		end
-        
-        local stand = NULL
-        
-        -- Clear previously played song, if any.
-        StopMusic()
-        
-        for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
-	        if pl:Alive() and (not pl:IsLastStanding()) then
-                
-                -- Remove previously weapon attached to player, if any.
-                if pl:HasLPSWeapon() then pl:RemoveLPSWeaponEntity() end
-                
-                local SelWep = PHX:GetCVar( "lps_weapon" )
-                if SelWep == "random" then
-                    PHX.LPS.WEAPON2.DATA,PHX.LPS.WEAPON2.NAME = table.Random( PHX.LPS.WEAPON_NEW )
-                else
-                    local datacheck = PHX.LPS.WEAPON_NEW[ SelWep ]
-                    if !datacheck or datacheck == nil then
-                        print("[LPS] WARNING: Weapon data for " .. SelWep .. " was not found in table. Randomizing weapon instead!!")
-                        PHX.LPS.WEAPON2.DATA,PHX.LPS.WEAPON2.NAME = table.Random( PHX.LPS.WEAPON_NEW )
-                    else
-                        PHX.LPS.WEAPON2.DATA = datacheck
-                        PHX.LPS.WEAPON2.NAME = SelWep
-                    end
-                end
-                local ammo = util.LPSgetConValue( PHX.LPS.WEAPON2.DATA.AmmoCount )
-                pl:SetLPSAmmoCount( ammo )
-                pl:SetLPSWeapon( PHX.LPS.WEAPON2.NAME )
-                pl:CreateLPSWeaponEntity( PHX.LPS.WEAPON2.DATA.WorldModel, PHX.LPS.WEAPON2.DATA.FixAngles, PHX.LPS.WEAPON2.DATA.FixPos )
-                pl:SetLastStanding( true )
-                timer.Simple(0, function() -- Give the dummy weapon. We'll give it on the next frame.
-                    if IsValid(pl) and pl:Alive() and pl:IsLastStanding() then pl:Give( PHX.LPS.DUMMYWEAPON ) end
-                end)
-                pl:SetLPSWeaponState( LPS_WEAPON_READY )
-                
-                -- Health & Armor Options
-                if PHX:GetCVar( "lps_use_normal_health" ) then pl:SetHealthProp(100) end
-                if PHX:GetCVar( "ph_allow_armor" ) and PHX:GetCVar( "lps_use_armor" ) then pl:SetArmor(100) end
-                
-                pl:PrintCenter( "LASTPROP_ANNOUNCE", Color(240,72,82) )
-                
-                if PHX:GetCVar("lps_trail_show") then
-                    local TrailCol = PHX.LPS:TrailColorTranslate( PHX:GetCVar( "lps_trail_color" ) )
-                    local TrailTex = PHX:GetCVar( "lps_trail_texture" )
-                    
-                    if !file.Exists("materials/" .. TrailTex .. ".vmt", "GAME") then
-                        print("[LPS] Texture file for creating Trail: '" .. TrailTex .. "' was not found! Reverting back to default!!")
-                        TrailTex = "trails/laser"
-                    end
-                    
-                    pl:CreateLPSTrail( 0, TrailCol, false, 15, 1, 4, 0.125, TrailTex )
-                end
-                
-                stand = pl
-	        end
-        end
-		
-		SetGlobalBool("LPS.InLastPropStanding", true) -- for Think
-		-- FIX 01/30/2023: Replaced 'pl' to 'stand'. pl was nil.
-		hook.Call( "PHInLastPropStanding", nil, stand, PHX.LPS.WEAPON2.NAME, PHX.LPS.WEAPON2.DATA ) -- for Something you need to "hook.Add" it.
+    if not CanStartLPS() or not IsLPSRound() then return end
 
-        for _,p in pairs(player.GetAll()) do                    
-            if p:IsLastStanding() then
-                continue
-            else
-                p:PrintCenter( "LASTPROP_ANNOUNCE_ALL", Color(180,230,30) )
-                p:PHXNotify( "LASTPROP_ANNOUNCE_ALL", "ERROR", 4, true )
-            end
-        end
-        
-        -- nil when no sound/lps/alert files are mounted: skip the alert, start the music at once.
-        local AlertSnd = PHX.LPS:GetAlertSound()
-        local world = game.GetWorld()
-        if AlertSnd then world:EmitSound( AlertSnd.sound, 0, 100, 0.8, CHAN_STATIC ) end
+    local stand = NULL
 
-		if PHX:GetCVar( "lps_enable_music" ) then
-			timer.Create(strAlertTimer, AlertSnd and AlertSnd.Len or 0, 1, function() PHX.LPS:CreateSound( stand ) end)
-		end
-        
+    -- Clear previously played song, if any.
+    StopMusic()
+
+    for _, pl in pairs(team.GetPlayers(TEAM_PROPS)) do
+        if pl:Alive() and (not pl:IsLastStanding()) then
+            MakeLastProp( pl )
+            stand = pl
+        end
     end
+
+    SetGlobalBool("LPS.InLastPropStanding", true) -- for Think
+    -- FIX 01/30/2023: Replaced 'pl' to 'stand'. pl was nil.
+    hook.Call( "PHInLastPropStanding", nil, stand, PHX.LPS.WEAPON2.NAME, PHX.LPS.WEAPON2.DATA ) -- for Something you need to "hook.Add" it.
+
+    AnnounceLastProp( stand )
 end
 
 local function DoPlayerCheck(ply)
