@@ -139,7 +139,7 @@ if SERVER then
             local allow = PHX:GetCVar( "ph_allow_armor" )
 			if allow and pl:Armor() >= 10 then
 				self.health = self.health - (math.Round( dmg:GetDamage()/2 ))
-				pl:SetArmor(pl:Armor() - 20)
+				pl:SetArmor(math.max(pl:Armor() - 20, 0))
 			else
 				self.health = self.health - dmg:GetDamage()
 			end
@@ -195,7 +195,12 @@ if SERVER then
 				
 				attacker:AddFrags(1)
 				pl:AddDeaths(1)
-				attacker:SetHealth(math.Clamp(attacker:Health() + PHX:GetCVar( "ph_hunter_kill_bonus" ), 1, 100))
+				-- Top up to max health, but never lower a hunter who is above it
+				-- (Lucky Ball heals past 100), and leave a dead hunter alone.
+				if attacker:Alive() then
+					local hp = attacker:Health()
+					attacker:SetHealth(math.min(hp + PHX:GetCVar( "ph_hunter_kill_bonus" ), math.max(hp, attacker:GetMaxHealth())))
+				end
                 
                 hook.Call("PH_OnPropKilled", nil, pl, inflictor, attacker) -- Added inflictor, due to PS2 needs it, although it doesn't.
 				pl:RemoveProp()

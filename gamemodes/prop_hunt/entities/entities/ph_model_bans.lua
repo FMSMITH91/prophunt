@@ -46,10 +46,16 @@ function ENT:AddBans()
 		
 		local BannedMdls = PHX.BANNED_PROP_MODELS
 		
+		-- Remember which bans this map added, so RemoveBans does not lift bans
+		-- the server already had (perma-bans, model_bans.txt).
 		for _,mdl in SortedPairs( self.KVs or {} ) do
 			if !CurMapBan[mdl] then 
-				CurMapBan[mdl] = true
-				if !table.HasValue( BannedMdls, mdl ) then table.insert(BannedMdls, mdl); end
+				if !table.HasValue( BannedMdls, mdl ) then
+					table.insert(BannedMdls, mdl)
+					CurMapBan[mdl] = "added"
+				else
+					CurMapBan[mdl] = "preexisting"
+				end
 			end
 		end
 		
@@ -71,8 +77,8 @@ function ENT:RemoveBans()
 		
 		for _,mdl in SortedPairs( self.KVs or {} ) do
 			if CurMapBan[mdl] then
+				if CurMapBan[mdl] == "added" then table.RemoveByValue( BannedMdls, mdl ) end
 				CurMapBan[mdl] = nil;
-				table.RemoveByValue( BannedMdls, mdl )
 			end
 		end
 		
