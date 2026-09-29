@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""Regression tests for check_net_receivers.py.
-
-The checker follows delegation chains so that safe handlers do not sit in the
-review list forever. That makes it more permissive, and a permissive security
-checker that has quietly gone blind is worse than none at all - these cases pin
-down both halves: it still flags an unguarded handler, and it refuses to call a
-chain safe when any branch of it skips the check.
-
-Run directly: python3 .github/scripts/test_check_net_receivers.py
-"""
+"""Regression tests for check_net_receivers.py."""
+# The checker follows delegation chains so that safe handlers do not sit in the
+# review list forever. That makes it more permissive, and a permissive security
+# checker that has quietly gone blind is worse than none at all - these cases pin
+# down both halves: it still flags an unguarded handler, and it refuses to call a
+# chain safe when any branch of it skips the check.
+#
+# Run directly: python3 .github/scripts/test_check_net_receivers.py
 import contextlib
 import importlib.util
 import io

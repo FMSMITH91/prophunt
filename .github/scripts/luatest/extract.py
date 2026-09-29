@@ -1,35 +1,33 @@
 #!/usr/bin/env python3
-"""Pull a function (or line range) out of a GLua file and translate it to stock Lua.
-
-The point is to execute the SHIPPED bytes under a test harness, not a retyped
-approximation of them. glualint and Codacy both pass code that errors the moment
-a player touches it; this is what catches that.
-
-Usage:
-    extract.py <repo-relative path> '<python regex matching the first line>'
-    extract.py <repo-relative path> 12-48
-
-The regex form walks the block to its matching `end`, so tests bind to code
-rather than line numbers and do not rot when the file above them changes. A
-match that starts inside a comment is skipped (it is commented-out code, never
-what a test means), and a spec that matches more than one line warns.
-
-Things this gets right, each of which silently broke an earlier version or
-could make a test run different code from what GMod runs:
-
-  * String and comment bodies are masked before any operator rewriting, so
-    `["!unstuck"]` does not become `[" not unstuck"]`.
-  * `for ... do` is ONE block opener, not two.
-  * `continue` is GLua-only. It is neutralised only for parse checks
-    (EXTRACT_PARSE_ONLY=1); for behaviour tests it warns loudly instead, because
-    dropping it would run loop bodies that should have been skipped.
-  * An extraction that matches nothing exits non-zero rather than printing "".
-  * `//[[ note` stays a LINE comment. Turned into `--[[` it would open a long
-    comment and swallow real code up to the next `]]`, with no parse error.
-  * A `/* */` body containing `]]` gets a long-bracket level that it does not
-    contain, so the comment cannot end early.
-  * `! x`, with a space, is negation as well as `!x`.
-"""
+"""Pull a function (or line range) out of a GLua file and translate it to stock Lua."""
+# The point is to execute the SHIPPED bytes under a test harness, not a retyped
+# approximation of them. glualint and Codacy both pass code that errors the moment
+# a player touches it; this is what catches that.
+#
+# Usage:
+#     extract.py <repo-relative path> '<python regex matching the first line>'
+#     extract.py <repo-relative path> 12-48
+#
+# The regex form walks the block to its matching `end`, so tests bind to code
+# rather than line numbers and do not rot when the file above them changes. A
+# match that starts inside a comment is skipped (it is commented-out code, never
+# what a test means), and a spec that matches more than one line warns.
+#
+# Things this gets right, each of which silently broke an earlier version or
+# could make a test run different code from what GMod runs:
+#
+#   * String and comment bodies are masked before any operator rewriting, so
+#     `["!unstuck"]` does not become `[" not unstuck"]`.
+#   * `for ... do` is ONE block opener, not two.
+#   * `continue` is GLua-only. It is neutralised only for parse checks
+#     (EXTRACT_PARSE_ONLY=1); for behaviour tests it warns loudly instead, because
+#     dropping it would run loop bodies that should have been skipped.
+#   * An extraction that matches nothing exits non-zero rather than printing "".
+#   * `//[[ note` stays a LINE comment. Turned into `--[[` it would open a long
+#     comment and swallow real code up to the next `]]`, with no parse error.
+#   * A `/* */` body containing `]]` gets a long-bracket level that it does not
+#     contain, so the comment cannot end early.
+#   * `! x`, with a space, is negation as well as `!x`.
 import os
 import re
 import sys
@@ -44,7 +42,7 @@ CONTINUE = re.compile(r'(?<![\w.])continue(?![\w])')
 
 
 def rewrite_code(code, parse_only=False):
-    """GLua operators to stock Lua: != && || and ! (with or without a space)."""
+    """Rewrite GLua operators as stock Lua: != && || and ! (with or without a space)."""
     code = code.replace("!=", "~=").replace("&&", " and ").replace("||", " or ")
     if parse_only:
         code = CONTINUE.sub('_CONTINUE_ = 1', code)
@@ -93,12 +91,10 @@ def block(masked, raw_lines, start):
 
 
 def code_hits(raw, spec):
-    """(masked lines, indexes of lines where spec matches outside a comment).
-
-    Masked lines have every string and comment blanked, for block() to count
-    keywords in. A match counts from its first non-blank character, so a
-    leading `\\s*` in the spec cannot smuggle a commented-out line in.
-    """
+    """(masked lines, indexes of lines where spec matches outside a comment)."""
+    # Masked lines have every string and comment blanked, for block() to count
+    # keywords in. A match counts from its first non-blank character, so a
+    # leading `\s*` in the spec cannot smuggle a commented-out line in.
     parts = split_code_and_literals(raw)
     masked = "".join(r if k == "code" else re.sub(r"[^\n]", " ", r) for k, _, r in parts)
     comments = "".join(re.sub(r"[^\n]", "#" if k == "comment" else " ", r)

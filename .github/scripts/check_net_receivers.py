@@ -1,38 +1,36 @@
 #!/usr/bin/env python3
-"""Report server-side net.Receive handlers that do not validate their sender.
-
-Anything a client sends over the net library is attacker-controlled. A handler
-that acts on it without checking who sent it - and whether that player is even
-allowed to do the thing - is how GMod servers get taken over.
-
-The realm comes from the file first: cl_ files are client-side; sv_ files,
-init.lua and lua/autorun/server are server-side. Anywhere else (sh_ files,
-weapons, shared.lua) the callback signature decides: the server gets
-`function( len, ply )`, the client only `function( len )`. A receiver passed by
-reference - net.Receive( "x", HandleX ) - is resolved to its definition in the
-same file.
-
-Each handler is reported as one of:
-
-  ok      - checks the sender's rank, team or alive state, inline or through
-            helpers and dispatch tables defined in the same file
-  REVIEW  - hands the sender to a helper this script cannot resolve (defined in
-            another file, or a table entry it cannot see), so check by hand
-            whether that helper validates anything
-  UNGATED - acts on client data with no sender check at all. A server-side
-            callback with no player parameter lands here too: it cannot check
-            its sender even if it wanted to.
-
-A rank check only counts when it is made on the sender - `ply:IsAdmin()`,
-`util.IsStaff( ply )`. Checking some other player's rank, or passing the
-sender to an allow-list like PCR:CheckUserGroup( ply ), is not a permission
-gate. The detection logic lives in netcheck_sender.py and netcheck_lua.py.
-
-This is a report, not a gate: it always exits 0. Some handlers legitimately need
-no permission check (a client asking for data it is allowed to have), so treat
-the output as a review list rather than a bug list. Flip STRICT to make UNGATED
-handlers fail the build.
-"""
+"""Report server-side net.Receive handlers that do not validate their sender."""
+# Anything a client sends over the net library is attacker-controlled. A handler
+# that acts on it without checking who sent it - and whether that player is even
+# allowed to do the thing - is how GMod servers get taken over.
+#
+# The realm comes from the file first: cl_ files are client-side; sv_ files,
+# init.lua and lua/autorun/server are server-side. Anywhere else (sh_ files,
+# weapons, shared.lua) the callback signature decides: the server gets
+# `function( len, ply )`, the client only `function( len )`. A receiver passed by
+# reference - net.Receive( "x", HandleX ) - is resolved to its definition in the
+# same file.
+#
+# Each handler is reported as one of:
+#
+#   ok      - checks the sender's rank, team or alive state, inline or through
+#             helpers and dispatch tables defined in the same file
+#   REVIEW  - hands the sender to a helper this script cannot resolve (defined in
+#             another file, or a table entry it cannot see), so check by hand
+#             whether that helper validates anything
+#   UNGATED - acts on client data with no sender check at all. A server-side
+#             callback with no player parameter lands here too: it cannot check
+#             its sender even if it wanted to.
+#
+# A rank check only counts when it is made on the sender - `ply:IsAdmin()`,
+# `util.IsStaff( ply )`. Checking some other player's rank, or passing the
+# sender to an allow-list like PCR:CheckUserGroup( ply ), is not a permission
+# gate. The detection logic lives in netcheck_sender.py and netcheck_lua.py.
+#
+# This is a report, not a gate: it always exits 0. Some handlers legitimately need
+# no permission check (a client asking for data it is allowed to have), so treat
+# the output as a review list rather than a bug list. Flip STRICT to make UNGATED
+# handlers fail the build.
 import os
 import re
 import sys
@@ -65,8 +63,9 @@ def realm_of(path):
 
 
 def callback_of(src, m):
-    """(params, body) of the receiver's callback; (None, None) when it is a
-    reference to a function this file does not define."""
+    """(params, body) of the receiver's callback."""
+    # (None, None) when the callback is a reference to a function this file does
+    # not define.
     if m.group("ref") is not None:
         return find_function(src, m.group("ref"))
     return params(m.group("args")), body_of(src, src.rfind("function", m.start(), m.start("args")))

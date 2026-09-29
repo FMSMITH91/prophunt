@@ -26,7 +26,9 @@ NULL = setmetatable({ __valid = false }, {
   __index    = function(_, k) error("Tried to use a NULL entity! (read " .. tostring(k) .. ")", 2) end,
   __newindex = function(_, k) error("Tried to use a NULL entity! (write " .. tostring(k) .. ")", 2) end })
 S.NULL = NULL
-function IsValid(e) return e ~= nil and e ~= NULL and e.__valid ~= false end
+-- A falsy argument is not valid, as in includes/util.lua. Indexing it instead
+-- would make IsValid(false) raise where GMod returns false.
+function IsValid(e) if not e then return false end return e ~= NULL and e.__valid ~= false end
 
 function isnumber(v) return type(v) == "number" end
 function isstring(v) return type(v) == "string" end
@@ -61,22 +63,61 @@ table.GetWinningKey = function(t) local bk, bv for k, v in pairs(t) do if bv == 
 table.CustomShuffle = function(a) local c = #a while c > 1 do local i = math.random(c); a[i], a[c] = a[c], a[i]; c = c - 1 end end
 SortedPairs, RandomPairs = pairs, pairs
 
+-- includes/extensions/string.lua, translated to plain Lua.
+local patternEscapes = { ["("] = "%(", [")"] = "%)", ["."] = "%.", ["%"] = "%%", ["+"] = "%+", ["-"] = "%-",
+                         ["*"] = "%*", ["?"] = "%?", ["["] = "%[", ["]"] = "%]", ["^"] = "%^", ["$"] = "%$",
+                         ["\0"] = "%z" }
+function string.PatternSafe(str) return (string.gsub(str, ".", patternEscapes)) end
+function string.ToTable(input)
+  local tbl, str = {}, tostring(input)
+  for i = 1, #str do tbl[i] = string.sub(str, i, i) end
+  return tbl
+end
+function string.Explode(separator, str, withpattern)
+  if separator == "" then return string.ToTable(str) end
+  if withpattern == nil then withpattern = false end
+  local ret, current_pos = {}, 1
+  for i = 1, string.len(str) do
+    local start_pos, end_pos = string.find(str, separator, current_pos, not withpattern)
+    if not start_pos then break end
+    ret[i] = string.sub(str, current_pos, start_pos - 1)
+    current_pos = end_pos + 1
+  end
+  ret[#ret + 1] = string.sub(str, current_pos)
+  return ret
+end
+function string.Trim(s, char)
+  if char then char = string.PatternSafe(char) else char = "%s" end
+  return string.match(s, "^" .. char .. "*(.-)" .. char .. "*$") or s
+end
+
 S.hooks = {}
 hook = {}
 function hook.Add(ev, name, fn) S.hooks[ev] = S.hooks[ev] or {}; S.hooks[ev][name] = fn end
 function hook.Remove(ev, name) if S.hooks[ev] then S.hooks[ev][name] = nil end end
 function hook.Run(ev, ...) if S.hooks[ev] then for _, f in pairs(S.hooks[ev]) do local r = f(...) if r ~= nil then return r end end end end
 function hook.Call(ev, _, ...) return hook.Run(ev, ...) end
+-- Looked up on every call: tests reset S.hooks to a fresh table.
+function hook.GetTable() return S.hooks end
 function S.fire(ev, ...) return hook.Run(ev, ...) end
 
 S.timers = {}
 timer = {}
 function timer.Simple(d, fn) S.timers[#S.timers + 1] = { fn = fn, at = _G.CURTIME + d } end
-function timer.Create(id, d, _, fn) S.timers[#S.timers + 1] = { id = id, fn = fn, at = _G.CURTIME + d } end
+-- GMod's timer.Create REPLACES a timer of the same name. Appending instead
+-- would fire a restarted timer twice, once on its old deadline.
+function timer.Create(id, d, _, fn)
+  timer.Remove(id)
+  S.timers[#S.timers + 1] = { id = id, fn = fn, at = _G.CURTIME + d }
+end
 function timer.Remove(id) for i = #S.timers, 1, -1 do if S.timers[i].id == id then table.remove(S.timers, i) end end end
 function timer.Exists(id) for _, t in ipairs(S.timers) do if t.id == id then return true end end return false end
 function timer.Pause() end
 function timer.Adjust() end
+-- One pump is one server tick at the new time. A timer that a callback creates
+-- runs on a later pump even at delay 0, as GMod runs it on the next tick, so a
+-- test can change the world between the two; a chain of timers needs a pump
+-- per link.
 function S.pump(advance)
   _G.CURTIME = _G.CURTIME + (advance or 0)
   local due, keep = {}, {}
@@ -136,7 +177,12 @@ function team.BestAutoJoinTeam() return TEAM_PROPS end
 player = {}
 function player.GetAll() return S.players end
 function player.GetCount() return #S.players end
-function player.GetHumans() return S.players end
+-- Bots are not humans. A test's own stand-in without IsBot counts as human.
+function player.GetHumans()
+  local humans = {}
+  for _, p in ipairs(S.players) do if not (p.IsBot and p:IsBot()) then humans[#humans + 1] = p end end
+  return humans
+end
 
 local VecMeta = {}
 VecMeta.__index = VecMeta
@@ -282,6 +328,7 @@ function PlyMeta:Nick() return self._name end
 function PlyMeta:Name() return self._name end
 function PlyMeta:GetName() return self._name end
 function PlyMeta:SteamID() return self._sid end
+function PlyMeta:UserID() return self._uid end
 function PlyMeta:IsBot() return self._bot == true end
 function PlyMeta:IsPlayer() return true end
 function PlyMeta:IsValid() return true end
@@ -381,11 +428,15 @@ function PlyMeta:Kick() self.kicked = true end
 function PlyMeta:CheckHull() return true end
 function PlyMeta:TraceLineFromPlayer() return { HitPos = self._pos, Contents = 0, HitSky = false } end
 
+-- UserID is never nil in GMod and differs per player, so each gets the next
+-- number unless the test names one.
+local lastUserID = 0
 function S.Player(t)
   t = t or {}
+  lastUserID = lastUserID + 1
   local p = setmetatable({
     _team = t.team or TEAM_PROPS, _alive = (t.alive ~= false), _name = t.name or "TestPly",
-    _sid = t.sid or "STEAM_0:0:1", _staff = t.staff or false, _bot = t.bot,
+    _sid = t.sid or "STEAM_0:0:1", _uid = t.uid or lastUserID, _staff = t.staff or false, _bot = t.bot,
     _onground = (t.onground ~= false), _pos = Vector(0, 0, 0),
     _vars = t.vars or {}, _info = t.info or {}, _nw = {}, _walk = t.walk,
     _idx = t.idx, chat = {}, sounds = {}, concmds = {}, weapons = {}, lua = {},

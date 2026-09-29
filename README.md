@@ -108,6 +108,9 @@ runs them against the stubbed Garry's Mod in `shim.lua`, and asserts with
 `check(name, got, want)` and `report()`. Extract by regex rather than by line
 numbers, so a test does not break when lines are added above the code. Before
 trusting a new assertion, break the code it covers and make sure it fails.
+`S.pump(seconds)` in `shim.lua` moves the clock on and runs one server tick: a
+timer created during that tick waits for the next pump, even at delay 0, so a
+chain of timers needs one pump per link.
 
 ### Things that are easy to get wrong
 

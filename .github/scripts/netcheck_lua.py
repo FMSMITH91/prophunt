@@ -1,9 +1,7 @@
-"""Lua source helpers for check_net_receivers.py.
-
-Everything here works on text that strip_noise() has already cleaned, so a
-keyword inside a comment or a string can never open or close a block. Kept in
-its own module because Codacy grades each file on its total complexity.
-"""
+"""Lua source helpers for check_net_receivers.py."""
+# Everything here works on text that strip_noise() has already cleaned, so a
+# keyword inside a comment or a string can never open or close a block. Kept in
+# its own module because Codacy grades each file on its total complexity.
 import re
 
 OPENERS = re.compile(r"\b(function|do|if)\b")
@@ -27,11 +25,9 @@ NOISE = re.compile(
 
 
 def strip_noise(src):
-    """Blank comments and string bodies, keeping every offset and line intact.
-
-    Length-preserving, so offsets in the stripped text still line up with the
-    original file - that is what lets us report accurate line numbers.
-    """
+    """Blank comments and string bodies, keeping every offset and line intact."""
+    # Length-preserving, so offsets in the stripped text still line up with the
+    # original file - that is what lets us report accurate line numbers.
     def blank(m):
         text = m.group(0)
         # Keep the quotes themselves so `net.Receive("x", ...)` still parses.
@@ -95,12 +91,10 @@ def find_table(src, name):
 
 
 def table_entries(tbl):
-    """(anonymous, named) handlers of a dispatch table literal.
-
-    anonymous: (params, body) of every function literal in it.
-    named:     identifiers assigned at its top level, `["b"] = Helper`. Missing
-               these let one unchecked helper hide behind checked siblings.
-    """
+    """(anonymous, named) handlers of a dispatch table literal."""
+    # anonymous: (params, body) of every function literal in it.
+    # named:     identifiers assigned at its top level, `["b"] = Helper`. Missing
+    #            these let one unchecked helper hide behind checked siblings.
     anonymous, masked = [], list(tbl)
     for entry in FUNC_LITERAL.finditer(tbl):
         body = body_of(tbl, entry.start())

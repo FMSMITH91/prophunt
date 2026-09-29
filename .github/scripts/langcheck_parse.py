@@ -1,7 +1,5 @@
-"""Reading and comparing PH:X language files, for check_langs.py.
-
-Kept in its own module because Codacy grades each file on its total complexity.
-"""
+"""Reading and comparing PH:X language files, for check_langs.py."""
+# Kept in its own module because Codacy grades each file on its total complexity.
 import glob
 import os
 import re

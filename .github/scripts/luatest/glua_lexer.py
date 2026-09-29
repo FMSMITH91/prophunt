@@ -1,10 +1,8 @@
-"""Split GLua source into code, strings and comments, for extract.py.
-
-Only the code parts may be rewritten (GLua operators to stock Lua), and a
-comment must stay a comment of the same extent: `//[[ note` is a LINE comment
-in GLua, so it must not turn into a Lua long comment that swallows real code.
-Kept in its own module because Codacy grades each file on its total complexity.
-"""
+"""Split GLua source into code, strings and comments, for extract.py."""
+# Only the code parts may be rewritten (GLua operators to stock Lua), and a
+# comment must stay a comment of the same extent: `//[[ note` is a LINE comment
+# in GLua, so it must not turn into a Lua long comment that swallows real code.
+# Kept in its own module because Codacy grades each file on its total complexity.
 import re
 
 
@@ -67,11 +65,9 @@ def literal_at(src, i):
 
 
 def split_code_and_literals(src):
-    """List of (kind, text, raw), kind 'code' | 'lit' | 'comment'.
-
-    text is what translate() emits (only code is rewritten, later); raw is the
-    original span, so masks built from it keep every column where it was.
-    """
+    """List of (kind, text, raw), kind 'code' | 'lit' | 'comment'."""
+    # text is what translate() emits (only code is rewritten, later); raw is the
+    # original span, so masks built from it keep every column where it was.
     out, i, start = [], 0, 0
     while i < len(src):
         found = literal_at(src, i)

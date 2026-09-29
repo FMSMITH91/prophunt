@@ -1,7 +1,5 @@
-"""Does a net.Receive handler validate its sender? Used by check_net_receivers.py.
-
-Kept in its own module because Codacy grades each file on its total complexity.
-"""
+"""Whether a net.Receive handler validates its sender, for check_net_receivers.py."""
+# Kept in its own module because Codacy grades each file on its total complexity.
 import re
 
 from netcheck_lua import find_function, find_table, table_entries
@@ -49,7 +47,7 @@ def delegation_targets(body, arg):
 
 
 def helper_checked(src, name, arg, depth, seen):
-    """Is the function called `name`, defined in src, a sender check?"""
+    """True if the function called `name`, defined in src, is a sender check."""
     if name in seen:
         return False
     hargs, hbody = find_function(src, name)
@@ -59,7 +57,7 @@ def helper_checked(src, name, arg, depth, seen):
 
 
 def entries_checked(src, tbl, arg, depth, seen):
-    """Does every handler in the dispatch table literal `tbl` check its sender?"""
+    """True if every handler in the dispatch table literal `tbl` checks its sender."""
     anonymous, named = table_entries(tbl)
     if not anonymous and not named:
         return False
@@ -73,8 +71,8 @@ def entries_checked(src, tbl, arg, depth, seen):
 
 
 def dispatch_checked(src, body, arg, depth, seen):
-    """Does `body` dispatch `arg` through a table - TBL[key](ply, ...) - whose
-    every entry checks it?"""
+    """True if `body` dispatches `arg` through a table whose every entry checks it."""
+    # The dispatch looks like TBL[key](ply, ...).
     for disp in re.finditer(r"\b([A-Za-z_][\w.]*)\s*\[[^\]]+\]\s*\(\s*" + sender(arg), body):
         tbl = find_table(src, disp.group(1))
         if tbl and entries_checked(src, tbl, arg, depth, seen):
@@ -83,20 +81,18 @@ def dispatch_checked(src, body, arg, depth, seen):
 
 
 def sender_checked(src, body, arg, depth=0, seen=None):
-    """Does `body` validate `arg`, directly or through the helpers it calls?
-
-    Follows three shapes, because real handlers rarely check inline:
-      1. a direct rank/team/alive test
-      2. a call to a named helper that checks (possibly itself via a helper)
-      3. dispatch through a table of handlers - TBL[key](ply, ...) - which
-         counts only if EVERY entry in that table validates, named ones too
-
-    Shape 3 is what sv_admin.lua uses: the receiver hands off to
-    ManageNetMessages, which dispatches through net_functions, whose every
-    entry calls doAdminStrictCheck, which calls ply:PHXIsStaff(). Without
-    following that, seven safe handlers sit permanently in the review list and
-    drown out anything real.
-    """
+    """True if `body` validates `arg`, directly or through the helpers it calls."""
+    # Follows three shapes, because real handlers rarely check inline:
+    #   1. a direct rank/team/alive test
+    #   2. a call to a named helper that checks (possibly itself via a helper)
+    #   3. dispatch through a table of handlers - TBL[key](ply, ...) - which
+    #      counts only if EVERY entry in that table validates, named ones too
+    #
+    # Shape 3 is what sv_admin.lua uses: the receiver hands off to
+    # ManageNetMessages, which dispatches through net_functions, whose every
+    # entry calls doAdminStrictCheck, which calls ply:PHXIsStaff(). Without
+    # following that, seven safe handlers sit permanently in the review list and
+    # drown out anything real.
     if depth > 4:
         return False
     seen = set() if seen is None else seen

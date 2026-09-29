@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
-"""Report inconsistencies between english.lua and the other translations.
-
-Checks, per language directory:
-  * keys present in a translation but missing from english.lua  (usually a typo
-    in the key name, e.g. "HUD-HUD_TEAMWIN" instead of "HUD_TEAMWIN")
-  * keys present in english.lua but missing from a translation   (players using
-    that language get english, or error text where the code calls
-    PHX:Translate, depending on which helper looks the key up)
-  * printf-style specifiers that differ from english in number, order or type.
-    string.format has no positional arguments, so a translation that reorders
-    "%s ... %d" to "%d ... %s" hands the string to %d and errors
-and across directories:
-  * a language the gamemode ships (gamemode/langs) with no file in a plugin's
-    lang directory, or a plugin file for a language code the gamemode never
-    declares (PHX:InsertToLanguage silently skips it)
-
-Parsing lives in langcheck_parse.py. This is a gate: with STRICT set it exits
-non-zero on any inconsistency. The backlog it was written to report is clear,
-so anything it finds now is drift.
-"""
+"""Report inconsistencies between english.lua and the other translations."""
+# Checks, per language directory:
+#   * keys present in a translation but missing from english.lua  (usually a typo
+#     in the key name, e.g. "HUD-HUD_TEAMWIN" instead of "HUD_TEAMWIN")
+#   * keys present in english.lua but missing from a translation   (players using
+#     that language get english, or error text where the code calls
+#     PHX:Translate, depending on which helper looks the key up)
+#   * printf-style specifiers that differ from english in number, order or type.
+#     string.format has no positional arguments, so a translation that reorders
+#     "%s ... %d" to "%d ... %s" hands the string to %d and errors
+# and across directories:
+#   * a language the gamemode ships (gamemode/langs) with no file in a plugin's
+#     lang directory, or a plugin file for a language code the gamemode never
+#     declares (PHX:InsertToLanguage silently skips it)
+#
+# Parsing lives in langcheck_parse.py. This is a gate: with STRICT set it exits
+# non-zero on any inconsistency. The backlog it was written to report is clear,
+# so anything it finds now is drift.
 import glob
 import os
 import sys
