@@ -96,7 +96,8 @@ loadblocks("init.lua@props", extractAll(INIT, {
   [[^local hunterdamagefix]],
   lineRange(INIT, "^%-%- Called when an entity takes damage", '^hook%.Add%("EntityTakeDamage", "PH_EntityTakeDamage"'),
   [[^hook\.Add\("PostEntityTakeDamage", "PHX\.SyncPropHealth"]],
-  [[^function GM:PlayerShouldTakeDamage]], [[^function GM:PlayerExchangeProp]],
+  [[^function GM:PlayerShouldTakeDamage]],
+  [[^local function IsBannedPropModel]], [[^function GM:PlayerExchangeProp]],
   [[^function GM:PlayerCanHearPlayersVoice]], [[^function GM:PlayerCanSeePlayersChat]],
   [[^hook\.Add\("PlayerSpawn", "PH_PlayerSpawn"]], [[^function GM:Think]] }))
 
@@ -183,6 +184,21 @@ pl = prop(100)
 GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = MIXED })
 check("ph_banned_models 0: the banned model is used (normal play)", pl.ph_prop:GetModel(), MIXED)
 S.cvars.ph_banned_models.v = "1"
+-- An addon inserting straight into the list keeps its own spelling (sh_config.lua
+-- asks owners to add bans from an Initialize hook). A junk entry (a table inserted
+-- by mistake) was skipped by table.HasValue and must still not break E.
+PHX.BANNED_PROP_MODELS = { "models/banned.mdl", MIXED, { "models/crate.mdl" } }
+pl = prop(100)
+GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = MIXED })
+check("addon's mixed-case ban, map spelled the same: refused", told(pl, "PHX_PROP_IS_BANNED"), true)
+pl = prop(100)
+GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = MIXED:lower() })
+check("addon's mixed-case ban, map spelled lowercase: refused", told(pl, "PHX_PROP_IS_BANNED"), true)
+changes = 0
+pl = prop(100)
+check("unbanned model past a junk entry: no error",
+  attempt(GAMEMODE.PlayerExchangeProp, GAMEMODE, pl, mkEnt{ mdl = "models/crate.mdl" }), "ok")
+check("  ... disguise changes (normal play)", changes, 1)
 PHX.BANNED_PROP_MODELS = { "models/banned.mdl" }
 
 print("\n== missing ph_prop / dead prop don't error ==")

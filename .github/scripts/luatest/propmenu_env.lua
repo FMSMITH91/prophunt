@@ -100,7 +100,8 @@ PHX.BANNED_PROP_MODELS = { "models/banned.mdl" }
 loadblocks("sh_player.lua@hull", "local Entity, Player = FindMetaTable('Entity'), FindMetaTable('Player')\n"
   .. extractAll(GMDIR .. "sh_player.lua", { [[^function Entity:GetPropSize]], [[^function Player:CheckHull]] }))
 GAMEMODE.ViewCam.cHullzMins, GAMEMODE.ViewCam.cHullzMaxs = 16, 72
-loadblocks("init.lua@PlayerExchangeProp", extract(GMDIR .. "init.lua", [[^function GM:PlayerExchangeProp]]))
+loadblocks("init.lua@PlayerExchangeProp", extractAll(GMDIR .. "init.lua",
+  { [[^local function IsBannedPropModel]], [[^function GM:PlayerExchangeProp]] }))
 loadblocks("sh_propchoose.lua", extract(PCRDIR .. "sh_propchoose.lua", "1-99999"))
 loadblocks("sh_meta.lua", extract(PCRDIR .. "sh_meta.lua", "1-99999"))
 do

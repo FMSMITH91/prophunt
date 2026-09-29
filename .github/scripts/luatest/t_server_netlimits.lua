@@ -1,11 +1,12 @@
 dofile((debug.getinfo(1, "S").source:match("@(.*/)") or "./") .. "runner.lua")
 
 -- Net payload limits, run as shipped: util.PHXSendCompressed from sv_nettables.lua,
--- init.lua's sendGroupInfo (a joiner's group lists), and the whole of sv_admin.lua
--- from the staff menu's save message to the broadcast of the saved file. GMod caps
--- a net message at about 64KB: past 60000 bytes nothing may be sent and the server
--- must say why; under it, every message must go out exactly as before (a 32-bit
--- length, then the data), as that is what the clients read.
+-- init.lua's sendGroupInfo (a joiner's group lists), sh_config.lua's prop ban list
+-- send, and the whole of sv_admin.lua from the staff menu's save message to the
+-- broadcast of the saved file. GMod caps a net message at about 64KB: past 60000
+-- bytes nothing may be sent and the server must say why; under it, every message
+-- must go out exactly as before (a 32-bit length, then the data), as that is what
+-- the clients read.
 
 local GM = "gamemodes/prop_hunt/gamemode/"
 
@@ -13,6 +14,9 @@ local GM = "gamemodes/prop_hunt/gamemode/"
 function net.WriteUInt(v, bits) table.insert(S.net.cur.data, ("uint%s:%s"):format(bits, v)) end
 function net.WriteData(d, n) table.insert(S.net.cur.data, ("data%s:%s"):format(n, d)) end
 function net.ReadData() return table.remove(S.net.readq, 1) end
+-- A refused payload must not even start a message: count every net.Start.
+local starts, shimStart = 0, net.Start
+function net.Start(n) starts = starts + 1; shimStart(n) end
 local errors = {}
 function ErrorNoHalt(msg) errors[#errors + 1] = tostring(msg) end
 local realprint = print
@@ -29,7 +33,7 @@ local function wire(name)
   local to = m[1].to == "all" and "all" or (m[1].to and m[1].to._name or "?")
   return (to .. " " .. table.concat(m[1].data, " ")):sub(1, 60)   -- a failure prints no 60KB line
 end
-local function reset() S.net.sent, errors = {}, {} end
+local function reset() S.net.sent, errors, starts = {}, {}, 0 end
 local function erred(pat) return #errors == 1 and errors[1]:find(pat) ~= nil end
 
 loadblocks("sv_nettables.lua", extract(GM .. "sv_nettables.lua", "1-99999"))
@@ -52,7 +56,7 @@ reset()
 local over = string.rep("x", 60001)
 check("60001 bytes: refused", util.PHXSendCompressed("PHX.Test", over, #over, ply), false)
 check("  ... nothing sent", wire("PHX.Test"), "none")
-check("  ... no message left half-built", #S.net.sent, 0)
+check("  ... no message even started", starts, 0)
 check("  ... one error naming the message and size", erred("PHX%.Test.*60001 bytes"), true)
 
 print("\n== sendGroupInfo: a joiner's group lists ==")
@@ -79,11 +83,35 @@ sendGroupInfo(ply)
 check("admin list past the limit: not sent", wire("PHX.AdminGroupInfo"), "none")
 check("  ... the server logs why", erred("PHX%.AdminGroupInfo.*60001 bytes"), true)
 check("  ... muted list still sent (normal play)", wire("PHX.MutedGroupInfo"), "joiner uint32:3 data3:vip")
+check("  ... only that message started", starts, 1)
 PHX.SVAdmins, PHX.IgnoreMutedUserGroup = { superadmin = true }, { [huge] = true }
 reset()
 sendGroupInfo(ply)
 check("muted list past the limit: not sent", wire("PHX.MutedGroupInfo"), "none")
 check("  ... admin list still sent (normal play)", wire("PHX.AdminGroupInfo"), "joiner uint32:10 data10:superadmin")
+
+print("\n== sh_config.lua: the prop ban lists ==")
+local UpdatePropBansInfo = loadchunk(extract(GM .. "sh_config.lua", [[^local function UpdatePropBansInfo]])
+  .. "\nreturn UpdatePropBansInfo", "sh_config.lua@UpdatePropBansInfo")()
+-- Stands in for TableToJSON + Compress: the models, in order.
+function util.PHXQuickCompress(t) local c = table.concat(t, ","); return c, #c end
+reset()
+UpdatePropBansInfo("BANNED_PROP_MODELS", { "models/a.mdl" }, ply)
+check("prop bans: sent to the joiner as before", wire("PHX.UpdatePropbanInfo"),
+  "joiner BANNED_PROP_MODELS uint32:12 data12:models/a.mdl")
+reset()
+UpdatePropBansInfo("PROP_PLMODEL_BANS", { "models/player.mdl" })
+check("playermodel bans: broadcast as before", wire("PHX.UpdatePropbanInfo"),
+  "all PROP_PLMODEL_BANS uint32:17 data17:models/player.mdl")
+reset()
+UpdatePropBansInfo("BANNED_PROP_MODELS", { string.rep("m", 60000) })
+check("exactly 60000 bytes: broadcast (normal play)", sent("PHX.UpdatePropbanInfo")[1] ~= nil, true)
+check("  ... no error", #errors, 0)
+reset()
+UpdatePropBansInfo("BANNED_PROP_MODELS", { string.rep("m", 60001) }, ply)
+check("ban list past the limit: nothing started", starts, 0)
+check("  ... the server logs the message, list and size",
+  erred("PHX%.UpdatePropbanInfo.*BANNED_PROP_MODELS.*60001 bytes"), true)
 
 print("\n== sv_admin.lua: saving the group lists ==")
 -- A DATA folder, and a JSON codec that is just the sorted group names in braces.
@@ -128,6 +156,7 @@ check("admin list past the limit: still saved", save("PHX.CLAdminGroupInfo", sta
 check("  ... on disk", files["phx_data/admins.txt"] == "{" .. huge .. "}", true)
 check("  ... but not broadcast", wire("PHX.AdminGroupInfo"), "none")
 check("  ... the server logs why", erred("PHX%.AdminGroupInfo.*60003 bytes"), true)
+check("  ... no message even started", starts, 0)
 check("muted list past the limit: not broadcast", (function()
   save("PHX.CLMutedGroupInfo", staff, { [huge] = true }); return wire("PHX.MutedGroupInfo") end)(), "none")
 check("  ... the server logs why", erred("PHX%.MutedGroupInfo.*60003 bytes"), true)
