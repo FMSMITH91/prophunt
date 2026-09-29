@@ -189,12 +189,12 @@ do
 
   loadblocks(CLV, extract(CLV, [[^function MapVote\.CanCancel]]), "local MapVote = PHX.MV\n")
   loadblocks(CUI, extract(CUI, "1-999999"))
-  local Classic = chunkReturningPanel(CLV, { [[^function PANEL:Init]], [[^function PANEL:AddWindowButtons]],
-                                             [[^function PANEL:PerformLayout]] })
+  local ClassicLayout = chunkReturningPanel(CLV, { [[^function PANEL:Init]], [[^function PANEL:AddWindowButtons]],
+                                                   [[^function PANEL:PerformLayout]] })
 
   local function classic()
     local c = Stub()
-    for k, v in pairs(Classic) do c[k] = v end
+    for k, v in pairs(ClassicLayout) do c[k] = v end
     c:Init()
     c.CancelBtn.GetParent = function() return Panel() end
     return c
@@ -210,12 +210,12 @@ do
     return m
   end
   -- Lays the screen out as `ply` at this point of the game; nil if it errors.
-  local function shown(screen, ply, endOfGame)
+  local function shown(pnl, ply, endOfGame)
     LocalPlayer = function() return ply end
     SetGlobalBool("IsEndOfGame", endOfGame or nil)
-    local ok = attempt(screen.PerformLayout, screen, 1920, 1080)
+    local ok = attempt(pnl.PerformLayout, pnl, 1920, 1080)
     if ok ~= "ok" then print("  layout error: " .. ok) return nil end
-    return screen.CancelBtn:IsVisible()
+    return pnl.CancelBtn:IsVisible()
   end
 
   local staff, pleb = S.Player{ staff = true }, S.Player{}

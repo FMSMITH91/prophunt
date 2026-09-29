@@ -97,7 +97,7 @@ print("\n== the server console and Lua callers ==")
 ------------------------------------------------------------------------------
 do
   endOfGameVote()
-  check("mv_stop from the dedicated console runs", quiet(stop, NULL), "ok")
+  check("mv_stop from the dedicated console runs", quiet(S.concommands["mv_stop"].fn, NULL, "mv_stop", {}), "ok")
   check("  ...is refused", PHX.MV.Allow, true)
   check("  ...and says so in the console", (out[1] or ""):find("cannot be cancelled", 1, true) ~= nil, true)
 

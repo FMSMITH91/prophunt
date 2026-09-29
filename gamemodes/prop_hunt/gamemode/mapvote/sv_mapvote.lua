@@ -382,8 +382,9 @@ function MapVote.PHXCancel(ply)
 	-- next disconnect started the cancelled vote all over again.
 	if MapVote.RTV then MapVote.RTV.Reset() end
 
-	-- With the setting off a built-in vote can still be running: it is the
-	-- end-of-game fallback when nothing handles PH_OverrideMapVote.
+	-- With the setting off a built-in vote can still be running (it was turned
+	-- off mid-vote), so only report "disabled" when nothing is open. The
+	-- end-of-game fallback never gets here: it is refused above.
 	if (not PHX:GetCVar( "ph_enable_mapvote" )) and not MapVote.Allow then
 		MsgAll("PH:X MapVote is disabled.\n")
 		return
