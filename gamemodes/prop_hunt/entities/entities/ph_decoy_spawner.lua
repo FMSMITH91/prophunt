@@ -40,6 +40,16 @@ local DontSpawn = {
 	["ph_fake_prop"] = true,
 	["ph_prop"] 	 = true,
 }
+-- No target name (unset keyvalue, or ChangeTarget with no data) has nothing to
+-- spawn on; FindByName raises on a non-string.
+local function FindTargets( name )
+	if !isstring(name) or name == "" then
+		PHX:VerboseMsg("[Decoy Spawner] No target name ('entity' keyvalue) set, not spawning.", 2)
+		return {}
+	end
+	return ents.FindByName( name )
+end
+
 function ENT:makeEntity()
 
 	if not GetGlobalBool("InRound", false) then
@@ -47,7 +57,7 @@ function ENT:makeEntity()
 		return
 	end
 
-    local SpawnToEnt = ents.FindByName( self.EntityNameToSpawn )
+    local SpawnToEnt = FindTargets( self.EntityNameToSpawn )
 	
 	local MaxType = self.SpawnMaxType or 0
     local Max = math.Clamp( self.SpawnMaximum or 0, -1, #SpawnToEnt )

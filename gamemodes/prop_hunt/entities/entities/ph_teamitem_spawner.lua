@@ -35,7 +35,7 @@ end
 
 function ENT:KeyValue( key, value )
 	if key == "spawnent" then
-		local id = tonumber(value)
+		local id = tonumber(value) or 1 -- a non-number (e.g. a class name) falls back to the first item
 		id = math.Clamp(id, 1, #self.Items)
 		self:SetSpawnEntity( id )
 	elseif key == "amount" then
@@ -45,6 +45,17 @@ function ENT:KeyValue( key, value )
     else
 		self:SetNetworkKeyValue(key, value)
 	end
+end
+
+-- Skipped at the entity limit, so the rest of CreateBall (and the
+-- remove-after-spawn below) still runs.
+local function SpawnItem( cls, pos, ang )
+	local e = ents.Create( cls )
+	if !IsValid(e) then return end
+	e:SetPos(pos)
+	e:SetAngles(ang)
+	e:Spawn()
+	e:Activate()
 end
 
 function ENT:CreateBall( entToSpawn, amt, targEnt, pos, ang )
@@ -79,11 +90,7 @@ function ENT:CreateBall( entToSpawn, amt, targEnt, pos, ang )
 			end
 			
 			for i=1,amt do
-				local e = ents.Create( entToSpawn )
-				e:SetPos(pos)
-				e:SetAngles(ang)
-				e:Spawn()
-				e:Activate()
+				SpawnItem( entToSpawn, pos, ang )
 			end
 			
 			if (self.RemoveAfterSpawn) then

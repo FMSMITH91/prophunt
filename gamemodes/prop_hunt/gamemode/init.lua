@@ -1322,6 +1322,7 @@ hook.Add("PropBreak", "Props_OnBreak_WithDrops", function( ply, ent )
 			local pos = ent:GetPos()
 			if math.random() < 0.08 then -- 8%
 				local lb = ents.Create("ph_luckyball")
+				if !IsValid(lb) then return end -- entity limit
                 lb:SetPos(Vector(pos.x, pos.y, pos.z + 32))
                 lb:SetAngles(Angle(0,0,0))
                 lb:SetColor(Color(math.Round(math.random(0,255)),math.Round(math.random(0,255)),math.Round(math.random(0,255)),255))
