@@ -28,12 +28,12 @@ function util.PHXQuickCompress( tbl )
     return nil,0
 end
 
--- nil when the data isn't valid compressed data: an empty table here would
+-- nil when the data isn't valid compressed JSON: an empty table here would
 -- replace the admin/mute group lists with nothing.
 function util.PHXQuickDecompress( data )
     local j = util.Decompress( data )
     if !j then return nil end
-    local t = util.JSONToTable( j ) or {}
+    local t = util.JSONToTable( j )
     
     return t
 end

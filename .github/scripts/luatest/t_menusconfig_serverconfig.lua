@@ -122,6 +122,7 @@ ULib = { ACCESS_SUPERADMIN = "superadmin", ACCESS_ALL = "user" }
 PHX.TITLE = "PH:X"
 S.concommands = {}
 loadblocks("sh_utils.lua", extract(GM .. "sh_utils.lua", "1-99999"))
+check("PHXQuickDecompress: data that is not JSON -> nil, not {}", util.PHXQuickDecompress("not json"), nil)
 -- the real ph_force_end_round, and a console that dispatches to it
 local ended
 function GAMEMODE:RoundEndWithResult(r) ended = r end
