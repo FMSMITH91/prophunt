@@ -301,6 +301,8 @@ concommand.Add( "changeclass", function( pl, cmd, args ) hook.Call( "PlayerReque
 
 local function SeenSplash( ply )
 
+	// The server console runs this with a NULL player.
+	if ( !IsValid( ply ) ) then return end
 	if ( ply.m_bSeenSplashScreen ) then return end
 	ply.m_bSeenSplashScreen = true
 	

@@ -39,4 +39,14 @@ net.ReadFloat = function() return 60 end
 S.receivers["PHX.RoundAddedTime"]()
 check("  ... and passes the added time to GM:UpdateHUD_AddedTime", got, 60)
 
+
+print("\n== seensplash from the server console ==")
+S.concommands = {}
+loadblocks("init.lua@SeenSplash", extractAll("gamemodes/base_phx/gamemode/init.lua",
+  { [[^local function SeenSplash]], [[^concommand\.Add\( "seensplash"]] }))
+check("seensplash from the console -> no error", attempt(S.concommands["seensplash"].fn, NULL), "ok")
+local joiner = S.Player{}
+S.concommands["seensplash"].fn(joiner)
+check("seensplash from a player marks the splash seen (normal play)", joiner.m_bSeenSplashScreen, true)
+
 report()
