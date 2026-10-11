@@ -169,6 +169,11 @@ ulxcmds["ulx ph3padjust"](p)
 check("ulx ph3padjust in game opens the window", p.lua[1], "OpenTPSAdjust()")
 ulxcmds["ulx phmenu"](p)
 check("ulx phmenu in game opens the menu", p.concmds[#p.concmds], "ph_x_menu")
+PCR = PCR or {}
+loadblocks("sh_cmd.lua@ulx", extractAll(GM .. "plugins/propmenu/sh_cmd.lua", {
+  [[^local CATEGORY_NAME]], [[^local function PHX_PropMenu]], [[^if \(!ulx or ulx == nil\)]] }))
+check("ulx propmenu from the console -> no error", attempt(ulxcmds["ulx propmenu"], NULL), "ok")
+check("ulx propmenu in game -> no error", attempt(ulxcmds["ulx propmenu"], S.Player{}), "ok")
 
 local mod = S.Player{ name = "moderator", staff = false }   -- granted by ULX, not PH:X staff
 ended = nil

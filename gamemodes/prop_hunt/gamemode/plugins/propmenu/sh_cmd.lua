@@ -22,6 +22,8 @@ end
 -- ULX
 local CATEGORY_NAME = PHX.TITLE
 local function PHX_PropMenu( calling_ply )
+	-- From the server console ULX passes NULL, and there is no menu to open.
+	if !IsValid(calling_ply) then return end
 	if PCR and PCR ~= nil then		  
 		if PHX:QCVar( "pcr_use_ulx_menu" ) then
 			calling_ply:SendLua("PCR:OpenPropMenu()")
