@@ -154,19 +154,18 @@ function ug:CreatePanel( tab )
         PHX:MsgBox_Query( "PHXM_ADMIN_ACCMSG_BODY", "PHXM_ADMIN_ACCMSG_TITLE",
             "MISC_YES", function()
             
-            local t = {}
-			local tm = {}
+            -- Start from the current lists and change only the groups shown here.
+            -- Building them from the checkboxes alone dropped every group ULX
+            -- doesn't list (PHX:AddAdminGroup, other admin mods) on save.
+            local t = table.Copy( PHX.SVAdmins or {} )
+			local tm = table.Copy( PHX.IgnoreMutedUserGroup or {} )
         
                 for group,checkbox in pairs( self.listCheckBoxes ) do
-                    if checkbox:GetChecked() then
-                        t[group] = true
-                    end
+                    t[group] = checkbox:GetChecked() or nil
                 end
 				
 				for group,checkbox in pairs( self.listMuteCB ) do
-                    if checkbox:GetChecked() then
-                        tm[group] = true
-                    end
+                    tm[group] = checkbox:GetChecked() or nil
                 end
 				
 				local dAdmin,len1 = util.PHXQuickCompress( t )
