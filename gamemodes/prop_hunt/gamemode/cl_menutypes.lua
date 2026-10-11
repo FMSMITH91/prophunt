@@ -244,15 +244,20 @@ end,
 		slider.OnValueChanged = function(self,value)
 			self:SetValue(value)
 			if kind == "SERVER" then
-				net.Start("SvCommandSliderReq")
-				net.WriteString(c)
-				net.WriteBool(float)
-				if float then
-					net.WriteFloat(value)
-				else
-					net.WriteInt(self:GetValue(), 16)
-				end
-				net.SendToServer()
+				-- Send the value it settles on, not every step of a drag: each send
+				-- runs the ConVar's change callbacks (and notify chat) on the server.
+				local v = float and value or self:GetValue()
+				timer.Create("PHX.SliderSend." .. c, 0.3, 1, function()
+					net.Start("SvCommandSliderReq")
+					net.WriteString(c)
+					net.WriteBool(float)
+					if float then
+						net.WriteFloat(v)
+					else
+						net.WriteInt(v, 16)
+					end
+					net.SendToServer()
+				end)
 			elseif kind == "CLIENT" then
 				if float then
 					RunConsoleCommand( c, tostring( value ) )

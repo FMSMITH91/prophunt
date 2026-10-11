@@ -322,7 +322,7 @@ function plus:CreatePanel( tab )
 		if !playerID or playerID == nil then return end
 		if PHX:GetCVar( "ph_enable_teambalance" ) and !PHX:GetCVar( "ph_rotateteams" ) then
 			net.Start("PHX.ForceHunterAsProp")
-				net.WriteUInt( playerID, 16 )
+				net.WriteUInt( playerID, 32 )	-- UserIDs pass 65535 on a long-running server
 			net.SendToServer()
 			
 			if (!panel.IsForced) then

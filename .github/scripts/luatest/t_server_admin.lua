@@ -165,4 +165,31 @@ slider.editing = true; slider:SetValue(10); slider.editing = false
 n, vals = sliderSends()
 check("waittime: the admin drags to 10 -> sent", vals[1], 10)
 
+
+print("\n== F1 menu server sliders send the value a drag settles on ==")
+local MT = "gamemodes/prop_hunt/gamemode/cl_menutypes.lua"
+loadblocks("cl_menutypes.lua@slider",
+  "MENUTYPES = {\n" .. extract(MT, [[^\["slider"\] = function]]) .. "\n}\n")
+local function numWidget()
+  return setmetatable({}, { __index = function() return function() return 100 end end })
+end
+local realVgui = vgui
+vgui = { Create = function(cls) local w = (cls == "DNumSlider") and mkSlider() or numWidget(); table.insert(created, w); return w end }
+ThrowError = ThrowError or function() end
+CreateConVar("ph_round_time", "300")
+S.net.sent, created, S.timers = {}, {}, {}
+MENUTYPES.slider("ph_round_time", { min = 120, max = 600, init = 300, dec = 0, kind = "SERVER" }, numWidget(), "LABEL")
+local drag
+for _, w in ipairs(created) do if w.IsEditing then drag = w end end
+S.net.sent = {}
+for v = 301, 400 do drag.val = v; drag:OnValueChanged(v) end
+check("100 drag steps: nothing sent yet", (sliderSends()), 0)
+S.pump(1)
+n, vals = sliderSends()
+check("  ... one message once the drag settles", n, 1)
+-- Last field: the int slider's float flag is nil, which the shim drops.
+local sent = S.net.sent[#S.net.sent].data
+check("  ... carrying the final value", sent[#sent], 400)
+vgui = realVgui
+
 report()

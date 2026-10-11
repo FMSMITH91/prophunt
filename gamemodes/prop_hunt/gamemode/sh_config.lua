@@ -697,6 +697,26 @@ if SERVER then
 
 	end
 	
+	-- Entries model_bans.txt added, so a refresh can drop the ones taken out of the
+	-- file without touching perma-bans, addon bans or ph_model_bans map entries.
+	local FileBans = {}
+	
+	-- Drops the file's entries that are no longer in `keep` (a set of models).
+	local function DropFileBans( keep )
+		local mapBans = GAMEMODE and GAMEMODE[ "BAN_" .. game.GetMap() ]
+		for mdl in pairs( FileBans ) do
+			if !keep[mdl] then
+				if mapBans and mapBans[mdl] == "preexisting" then
+					-- The map's ph_model_bans wants it too: it now owns the entry.
+					mapBans[mdl] = "added"
+				else
+					table.RemoveByValue( PHX.BANNED_PROP_MODELS, mdl )
+				end
+				FileBans[mdl] = nil
+			end
+		end
+	end
+	
 	local function AddBannedPropModels()
 		local dir = config_path .. "/prop_model_bans"
 		
@@ -716,8 +736,11 @@ if SERVER then
 		
 		if ( file.Exists ( dir.."/model_bans.txt","DATA" ) ) then
 			local PROP_MODEL_BANS_READ = util.JSONToTable(file.Read(dir.."/model_bans.txt") or "") or {}
+			
+			local keep = {}
+			for _,v in pairs(PROP_MODEL_BANS_READ) do keep[string.lower(v)] = true end
+			DropFileBans( keep )
             
-			--PHX.BANNED_PROP_MODELS = {}
 			for _,v in pairs(PROP_MODEL_BANS_READ) do
 				PHX:VerboseMsg("[Models] Adding entry of restricted model to be used -> "..string.lower(v))
                 
@@ -728,6 +751,7 @@ if SERVER then
                     PHX:VerboseMsg("[Models] Models " .. mdl .. " is already exists in the prop model banlist. Ignoring...!")
                 else
                     table.insert(PHX.BANNED_PROP_MODELS, mdl)
+                    FileBans[mdl] = true
                 end
 			end
 		else

@@ -25,7 +25,7 @@ end)
 
 net.Receive("PHX.ForceHunterAsProp", function(len, ply)
 	if ( ply:PHXIsStaff() ) then
-		local hunter 	 = Player(net.ReadUInt(16))
+		local hunter 	 = Player(net.ReadUInt(32))
 		if !hunter or !IsValid(hunter) then
 			ply:PHXChatInfo("ERROR", "FORCEH2P_PLAYER_NOT_FOUND")
 		return
