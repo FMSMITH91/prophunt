@@ -70,6 +70,25 @@ S.concommands["ph_refresh_propmodel_ban"].fn(staff)
 S.concommands["ph_refresh_propmodel_ban"].fn(staff)
 check("refresh twice -> still one entry", count(bans, "models/props_junk/popcan01a.mdl"), 1)
 
+-- Taking a model out of the file and refreshing lifts its ban; other sources keep theirs.
+GAMEMODE["BAN_" .. game.GetMap()] = { ["models/props_junk/popcan01a.mdl"] = "preexisting", _HasBanData = true }
+parsed["BANS"] = { "models/Props/CS_Assault/Money.mdl" }
+S.concommands["ph_refresh_propmodel_ban"].fn(staff)
+check("model dropped from the file, map entity also bans it -> kept", count(bans, "models/props_junk/popcan01a.mdl"), 1)
+check("  ... and the map entity now owns it", GAMEMODE["BAN_" .. game.GetMap()]["models/props_junk/popcan01a.mdl"], "added")
+GAMEMODE["BAN_" .. game.GetMap()] = nil
+table.RemoveByValue(bans, "models/props_junk/popcan01a.mdl")
+parsed["BANS"] = { "models/props_junk/PopCan01a.mdl", "models/Props/CS_Assault/Money.mdl" }
+S.concommands["ph_refresh_propmodel_ban"].fn(staff)
+check("back in the file -> banned again", count(bans, "models/props_junk/popcan01a.mdl"), 1)
+parsed["BANS"] = { "models/Props/CS_Assault/Money.mdl" }
+S.concommands["ph_refresh_propmodel_ban"].fn(staff)
+check("taken out of the file + refresh -> unbanned", count(bans, "models/props_junk/popcan01a.mdl"), 0)
+check("  ... the perma ban in the file is untouched", count(bans, "models/props/cs_assault/money.mdl"), 1)
+parsed["BANS"] = { "models/props_junk/PopCan01a.mdl", "models/Props/CS_Assault/Money.mdl" }
+S.concommands["ph_refresh_propmodel_ban"].fn(staff)
+check("  ... and kept in the file -> still one entry", count(bans, "models/props_junk/popcan01a.mdl"), 1)
+
 print("\n== #214: ban lists reach late joiners and follow a refresh ==")
 S.net.sent = {}
 S.concommands["ph_refresh_propmodel_ban"].fn(staff)
