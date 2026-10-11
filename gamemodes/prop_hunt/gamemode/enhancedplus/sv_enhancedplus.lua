@@ -324,6 +324,54 @@ function GM:TryNormalUnstuck(pl)
 	end
 end
 
+local function InRotateWindow(ix, offset, max, plyrCount)
+	return (ix >= (1 + offset) and ix <= max) or (max > plyrCount and ix <= max - plyrCount)
+end
+
+-- Give `skipped` hunter slots to the players after the window, in rotation
+-- order. Forced players fill in last, only if nobody else is left: a round with
+-- no hunters ends the moment it starts.
+local function FillHunterSlots(plyrTable, plyrCount, max, skipped)
+	for _, bAllowForced in ipairs({ false, true }) do
+		for step = 1, plyrCount do
+			if skipped < 1 then return end
+			local plyr = plyrTable[((max + step - 1) % plyrCount) + 1]
+			if plyr:Team() ~= TEAM_HUNTERS and (bAllowForced or !plyr:IsCurrentlyForcedAsProp()) then
+				plyr:SetTeam(TEAM_HUNTERS)
+				skipped = skipped - 1
+			end
+		end
+	end
+end
+
+-- ph_rotateteams: a window of hunterCount players, moved along one each round.
+function GM:RotateTeams(plyrTable, plyrCount, hunterCount)
+	-- Rotate over a stable order. The caller's list is last round's hunters then
+	-- props, which reshuffles every round, so the window landed on the same
+	-- players again and again while others never hunted.
+	table.sort(plyrTable, function(a, b) return a:UserID() < b:UserID() end)
+
+	local offset = GetGlobalInt("RotateTeamsOffset", 1)
+	SetGlobalInt("RotateTeamsOffset", offset + 1)
+	offset = offset % plyrCount
+	local max = hunterCount + offset
+
+	-- A forced prop sits out its hunter turn, and the next player in rotation
+	-- order who isn't forced takes the slot, so the hunter count holds.
+	local skipped = 0
+	for ix, plyr in ipairs(plyrTable) do
+		local bHunter = InRotateWindow(ix, offset, max, plyrCount)
+		if bHunter and plyr:IsCurrentlyForcedAsProp() then
+			bHunter = false
+			skipped = skipped + 1
+		end
+		plyr:SetTeam(bHunter and TEAM_HUNTERS or TEAM_PROPS)
+	end
+	FillHunterSlots(plyrTable, plyrCount, max, skipped)
+	-- Spent either way: left set, it fired rounds later once rotation was turned off.
+	for _, plyr in ipairs(plyrTable) do plyr:SetForceAsProp( false ) end
+end
+
 -- Moved from Fretta to This file.
 function GM:CheckTeamBalanceCustom()
 	local plyrTable = player.GetAll()
@@ -337,23 +385,7 @@ function GM:CheckTeamBalanceCustom()
 	local hunterCount = GAMEMODE:GetHunterCount(plyrCount)
 
 	if PHX:GetCVar( "ph_rotateteams" ) then
-		-- Rotate over a stable order. The list above is last round's hunters then
-		-- props, which reshuffles every round, so the window landed on the same
-		-- players again and again while others never hunted.
-		table.sort(plyrTable, function(a, b) return a:UserID() < b:UserID() end)
-
-		local offset = GetGlobalInt("RotateTeamsOffset", 1)
-		SetGlobalInt("RotateTeamsOffset", offset + 1)
-		offset = offset % plyrCount
-		local max = hunterCount + offset
-
-		for ix, plyr in ipairs(plyrTable) do
-			if (ix >= (1 + offset) and ix <= max) or (max > plyrCount and ix <= max - plyrCount) then
-				plyr:SetTeam(TEAM_HUNTERS)
-			else
-				plyr:SetTeam(TEAM_PROPS)
-			end
-		end
+		GAMEMODE:RotateTeams(plyrTable, plyrCount, hunterCount)
 	else
 		-- No math.randomseed(os.time()) here: it reseeds the one global RNG every
 		-- round from a value with 1-second granularity, degrading randomness for

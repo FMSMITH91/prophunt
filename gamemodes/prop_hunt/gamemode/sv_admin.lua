@@ -198,7 +198,12 @@ local net_functions = {
 		local valbool = data[2]
 		
 		if doAdminStrictCheck(ply) then
-			doCommand(ply, cmd, math.Round(valbool), "" )
+			local num = tonumber(valbool)
+			if !num then
+				ply:PHXChatInfo( "ERROR", "MISC_ERROR" )
+				return
+			end
+			doCommand(ply, cmd, math.Round(num), "" )
 		else
 			doKickInvalidAccess(ply, cmd, "")
 		end
@@ -232,6 +237,11 @@ local net_functions = {
 		local lang = data[1]
 		local cmd  = data[2]
 		
+		if !doAdminStrictCheck(ply) then
+			doKickInvalidAccess(ply, cmd, "LANGSETTINGS")
+			return
+		end
+		
 		local l = PHX.LANGUAGES
 		
 		if (l[lang] == nil or table.IsEmpty(l[lang])) then
@@ -239,11 +249,7 @@ local net_functions = {
 			return
 		end
 		
-		if doAdminStrictCheck(ply) then
-			doCommand(ply, cmd, lang, "LANGSETTINGS")
-		else
-			doKickInvalidAccess(ply, cmd, "LANGSETTINGS")
-		end
+		doCommand(ply, cmd, lang, "LANGSETTINGS")
 	end,
 	["SvCommandTextEntry"] = function(ply, data)
 		local val = data[1]

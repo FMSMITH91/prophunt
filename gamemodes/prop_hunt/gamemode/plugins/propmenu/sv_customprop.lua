@@ -169,6 +169,11 @@ local function SendUpdatedProps( ply )
 	if IsValid( ply ) then InformEditor(ply, !sent) end
 end
 
+-- The decompressed JSON, or nil when the data is missing or isn't valid compressed data.
+local function DecompressPropData( data )
+	return data and util.Decompress( data )
+end
+
 net.Receive("PCR.EditedCustomPropData", function(len, ply)
 	if CheckUser(ply) then
 		
@@ -185,14 +190,12 @@ net.Receive("PCR.EditedCustomPropData", function(len, ply)
 		local size = net.ReadUInt(32)
 		local data = net.ReadData(size)
 		
-		if !data or data == nil then 
-			-- confirm to editor that variable PCR and CustomProp is missing.
-			ErrorNoHalt("[!Prop Menu] Error Retreiving Prop Data: Unknown Error\n")
+		local js = DecompressPropData( data )
+		if !js then
+			ErrorNoHalt("[!Prop Menu] Error Retreiving Prop Data: the data is missing or could not be decompressed\n")
 			InformEditor(ply, true)
 			return
 		end
-		
-		local js = util.Decompress( data )
 		local DataTable = util.JSONToTable(js)
 		
 		if var ~= "PCR" or sub ~= "CustomProp" then --Strict to PCR and CustomProp!

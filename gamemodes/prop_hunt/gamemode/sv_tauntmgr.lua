@@ -60,7 +60,7 @@ local function CheckValidity( tauntName, sndFile, plyTeam )
 	
 	-- Cheap table checks first: file.Exists searches every mounted path, on strings
 	-- the client chose.
-	return (cached[tauntName] ~= nil) and table.HasValue( cached, sndFile ) and file.Exists("sound/"..sndFile, "GAME")
+	return cached[tauntName] == sndFile and file.Exists("sound/"..sndFile, "GAME")
 end
 
 local function SetLastTauntDelay( ply )

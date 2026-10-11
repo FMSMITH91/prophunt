@@ -11,6 +11,16 @@ local LPSAllowed = false
 
 PHX.LPS.ROUND_LEFT = 1
 
+-- Len is -1 without the duration library, and 0 or NaN for a file it cannot
+-- read. Queue the next track only after a real length, or the music restarted
+-- every 0.2s; otherwise the track plays once.
+local function QueueNextTrack( len, ply )
+    if !isnumber( len ) or !( len > 0 and len < math.huge ) then return end
+    timer.Create( strMusicTimer, len + 0.2, 1, function()
+        PHX.LPS:CreateSound( ply )
+    end )
+end
+
 function PHX.LPS:CreateSound( ply )
 
     if IsValid( ply ) and ply:Alive() and ply:Team() == TEAM_PROPS then
@@ -26,15 +36,18 @@ function PHX.LPS:CreateSound( ply )
             end
         end
         
+        -- Stop the last track: with a wrong length the next one can start early.
+        local last = self.SOUND.LASTPATCH
+        if last then last:Stop() end
+
         local snd = CreateSound( ply, self.SOUND.CURRENT.sound, filter )
         self.SOUND.CURRENT.sndObj = snd
         self.SOUND.CURRENT.Owner = ply
+        self.SOUND.LASTPATCH = snd
         snd:SetSoundLevel(0)
         snd:PlayEx(0.95,100)
         
-        timer.Create( strMusicTimer, self.SOUND.CURRENT.Len + 0.2, 1, function()
-            self:CreateSound( ply )
-        end )
+        QueueNextTrack( self.SOUND.CURRENT.Len, ply )
         
     end
     

@@ -1293,7 +1293,10 @@ function GM:OnPreRoundStart(num)
 	end
     
     -- Timer to give grenades, if ph_give_grenade_near_roundend is set.
-    timer.Create( "phx.tmr_GiveGrenade", GAMEMODE.RoundLength - PHX:GetCVar( "ph_give_grenade_roundend_before_time" ), 1, function()
+    -- The round's real length, as GM:RoundStart reads it. Clamped: a lead time at or
+    -- past the round length handed the grenades out as the round began.
+    local grenadeDelay = math.max( GAMEMODE:GetRoundTime( num ) - PHX:GetCVar( "ph_give_grenade_roundend_before_time" ), 1 )
+    timer.Create( "phx.tmr_GiveGrenade", grenadeDelay, 1, function()
         if PHX:GetCVar( "ph_give_grenade_near_roundend" ) and GAMEMODE:InRound() then
             for _,h in ipairs(team.GetPlayers( TEAM_HUNTERS )) do
                 if h:Alive() and h:HasWeapon( "weapon_smg1" ) then

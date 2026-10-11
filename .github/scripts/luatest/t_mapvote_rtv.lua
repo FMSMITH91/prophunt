@@ -215,6 +215,22 @@ do
   check("  ...and says so", log:find("Server emptied", 1, true) ~= nil, true)
 end
 
+do
+  -- A disconnect can push the tally over the shrunken threshold, but it must
+  -- not start a vote below the mv_rtvcount minimum that rtv itself enforces.
+  local ps = rtvBoot(4)
+  PHX.MV.PHXConfig.RTVPlayerCount = 4
+  say(ps[1], "rtv"); say(ps[2], "rtv")
+  leave(ps[4]); run(4)
+  check("2 of 4 voted, a non-voter leaves, mv_rtvcount 4: no vote", count("PHX.MV.Start"), 0)
+
+  ps = rtvBoot(4)
+  PHX.MV.PHXConfig.RTVPlayerCount = 3
+  say(ps[1], "rtv"); say(ps[2], "rtv")
+  leave(ps[4]); run(4)
+  check("  ...same with mv_rtvcount 3: the vote starts", count("PHX.MV.Start"), 1)
+end
+
 ------------------------------------------------------------------------------
 print("\n== #14/#48: ph_enable_mapvote 0 forces a vote only at the end of the game ==")
 ------------------------------------------------------------------------------

@@ -23,7 +23,7 @@ loadblocks("sh_enhancedplus.lua",
     [[^function GM:PlayerCanJoinTeam]] }))
 loadblocks("sv_enhancedplus.lua@Balance",
   extractAll("gamemodes/prop_hunt/gamemode/enhancedplus/sv_enhancedplus.lua", {
-    [[^function GM:CheckTeamBalanceCustom]], [[^function GM:CheckTeamBalance\(]] }))
+    [[^local function InRotateWindow]], [[^local function FillHunterSlots]], [[^function GM:RotateTeams]], [[^function GM:CheckTeamBalanceCustom]], [[^function GM:CheckTeamBalance\(]] }))
 loadblocks("init.lua@OnPreRoundStart",
   extract("gamemodes/prop_hunt/gamemode/init.lua", [[^function GM:OnPreRoundStart]]))
 
@@ -41,6 +41,7 @@ S.boolCVar("ph_rotateteams", "0")
 S.boolCVar("ph_preventconsecutivehunting", "1")
 S.boolCVar("ph_force_join_balanced_teams", "0")
 GAMEMODE.RoundLength = 300
+function GAMEMODE:GetRoundTime() return self.RoundLength end
 function GAMEMODE:FindLeastCommittedPlayerOnTeam(t) return team.GetPlayers(t)[1] end
 
 local function cv(n, v) S.cvars[n].v = v end
