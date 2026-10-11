@@ -315,16 +315,14 @@ function GM:UpdateHUD_Alive( InRound )
 
 end
 
---[[
-	this thing is obsolete/depcretaed. Sorry!
-
+-- Called when GM:AddRoundTime adds time. The round timer already follows
+-- RoundEndTime; override this to show the change.
 function GM:UpdateHUD_AddedTime( iTimeAdded )
-	// to do or to override, your choice
 end
 -- Was usermessage.Hook, removed from Garry's Mod alongside umsg. See
--- round_controller.lua's GM:AddRoundTime for the sending half.
+-- round_controller.lua's GM:AddRoundTime for the sending half. This used to
+-- sit inside a block comment, so the message arrived unhandled.
 net.Receive( "PHX.RoundAddedTime", function()
 	local added = net.ReadFloat()
 	if ( GAMEMODE ) then GAMEMODE:UpdateHUD_AddedTime( added ) end
 end )
-]]--
