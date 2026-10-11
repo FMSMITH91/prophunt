@@ -218,4 +218,35 @@ log = capture(function() answer("timed out") end)
 check("  ... all-clear once the fetch gives up", has(log, CLEAN), true)
 check("  ... still no banner", has(log, NEEDLE), false)
 
+print("\n== only a conflict list that parses is cached, and only then the cooldown ==")
+local onOK, cookieSet
+http.Fetch = function(_, ok) onOK = ok end
+cookie.Set = function() cookieSet = true end
+local LIST = '["123"]'
+S.json = { [LIST] = { "123" } }
+reset(); install("direct"); cookieSet = false
+boot()
+capture(function() onOK("<html>portal</html>", 19, {}, 200) end)
+check("HTML served with 200: not cached", mounts.DATA["phx_addons_conflict.json"] ~= "<html>portal</html>", true)
+check("  ... and no two-day cooldown, so it retries", cookieSet, false)
+reset(); install("direct"); cookieSet = false
+boot()
+capture(function() onOK(LIST, #LIST, {}, 200) end)
+check("a valid list is cached", mounts.DATA["phx_addons_conflict.json"], LIST)
+check("  ... and starts the cooldown", cookieSet, true)
+S.json = nil
+cookie.GetNumber = function() return os.time() + 3600 end
+
+print("\n== phx_integrity_check_fretta 0 keeps its messages out of the list ==")
+-- Unreadable gamemode txts plus one other failure, so the banner prints its list.
+reset()
+S.hooks, S.timers, dialogs = {}, {}, 0
+loadblocks("integrity.lua", extract(IG, "1-99999"))
+S.cvars["phx_integrity_check_fretta"].v = "0"
+GAMEMODE.IS_PROPER_PHX_INSTALLED = false
+log = capture(function() S.fire("InitPostEntity"); return #S.pump(1) end)
+GAMEMODE.IS_PROPER_PHX_INSTALLED = true
+check("fretta check off: the other error still shows", has(log, NEEDLE), true)
+check("  ... but not the gamemode-txt ones", log:find("Cannot read", 1, true) == nil, true)
+
 report()

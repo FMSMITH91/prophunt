@@ -289,9 +289,14 @@ local function FETCH_CONFLICT_WSID()
 		http.Fetch(
 			"https://raw.githubusercontent.com/Wolvin-NET/prophuntx/master/AddonsConflicts.json",
 			function(body,len,_,code)
-				if tonumber(code) < 400 and (body ~= "" and tonumber(len) > 0) then
+				-- Only a list that parses is cached: a portal or error page served
+				-- with 200 used to replace it and hide every conflict for two days.
+				if tonumber(code) < 400 and (body ~= "" and tonumber(len) > 0) and istable( util.JSONToTable( body ) ) then
 					print( "[PH:X Integrity Check] Retreiving Database Info and Saving to Local Cache." )
 					CachedWSID = ManageData( true, body )
+					-- Set on success only, so a failed fetch is retried next boot.
+					cookie.Set( "phxIntegrityCheck", time + cooldown )
+					print("[PH:X Integrity Check] Database Synced. Will use a Local cache instead and will do a recheck on "..os.date("%Y/%m/%d - %H:%M:%S", cookie.GetNumber( "phxIntegrityCheck", 0 )) )
 					GetConflictingAddons( CachedWSID )
 					return
 				end
@@ -307,9 +312,6 @@ local function FETCH_CONFLICT_WSID()
 				GetConflictingAddons( CachedWSID )
 			end
 		)
-		
-		cookie.Set( "phxIntegrityCheck", time + cooldown )
-		print("[PH:X Integrity Check] Database Synced. Will use a Local cache instead and will do a recheck on "..os.date("%Y/%m/%d - %H:%M:%S", cookie.GetNumber( "phxIntegrityCheck", 0 )) )
 	end
 
 end
@@ -409,8 +411,10 @@ hook.Add("InitPostEntity", "PHX.CheckIntegrity", function()
 			table.insert(ErrorList, "An Essential PH:X Core File was not found!")
 		end
 		
-		local CheckGM = CheckGamemodeTXT()
-		if CheckGM > 0 and CheckBaseFretta then
+		-- Not run at all with the Fretta check off: it adds its messages to
+		-- ErrorList, which the dialog shows whenever anything else fails.
+		local CheckGM = CheckBaseFretta and CheckGamemodeTXT() or 0
+		if CheckGM > 0 then
 			Errors = Errors + CheckGM + 1
 			table.insert(ErrorList, "Fretta/Prop Hunt gamemode files IS different! You're likely using different gamemode!")
 		end

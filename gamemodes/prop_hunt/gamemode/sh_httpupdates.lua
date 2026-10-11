@@ -179,8 +179,11 @@ if CLIENT then
 	
 		if (file.Exists(PHX.ConfigPath .. "/phx_update_info.txt", "DATA")) then
 			local json = file.Read(PHX.ConfigPath .. "/phx_update_info.txt", "DATA")
-			data = util.JSONToTable(json)
-		else
+			data = util.JSONToTable(json or "")
+		end
+		
+		-- A damaged file is treated like a missing one.
+		if !istable(data) or !isstring(data.notice) or !isstring(data.url) then
 			PHX:MsgBox("UPDATE_NOTIFY_MSG_NOTFOUND", "UPDATE_NOTIFY_MSG_TITLE", "MISC_OK")
 			return
 		end
