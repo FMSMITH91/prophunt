@@ -22,13 +22,23 @@ local function LoadOBBConfig()
 	end
 end
 
+-- A { x, y, z } list of numbers.
+local function IsVec3( t )
+	return istable( t ) and isnumber( t[1] ) and isnumber( t[2] ) and isnumber( t[3] )
+end
+
+-- { "model.mdl", { min = {x,y,z}, max = {x,y,z} } }
+local function IsValidEntry( e )
+	return istable( e ) and isstring( e[1] ) and istable( e[2] ) and IsVec3( e[2]["min"] ) and IsVec3( e[2]["max"] )
+end
+
 local function DoConfig()
 	-- Clear only what we added last time, so a model dropped from the file stops matching.
 	for mdl in pairs(OwnHulls) do PHX.CustomHulls[mdl] = nil end
 	OwnHulls = {}
 	
 	local data = CUR_MAP_DATA
-	if !data then return end
+	if !istable( data ) then return end
 	
 	--[[
 	JSON structure:
@@ -55,6 +65,11 @@ local function DoConfig()
 	]]
 	
 	for i=1,#data do
+		-- One bad entry used to error here every round and drop every entry after it.
+		if !IsValidEntry( data[i] ) then
+			PHX:VerboseMsg( "[OBB] Skipping malformed entry #"..i.." in this map's OBB config.", 2 )
+			continue
+		end
 		local tent = ents.FindByModel(data[i][1])
 		local min 	= Vector(data[i][2]["min"][1],data[i][2]["min"][2],data[i][2]["min"][3])
 		local max 	= Vector(data[i][2]["max"][1],data[i][2]["max"][2],data[i][2]["max"][3])

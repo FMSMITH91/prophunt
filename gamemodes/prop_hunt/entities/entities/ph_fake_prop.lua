@@ -126,6 +126,23 @@ if SERVER then
         self.owner = ent
     end
 	
+	-- The laugh plays from a stand-in entity that outlives the decoy. Skipped
+	-- at the entity limit rather than erroring before the decoy is removed.
+	function ENT:PlayDeathLaugh()
+		local targ = ents.Create("info_target")
+		if !IsValid(targ) then return end
+		targ:SetPos(self:GetPos())
+		targ:SetAngles(self:GetAngles())
+		targ:Spawn()
+		
+		local randLaugh = self.LaughsSound[math.random(1,#self.LaughsSound)]
+		timer.Simple(0, function()
+			if IsValid(targ) then targ:EmitSound( randLaugh[1] , 85, math.random(80, 120) ) end
+		end)
+		
+		SafeRemoveEntityDelayed(targ, randLaugh[2])
+	end
+	
 	function ENT:OnTakeDamage(dmg)
 		-- Remove() only takes effect at the end of the frame, so a second hit in
 		-- the same tick would run the death (and steal frags) again.
@@ -151,17 +168,7 @@ if SERVER then
                     owner:PHXChatInfo( "GOOD", "DECOY_FRAGS_RECEIVED", attacker:Nick() )
                 end
 				
-				local targ = ents.Create("info_target")
-				targ:SetPos(self:GetPos())
-				targ:SetAngles(self:GetAngles())
-				targ:Spawn()
-				
-				local randLaugh = self.LaughsSound[math.random(1,#self.LaughsSound)]
-				timer.Simple(0, function()
-					targ:EmitSound( randLaugh[1] , 85, math.random(80, 120) ) 
-				end)
-				
-				SafeRemoveEntityDelayed(targ, randLaugh[2])
+				self:PlayDeathLaugh()
 				
 				net.Start("PHX.DeathNoticeDecoy")
                     net.WriteEntity( attacker )

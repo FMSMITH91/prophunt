@@ -342,7 +342,7 @@ if SERVER then
                 self.propdecoy:SetOwner( self )
                 
 				timer.Simple(0, function() 
-					self:SendSurfaceSound('buttons/lever4.wav')
+					if IsValid(self) then self:SendSurfaceSound('buttons/lever4.wav') end
 				end)
 				
 				self:SetFakePropEntity(false)
