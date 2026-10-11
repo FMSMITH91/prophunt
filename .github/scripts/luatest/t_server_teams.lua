@@ -23,7 +23,7 @@ loadblocks("sh_enhancedplus.lua",
     [[^function GM:PlayerCanJoinTeam]] }))
 loadblocks("sv_enhancedplus.lua@Balance",
   extractAll("gamemodes/prop_hunt/gamemode/enhancedplus/sv_enhancedplus.lua", {
-    [[^function GM:RotateTeams]], [[^function GM:CheckTeamBalanceCustom]], [[^function GM:CheckTeamBalance\(]] }))
+    [[^local function InRotateWindow]], [[^local function FillHunterSlots]], [[^function GM:RotateTeams]], [[^function GM:CheckTeamBalanceCustom]], [[^function GM:CheckTeamBalance\(]] }))
 loadblocks("init.lua@OnPreRoundStart",
   extract("gamemodes/prop_hunt/gamemode/init.lua", [[^function GM:OnPreRoundStart]]))
 

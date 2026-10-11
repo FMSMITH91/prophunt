@@ -10,7 +10,7 @@ loadblocks("sh_enhancedplus.lua",
     [[^function GM:GetPlayingCount]], [[^function GM:GetHunterCount]] }))
 loadblocks("sv_enhancedplus.lua@Balance",
   extractAll("gamemodes/prop_hunt/gamemode/enhancedplus/sv_enhancedplus.lua", {
-    [[^function GM:RotateTeams]], [[^function GM:CheckTeamBalanceCustom]] }))
+    [[^local function InRotateWindow]], [[^local function FillHunterSlots]], [[^function GM:RotateTeams]], [[^function GM:CheckTeamBalanceCustom]] }))
 
 S.boolCVar("ph_forcespectatorstoplay", "0")
 CreateConVar("ph_huntercount", "0")

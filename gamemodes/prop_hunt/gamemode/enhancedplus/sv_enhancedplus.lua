@@ -324,6 +324,26 @@ function GM:TryNormalUnstuck(pl)
 	end
 end
 
+local function InRotateWindow(ix, offset, max, plyrCount)
+	return (ix >= (1 + offset) and ix <= max) or (max > plyrCount and ix <= max - plyrCount)
+end
+
+-- Give `skipped` hunter slots to the players after the window, in rotation
+-- order. Forced players fill in last, only if nobody else is left: a round with
+-- no hunters ends the moment it starts.
+local function FillHunterSlots(plyrTable, plyrCount, max, skipped)
+	for _, bAllowForced in ipairs({ false, true }) do
+		for step = 1, plyrCount do
+			if skipped < 1 then return end
+			local plyr = plyrTable[((max + step - 1) % plyrCount) + 1]
+			if plyr:Team() ~= TEAM_HUNTERS and (bAllowForced or !plyr:IsCurrentlyForcedAsProp()) then
+				plyr:SetTeam(TEAM_HUNTERS)
+				skipped = skipped - 1
+			end
+		end
+	end
+end
+
 -- ph_rotateteams: a window of hunterCount players, moved along one each round.
 function GM:RotateTeams(plyrTable, plyrCount, hunterCount)
 	-- Rotate over a stable order. The caller's list is last round's hunters then
@@ -340,29 +360,14 @@ function GM:RotateTeams(plyrTable, plyrCount, hunterCount)
 	-- order who isn't forced takes the slot, so the hunter count holds.
 	local skipped = 0
 	for ix, plyr in ipairs(plyrTable) do
-		if (ix >= (1 + offset) and ix <= max) or (max > plyrCount and ix <= max - plyrCount) then
-			if plyr:IsCurrentlyForcedAsProp() then
-				plyr:SetTeam(TEAM_PROPS)
-				skipped = skipped + 1
-			else
-				plyr:SetTeam(TEAM_HUNTERS)
-			end
-		else
-			plyr:SetTeam(TEAM_PROPS)
+		local bHunter = InRotateWindow(ix, offset, max, plyrCount)
+		if bHunter and plyr:IsCurrentlyForcedAsProp() then
+			bHunter = false
+			skipped = skipped + 1
 		end
+		plyr:SetTeam(bHunter and TEAM_HUNTERS or TEAM_PROPS)
 	end
-	-- Forced players fill in last, only if nobody else is left: a round with
-	-- no hunters ends the moment it starts.
-	for _, bAllowForced in ipairs({ false, true }) do
-		for step = 1, plyrCount do
-			if skipped < 1 then break end
-			local plyr = plyrTable[((max + step - 1) % plyrCount) + 1]
-			if plyr:Team() ~= TEAM_HUNTERS and (bAllowForced or !plyr:IsCurrentlyForcedAsProp()) then
-				plyr:SetTeam(TEAM_HUNTERS)
-				skipped = skipped - 1
-			end
-		end
-	end
+	FillHunterSlots(plyrTable, plyrCount, max, skipped)
 	-- Spent either way: left set, it fired rounds later once rotation was turned off.
 	for _, plyr in ipairs(plyrTable) do plyr:SetForceAsProp( false ) end
 end

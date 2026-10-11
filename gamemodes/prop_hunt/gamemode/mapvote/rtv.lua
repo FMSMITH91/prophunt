@@ -118,6 +118,13 @@ end
 hook.Remove( "PlayerDisconnected", "Remove RTV" )
 hook.Remove( "PlayerSay", "RTV Chat Commands" )
 
+-- Too few humans for mv_rtvcount, the minimum CanVote holds a vote to. An
+-- emptied server is exempt: that is mv_change_when_no_player's call.
+function RTV.BelowMinimum()
+	local humans = #player.GetHumans()
+	return humans >= 1 and humans < RTV.GetPlayerCount()
+end
+
 hook.Add( "PlayerDisconnected", "PHX.RTV.Remove", function( ply )
 
 	if ply.RTVoted then
@@ -127,16 +134,11 @@ hook.Add( "PlayerDisconnected", "PHX.RTV.Remove", function( ply )
 	timer.Simple( 0.1, function()
 		-- Someone leaving a vote that is running, about to run (the end-of-game
 		-- one included), or already decided must not start it over.
-		if MapVote.Allow or RTV.Pending or MapVote.ChangingMap or VoteDue() then return end
+		if MapVote.Allow or RTV.Pending or MapVote.ChangingMap or VoteDue() or RTV.BelowMinimum() then return end
 
 		if (#player.GetHumans() < 1 && !MapVote.PHXConfig.ChangeMapNoPlayer) then 
 			print("MapVote: There is no player to force change map...")
 		else
-			-- The same minimum CanVote holds a vote to. An emptied server is exempt:
-			-- that is mv_change_when_no_player's call, above.
-			local humans = #player.GetHumans()
-			if humans >= 1 and humans < RTV.GetPlayerCount() then return end
-
 			if RTV.ShouldChange() then
 				if #player.GetHumans() < 1 then
 					local time = MapVote.PHXConfig.TimeLimit or 28
