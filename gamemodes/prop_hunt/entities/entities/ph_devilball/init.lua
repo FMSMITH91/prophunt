@@ -26,19 +26,22 @@ function ENT:Initialize()
 	
 	-- Spawn a Sprite, for an Effect.
 	self.Sprite = ents.Create("env_sprite")
-	self.Sprite:SetPos(self:GetPos())
-	self.Sprite:SetAngles(Angle(0,0,0))
-	self.Sprite:SetKeyValue("spawnflags","1")
-	self.Sprite:SetKeyValue("framerate","1")
-	self.Sprite:SetKeyValue("rendermode","5")
-	self.Sprite:SetKeyValue("rendercolor","255 "..tostring(math.random(1,180)).." "..tostring(math.random(1,20)))
-	self.Sprite:SetKeyValue("model","sprites/light_glow01.vmt")
-	self.Sprite:SetKeyValue("scale","0.4")
+	-- No sprite at the entity limit: the crystal still works without its glow.
+	if IsValid(self.Sprite) then
+		self.Sprite:SetPos(self:GetPos())
+		self.Sprite:SetAngles(Angle(0,0,0))
+		self.Sprite:SetKeyValue("spawnflags","1")
+		self.Sprite:SetKeyValue("framerate","1")
+		self.Sprite:SetKeyValue("rendermode","5")
+		self.Sprite:SetKeyValue("rendercolor","255 "..tostring(math.random(1,180)).." "..tostring(math.random(1,20)))
+		self.Sprite:SetKeyValue("model","sprites/light_glow01.vmt")
+		self.Sprite:SetKeyValue("scale","0.4")
 	
-	self.Sprite:Spawn()
-	self.Sprite:Activate()
+		self.Sprite:Spawn()
+		self.Sprite:Activate()
 	
-	self.Sprite:SetParent(self)
+		self.Sprite:SetParent(self)
+	end
 	
 	self:StartTeslaSpark()
 end

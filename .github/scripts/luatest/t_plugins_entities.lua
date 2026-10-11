@@ -110,7 +110,11 @@ ents.Create = function(cls)
   return e
 end
 local byName = {}
-ents.FindByName = function(n) return byName[n] or {} end
+-- The engine rejects a non-string name, as it does here.
+ents.FindByName = function(n)
+  if type(n) ~= "string" then error("bad argument #1 to 'FindByName' (string expected, got " .. type(n) .. ")", 2) end
+  return byName[n] or {}
+end
 ents.FindInSphere = function() return {} end
 
 local function loadENT(...)
@@ -457,5 +461,36 @@ check("named target: spawned on the target (normal play)", balls()[1] and tostri
 is = itemSpawner("")
 check("no target: runs without error (normal play)", attempt(function() is:AcceptInput("Spawn") end), "ok")
 check("no target: spawned on the spawner (normal play)", balls()[1] and tostring(balls()[1]:GetPos()), "[1 2 3]")
+
+
+print("\n== entity limit and bad map keyvalues ==")
+local realCreate = ents.Create
+local function atLimit(fn) ents.Create = function() return NULL end; local r = attempt(fn); ents.Create = realCreate; return r end
+local c3 = newEnt("ph_devilball", DEVIL)
+check("devil crystal at the entity limit: Initialize runs without error", atLimit(function() c3:Initialize() end), "ok")
+check("  ... and still starts its spark timer", timer.Exists("DoTeslaSpark-" .. c3:EntIndex()), true)
+is = itemSpawner("itemspot")
+check("item spawner at the entity limit: Spawn input runs without error", atLimit(function() is:AcceptInput("Spawn") end), "ok")
+local ks = newEnt("ph_teamitem_spawner", ITEMS)
+check("spawnent set to a class name: no error", attempt(function() ks:KeyValue("spawnent", "ph_luckyball") end), "ok")
+check("  ... falls back to the first item", ks:GetSpawnEntity(), 1)
+sp = spawner({ spawnchance = "1" }, 1)
+check("decoy spawner with no target name: Spawn input runs without error", attempt(function() sp:AcceptInput("Spawn") end), "ok")
+check("  ... and spawns nothing", #decoys(), 0)
+sp:AcceptInput("ChangeTarget", nil, nil, "")
+check("ChangeTarget with no data: Spawn still runs without error", attempt(function() sp:AcceptInput("Spawn") end), "ok")
+
+local realRandom, realGetCVar = math.random, PHX.GetCVar
+math.random = function(a, b) if a == nil then return 0 end return realRandom(a, b) end   -- force the 8% drop
+PHX.GetCVar = function(self, n) if n == "ph_enable_lucky_balls" then return true end return realGetCVar(self, n) end
+loadblocks("init.lua@PropBreak", extract("gamemodes/prop_hunt/gamemode/init.lua", [[^hook\.Add\("PropBreak"]]))
+EntMeta.SetColor = EntMeta.SetColor or function() end
+local broken = newEnt("prop_physics", nil, { _pos = Vector(0, 0, 0) })
+SetGlobalBool("InRound", true)
+check("prop break drop at the entity limit: no error", atLimit(function() S.fire("PropBreak", hunterA, broken) end), "ok")
+created = {}
+S.fire("PropBreak", hunterA, broken)
+check("prop break drop below the limit: a lucky ball spawns (normal play)", #balls(), 1)
+math.random, PHX.GetCVar = realRandom, realGetCVar
 
 report()
