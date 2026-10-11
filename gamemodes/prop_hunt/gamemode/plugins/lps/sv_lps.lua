@@ -26,15 +26,26 @@ function PHX.LPS:CreateSound( ply )
             end
         end
         
+        -- Stop the last track: with a wrong length the next one can start early.
+        local last = self.SOUND.LASTPATCH
+        if last then last:Stop() end
+
         local snd = CreateSound( ply, self.SOUND.CURRENT.sound, filter )
         self.SOUND.CURRENT.sndObj = snd
         self.SOUND.CURRENT.Owner = ply
+        self.SOUND.LASTPATCH = snd
         snd:SetSoundLevel(0)
         snd:PlayEx(0.95,100)
         
-        timer.Create( strMusicTimer, self.SOUND.CURRENT.Len + 0.2, 1, function()
-            self:CreateSound( ply )
-        end )
+        -- Len is -1 without the duration library, and 0 or NaN for a file it
+        -- cannot read. Queue the next track only after a real length, or this
+        -- restarted the music every 0.2s; otherwise the track plays once.
+        local len = self.SOUND.CURRENT.Len
+        if isnumber( len ) and len > 0 and len < math.huge then
+            timer.Create( strMusicTimer, len + 0.2, 1, function()
+                self:CreateSound( ply )
+            end )
+        end
         
     end
     

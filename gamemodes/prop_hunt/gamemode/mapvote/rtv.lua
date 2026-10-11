@@ -132,6 +132,11 @@ hook.Add( "PlayerDisconnected", "PHX.RTV.Remove", function( ply )
 		if (#player.GetHumans() < 1 && !MapVote.PHXConfig.ChangeMapNoPlayer) then 
 			print("MapVote: There is no player to force change map...")
 		else
+			-- The same minimum CanVote holds a vote to. An emptied server is exempt:
+			-- that is mv_change_when_no_player's call, above.
+			local humans = #player.GetHumans()
+			if humans >= 1 and humans < RTV.GetPlayerCount() then return end
+
 			if RTV.ShouldChange() then
 				if #player.GetHumans() < 1 then
 					local time = MapVote.PHXConfig.TimeLimit or 28

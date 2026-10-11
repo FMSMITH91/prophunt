@@ -1,13 +1,15 @@
 concommand.Add( "pcr_debug_model_list",function( ply )
 	if ( (game.IsDedicated() and ply == NULL) ) then
 		PrintTable(PCR.PropList)
-	else
+	elseif ( IsValid( ply ) ) then
 		if ( ply:PHXIsStaff() ) then
 			ply:ChatPrint("[Prop Menu] Check on your Console!")
 			PrintTable(PCR.PropList)
 		else
 			ply:ChatPrint("[Prop Menu] Sorry, you can not use this command.")
 		end
+	else
+		print("[Prop Menu] On a listen server, run this as a staff player.")
 	end
 end)
 

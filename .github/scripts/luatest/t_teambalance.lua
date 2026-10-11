@@ -9,8 +9,8 @@ loadblocks("sh_enhancedplus.lua",
   extractAll("gamemodes/prop_hunt/gamemode/enhancedplus/sh_enhancedplus.lua", {
     [[^function GM:GetPlayingCount]], [[^function GM:GetHunterCount]] }))
 loadblocks("sv_enhancedplus.lua@Balance",
-  extract("gamemodes/prop_hunt/gamemode/enhancedplus/sv_enhancedplus.lua",
-          [[^function GM:CheckTeamBalanceCustom]]))
+  extractAll("gamemodes/prop_hunt/gamemode/enhancedplus/sv_enhancedplus.lua", {
+    [[^function GM:RotateTeams]], [[^function GM:CheckTeamBalanceCustom]] }))
 
 S.boolCVar("ph_forcespectatorstoplay", "0")
 CreateConVar("ph_huntercount", "0")
@@ -57,5 +57,36 @@ for _, ply in ipairs(S.players) do
   if ply:IsCurrentlyForcedAsProp() then cleared = false end
 end
 check("forced-as-prop flags cleared after balancing", cleared, true)
+
+print("\n== ph_rotateteams honours and clears Force Hunter as Prop ==")
+S.cvars["ph_rotateteams"].v = "1"
+local function rotate(n, forced, offset)
+  S.players = {}
+  for i = 1, n do
+    S.players[i] = S.Player{ name = "r" .. i, uid = 100 + i, team = TEAM_PROPS }
+    if forced[i] then S.players[i]:SetForceAsProp(true) end
+  end
+  SetGlobalInt("RotateTeamsOffset", offset)
+  GAMEMODE:CheckTeamBalanceCustom()
+  local hunters, anyFlag = {}, false
+  for i, ply in ipairs(S.players) do
+    if ply:Team() == TEAM_HUNTERS then hunters[#hunters + 1] = i end
+    if ply:IsCurrentlyForcedAsProp() then anyFlag = true end
+  end
+  return hunters, anyFlag
+end
+
+-- 6 players -> 2 hunters. Offset 0: the window is players 1-2.
+local hs = rotate(6, {}, 0)
+check("rotate, nobody forced -> window hunts", table.concat(hs, ","), "1,2")
+hs, flag = rotate(6, { [1] = true }, 0)
+check("rotate, window player forced -> next in order hunts", table.concat(hs, ","), "2,3")
+check("rotate, forced flag cleared", flag, false)
+hs = rotate(6, { [6] = true }, 5)	-- window wraps: players 6 and 1
+check("rotate, forced player at the wrap -> still two hunters", #hs, 2)
+check("rotate, forced player at the wrap is a prop", S.players[6]:Team(), TEAM_PROPS)
+hs = rotate(3, { [1] = true, [2] = true, [3] = true }, 0)
+check("rotate, everyone forced -> force ignored, one hunter", #hs, 1)
+S.cvars["ph_rotateteams"].v = "0"
 
 report()

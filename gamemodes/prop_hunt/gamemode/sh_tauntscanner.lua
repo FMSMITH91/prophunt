@@ -299,6 +299,10 @@ if CLIENT then
 		local taunts = table.concat( chunks, "", 1, total )
 		chunks = {}
 		local Conv = util.PHXQuickDecompress( taunts )
+		if !Conv then
+			PHX:VerboseMsg("[TauntScanner] Could not decompress the taunt scanner data, ignoring it.", 2)
+			return
+		end
 		
 		if PHX and PHX.ManageTaunt ~= nil then
 			for cat, data in pairs(Conv) do

@@ -193,6 +193,11 @@ net.Receive("PCR.EditedCustomPropData", function(len, ply)
 		end
 		
 		local js = util.Decompress( data )
+		if !js then
+			ErrorNoHalt("[!Prop Menu] Error Retreiving Prop Data: the data could not be decompressed\n")
+			InformEditor(ply, true)
+			return
+		end
 		local DataTable = util.JSONToTable(js)
 		
 		if var ~= "PCR" or sub ~= "CustomProp" then --Strict to PCR and CustomProp!
