@@ -81,8 +81,10 @@ function GM:Think()
 		
 	end
 
-	// Game time related
-	if( !GAMEMODE.IsEndOfGame && ( !GAMEMODE.RoundBased || ( GAMEMODE.RoundBased && GAMEMODE:CanEndRoundBasedGame() ) ) && CurTime() >= GAMEMODE.GetTimeLimit() ) then
+	// Game time related. -1 is no limit (ph_game_time 0), which every CurTime()
+	// is past; PreRoundStart skips it the same way.
+	local iTimeLimit = GAMEMODE:GetTimeLimit()
+	if( !GAMEMODE.IsEndOfGame && ( !GAMEMODE.RoundBased || ( GAMEMODE.RoundBased && GAMEMODE:CanEndRoundBasedGame() ) ) && iTimeLimit != -1 && CurTime() >= iTimeLimit ) then
 		GAMEMODE:EndOfGame( true )
 	end
 	
