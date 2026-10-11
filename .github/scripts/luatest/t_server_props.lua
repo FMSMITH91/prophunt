@@ -272,6 +272,13 @@ pl = prop(100)
 GAMEMODE:PlayerExchangeProp(pl, mkEnt{ mdl = BOARD, min = mapBoard._min, max = mapBoard._max })
 check("model dropped from the config: back to the OBB hull", v(pl._hull[2]), v(Vector(8.28, 8.28, 128.56 * 0.8)))
 
+-- Malformed entries are skipped; a good one after them still applies.
+mapBoard:SetNWBool("hasCustomHull", false)
+S.json.obb = { "just a string", { "models/x.mdl", { min = { 0, 0, 0 } } }, { BOARD, { min = { -1, -1, 0 }, max = { 1, 1, 50 } } } }
+local okCfg = pcall(S.concommands["refresh_obb_map_setting"].fn, NULL)
+check("malformed OBB entries: no error", okCfg, true)
+check("  ...the valid entry after them still applies", mapBoard:GetNWBool("hasCustomHull", false), true)
+
 print("\n== voice and chat ==")
 local function P(t, alive) return S.Player{ team = t, alive = alive } end
 local liveH, deadH, liveP, spec = P(TEAM_HUNTERS, true), P(TEAM_HUNTERS, false), P(TEAM_PROPS, true), P(TEAM_SPECTATOR, true)

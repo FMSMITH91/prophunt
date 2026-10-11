@@ -124,7 +124,8 @@ function SWEP:SecondaryAttack()
 				SuppressHostEvents( NULL ) -- Do not suppress the flechette effects
 
 				local ent = ents.Create( "hunter_flechette" )
-				if ( !IsValid( ent ) ) then return end
+				-- break, not return: the ammo and cooldown below must still apply.
+				if ( !IsValid( ent ) ) then break end
 				
 				local ang=Angle(0,i,0)
 				
