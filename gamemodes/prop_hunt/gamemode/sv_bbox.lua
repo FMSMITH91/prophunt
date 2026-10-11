@@ -32,6 +32,25 @@ local function IsValidEntry( e )
 	return istable( e ) and isstring( e[1] ) and istable( e[2] ) and IsVec3( e[2]["min"] ) and IsVec3( e[2]["max"] )
 end
 
+-- Records one entry's hull by model and applies it to the map props using it.
+local function ApplyEntry( entry )
+	local tent = ents.FindByModel(entry[1])
+	local min 	= Vector(entry[2]["min"][1],entry[2]["min"][2],entry[2]["min"][3])
+	local max 	= Vector(entry[2]["max"][1],entry[2]["max"][2],entry[2]["max"][3])
+	
+	local mdl = string.lower(entry[1])
+	PHX.CustomHulls[mdl] = {min,max}
+	OwnHulls[mdl] = true
+	
+	for _,found in pairs(tent) do
+		if IsValid(found) then
+			PHX:VerboseMsg( "[OBB MODIFIER] Setting up OBB Value for Entity ["..found:EntIndex().."]["..found:GetModel().."]: \n   >Hull-Vector: min "..tostring(min).." max "..tostring(max) )
+			found:SetNWBool("hasCustomHull",true)
+			found.m_Hull 	= {min,max}
+		end
+	end
+end
+
 local function DoConfig()
 	-- Clear only what we added last time, so a model dropped from the file stops matching.
 	for mdl in pairs(OwnHulls) do PHX.CustomHulls[mdl] = nil end
@@ -66,26 +85,10 @@ local function DoConfig()
 	
 	for i=1,#data do
 		-- One bad entry used to error here every round and drop every entry after it.
-		if !IsValidEntry( data[i] ) then
+		if IsValidEntry( data[i] ) then
+			ApplyEntry( data[i] )
+		else
 			PHX:VerboseMsg( "[OBB] Skipping malformed entry #"..i.." in this map's OBB config.", 2 )
-			continue
-		end
-		local tent = ents.FindByModel(data[i][1])
-		local min 	= Vector(data[i][2]["min"][1],data[i][2]["min"][2],data[i][2]["min"][3])
-		local max 	= Vector(data[i][2]["max"][1],data[i][2]["max"][2],data[i][2]["max"][3])
-		--[[ local dmin 	= Vector(data[i][2]["dmin"][1],data[i][2]["dmin"][2],data[i][2]["dmin"][3])
-		local dmax 	= Vector(data[i][2]["dmax"][1],data[i][2]["dmax"][2],data[i][2]["dmax"][3]) ]]
-		
-		local mdl = string.lower(data[i][1])
-		PHX.CustomHulls[mdl] = {min,max}
-		OwnHulls[mdl] = true
-		
-		for _,found in pairs(tent) do
-			if IsValid(found) then
-				PHX:VerboseMsg( "[OBB MODIFIER] Setting up OBB Value for Entity ["..found:EntIndex().."]["..found:GetModel().."]: \n   >Hull-Vector: min "..tostring(min).." max "..tostring(max) )
-				found:SetNWBool("hasCustomHull",true)
-				found.m_Hull 	= {min,max}
-			end
 		end
 	end
 	
