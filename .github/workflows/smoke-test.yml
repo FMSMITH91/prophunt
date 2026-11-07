@@ -42,8 +42,9 @@ env:
 jobs:
   smoke:
     name: smoke
-    # Pinned rather than ubuntu-latest: the package names below are 24.04's,
-    # and the move to 24.04 is what removed libncurses5:i386 under this job.
+    # Pinned rather than ubuntu-latest, so the image only changes through a
+    # reviewed PR (Renovate opens one): the move to 24.04 is what removed
+    # libncurses5:i386 under this job. The packages below also exist on 26.04.
     runs-on: ubuntu-26.04
     timeout-minutes: 45
 
