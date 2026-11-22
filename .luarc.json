@@ -1,0 +1,10 @@
+{
+    "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+    "runtime.version": "LuaJIT",
+    "runtime.nonstandardSymbol": ["!", "!=", "&&", "||", "//", "/**/", "continue"],
+    "workspace.library": [".luals/glua-api"],
+    "workspace.ignoreDir": [".luals", ".git"],
+    "workspace.checkThirdParty": false,
+    "diagnostics.globals": ["DLabel", "HudBase"],
+    "diagnostics.disable": ["duplicate-set-field", "inject-field"]
+}

@@ -3,3 +3,6 @@
 # the script.
 __pycache__/
 *.py[cod]
+
+# Garry's Mod API definitions fetched by tools/dev-setup.sh.
+.luals/
